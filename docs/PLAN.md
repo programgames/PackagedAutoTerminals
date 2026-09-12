@@ -17,13 +17,31 @@ Restent à vérifier dans le code, au début du lot 1 :
 parcours générique des nœuds de grille, effet exact de `setPatternStack()`, comportement du
 `Packager Extension`.
 
-## Lot 1 — Squelette et environnement de dev — 1 session
+## Lot 1 — Squelette et environnement de dev ✅ terminé le 2026-09-12
 
 Dépôt Git, `build.gradle`, dépendances épinglées, `mcmod.info`, classe principale vide,
-`run/mods` peuplé des 6 jars nécessaires.
+`run/mods` peuplé.
 
-**Fait quand** : `gradlew runClient` démarre et le mod apparaît dans la liste.
-**Plus** : un chargement de contrôle dans l'instance Cleanroom réelle, avec le jar vide.
+**Résultat** : `gradlew setupDecompWorkspace`, `gradlew build` et `gradlew runClient`
+passent. Le client de dev charge **17 mods**, dont `PackagedAuto Terminals 1.12.2-0.1.0`.
+Le journal affiche bien `pre-init` puis `init`.
+
+**Trois points de code vérifiés au passage**, consignés dans `docs/PACKAGEDAUTO-MODEL.md`
+section 7 :
+
+1. Le Recipe Holder occupe l'**emplacement 10** du Packager.
+2. Écrire cet emplacement appelle `updatePatternList()`, qui appelle `postPatternChange()`.
+   **Le point le plus fragile du projet est donc résolu avant d'avoir écrit une ligne de
+   GUI.** Règle qui en découle : toujours réécrire le stack, jamais modifier son NBT en place.
+3. La découverte se fait par `IGrid.getMachinesClasses()` puis `getMachines(cls)`, sans
+   connaître aucune classe d'addon à la compilation.
+
+**Contrainte D20 prouvée** : une sonde a compilé contre les classes internes d'AE2
+(`AbstractPartTerminal`, `AEBasePoweredItem`). Le montage `flatDir` + `deobfProvided` tient.
+
+**Reste à faire par toi** : ouvrir le menu « Mods » du client déjà lancé, et vérifier la
+ligne `PackagedAuto Terminals`. Puis le test de chargement dans l'instance Cleanroom réelle,
+avec le jar de `build/libs/`.
 
 ## Lot 2 — Lecture seule, terminal câblé — 2 à 3 sessions
 

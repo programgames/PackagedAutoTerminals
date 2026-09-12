@@ -54,6 +54,19 @@ et édite leurs patterns à distance.
 > Ce fork n'ajoute que des correctifs. **On compile contre AE2UEL officiel**, jamais contre
 > le fork. Le jar produit doit fonctionner avec les deux.
 
+### Environnement d'exécution de dev
+
+`libs/` porte les dépendances de compilation. `run/mods` porte **uniquement** les mods
+absents de `libs/`, sans quoi FML refuse de démarrer (voir section 4.1) :
+
+```
+Avaritia, Baubles, CodeChickenLib, Cucumber, ExtendedCrafting-Nomifactory-Edition,
+HadEnoughItems, PackagedAvaritia, PackagedExCrafting, PackagingProvider, mixinbooter
+```
+
+> `PackagingProvider` exige `mixinbooter`. Sans lui, FML s'arrête sur
+> `MissingModsException`.
+
 ### Instance de test
 
 `H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`
