@@ -1,82 +1,134 @@
 # Tests manuels en jeu
 
 > Le mod touche à un réseau ME et à des recettes encodées. Aucun test automatique ne couvre
-> cela. Chaque lot se valide donc à la main, dans l'ordre ci-dessous.
+> cela. Tout le code écrit pendant la nuit du 12 au 13 septembre 2026 **n'a jamais tourné
+> en jeu**. Cette liste existe pour le vérifier en une seule session.
+>
+> Coche au fur et à mesure. Au premier échec, note le message du journal
+> (`run/logs/latest.log`) : il porte presque toujours la cause exacte.
 
-## Préparer l'environnement
+## Préparer
 
-1. Vérifie que `JAVA_HOME` pointe vers le JDK 8 Adoptium.
-2. Lance `gradlew runClient`.
-3. Crée un monde créatif superplat.
+1. Vérifie que le **Gradle JVM d'IntelliJ pointe sur le JDK 8**.
+2. Lance la configuration **Gradle runClient**.
+3. Monde créatif superplat, avec : contrôleur ME, Creative Energy Cell, câble, Packager,
+   Unpackager, Package Recipe Encoder, quelques Package Recipe Holders, un Package Crafter,
+   un Ultimate Crafter, et des objets de base.
 
-> ⚠️ Ne copie jamais dans `run/mods` un jar déjà présent dans `libs/`. FML refuse de
-> démarrer avec `DuplicateModsFoundException`. Voir CLAUDE.md, section 4.1.
+> ⚠️ Ne copie jamais dans `run/mods` un jar déjà présent dans `libs/maven`. FML refuse de
+> démarrer. Voir CLAUDE.md, section 4.1.
 
-## T1 — Le mod se charge (lot 1)
+---
 
-1. Ouvre le menu « Mods ».
-2. Vérifie que `PackagedAuto Terminals` apparaît dans la liste.
-3. Vérifie que le journal affiche `PackagedAuto Terminals … : pre-init`.
+## T1 — Le mod se charge
 
-**Attendu** : aucun avertissement, aucune erreur.
+- [ ] Le menu **Mods** liste `PackagedAuto Terminals`.
+- [ ] Le journal affiche `Types de recettes enregistres : 10`.
+- [ ] Le journal affiche `Traductions chargees`, et **pas** `NE sont PAS chargees`.
 
-## T2 — Découverte des fournisseurs (lot 2)
+## T2 — Fabrication *(nouveau, lot 7d)*
 
-1. Pose un contrôleur ME, un câble et une source d'énergie créative.
-2. Pose un Packager, relie-le au réseau.
-3. Encode une recette avec le Package Recipe Encoder.
-4. Insère le Package Recipe Holder dans le Packager.
-5. Ouvre le terminal.
+- [ ] Dans JEI, la recette du **Terminal PackagedAuto** apparaît : un terminal ME plus un
+      Package Recipe Holder.
+- [ ] La fabrication fonctionne en table de craft.
 
-**Attendu** : le Packager apparaît, avec sa recette et son type.
+> Si la recette est absente, cherche dans le journal `Recette du terminal non enregistree`.
 
-## T3 — Cas limites de découverte (lot 2)
+## T3 — Pose et ouverture
+
+- [ ] Le terminal se pose sur un câble ME.
+- [ ] Le clic droit ouvre la fenêtre.
+- [ ] La liste montre le Packager, son état, puis ses recettes.
+
+## T4 — Recherche *(nouveau, lot 4c)*
+
+- [ ] Le champ de recherche apparaît en haut à droite de la fenêtre.
+- [ ] Taper le nom d'une machine filtre la liste.
+- [ ] Taper le nom d'un objet **produit** garde la machine ET sa recette.
+- [ ] Taper le nom d'un objet **consommé** fonctionne aussi.
+- [ ] **Échap** ferme la fenêtre même quand le champ a le focus.
+- [ ] La touche d'inventaire ferme aussi la fenêtre.
+
+## T5 — Suppression
+
+- [ ] **Maj + clic droit** sur une recette la supprime.
+- [ ] Le terminal de craft d'AE2 ne propose plus l'objet correspondant.
+
+## T6 — Édition
+
+- [ ] **Clic droit** sur une recette ouvre l'éditeur, rempli.
+- [ ] Les libellés ne se chevauchent pas.
+- [ ] L'icône du type apparaît entre les flèches `<` et `>`.
+- [ ] Les flèches changent le type, et les cases actives suivent.
+- [ ] **Enregistrer** ramène au terminal, et AE2 voit la nouvelle recette.
+
+## T7 — Quantités *(nouveau, lot 3d)*
+
+- [ ] La molette au-dessus d'une case occupée change la quantité.
+- [ ] **Maj + molette** avance de dix.
+- [ ] **Ctrl + molette** avance de soixante-quatre.
+- [ ] La quantité ne descend jamais sous un, et ne dépasse pas 4096.
+- [ ] La molette sur une case grisée ne fait rien.
+
+## T8 — Création *(nouveau, lot 3c)*
+
+- [ ] **Clic gauche** sur une machine qui porte un porte-recettes ouvre un éditeur vide.
+- [ ] Le type proposé est **Crafting**.
+- [ ] Après enregistrement, la recette s'ajoute à la suite des autres.
+- [ ] Sur une machine **sans** porte-recettes, le clic gauche en prend un sur le réseau ME,
+      puis ouvre l'éditeur.
+- [ ] Sans porte-recettes vierge sur le réseau, le message
+      « Aucun porte-recettes vierge sur le réseau » s'affiche.
+
+## T9 — Déplacer un porte-recettes *(nouveau, lot 3e)*
+
+- [ ] **Maj + clic gauche** sur une machine renvoie son porte-recettes au réseau.
+- [ ] Le porte-recettes apparaît dans le terminal ME, avec ses recettes.
+- [ ] La machine n'en porte plus, et AE2 ne propose plus ses recettes.
+
+## T10 — Transfert depuis JEI *(nouveau, lot 4a)*
+
+- [ ] Dans l'éditeur, ouvre une recette dans JEI, puis clique le bouton **+**.
+- [ ] La grille se remplit, et le type bascule sur celui qui convient.
+- [ ] Sur une catégorie qu'aucun type n'accepte, JEI affiche
+      « Aucun type PackagedAuto n'accepte cette catégorie ».
+
+## T11 — Onglet Machines *(nouveau, lot 5)*
+
+- [ ] Le bouton en haut à gauche bascule entre **Patterns** et **Machines**.
+- [ ] L'onglet Machines liste les crafters, avec **prête** ou **occupée**.
+- [ ] Encode une recette **Ultimate** sans poser d'Ultimate Crafter : l'onglet Machines
+      affiche `Ultimate : aucun crafter sur ce réseau`, en rouge.
+- [ ] Pose l'Ultimate Crafter : l'avertissement disparaît.
+- [ ] Une recette de type **Processing** ne déclenche aucun avertissement : ce type n'exige
+      aucune machine reconnue.
+
+## T12 — Configuration *(nouveau, lot 7c)*
+
+- [ ] Le fichier `run/config/packagedautoterminals.cfg` existe.
+- [ ] `machinesTab = false` fait disparaître le bouton d'onglet, et le titre revient.
+- [ ] `refreshTicks = 100` ralentit visiblement la mise à jour de la liste.
+
+## T13 — Cas limites
 
 | Cas | Attendu |
 |---|---|
-| Packager sans holder | la machine apparaît, marquée « vide » |
-| Packager hors énergie | la machine apparaît, marquée inactive |
+| Packager sans porte-recettes | ligne « aucun porte-recettes » |
+| Packager sans énergie | ligne « inactive » |
 | Unpackager et Packaging Provider | ils apparaissent aussi |
-| Packager Extension | ligne rattachée au Packager, jamais une machine séparée |
 | Deux réseaux distincts | seul le réseau du terminal apparaît |
+| Casser la machine pendant l'édition | l'enregistrement échoue sans planter |
+| Plus de six rangées | l'ascenseur fonctionne |
 
-## T4 — Écriture (lot 3)
+## T14 — Mesure de la révision R2
 
-1. Ajoute une recette depuis le terminal.
-2. Ferme le terminal. **Ne touche pas au bloc.**
-3. Ouvre le terminal de craft AE2 et demande le craft de la sortie.
+- [ ] Sur un réseau chargé, note la **taille du paquet** affichée à droite du libellé
+      « Inventaire ».
+- [ ] Au-delà de 30 000 octets, il faudra découper les paquets. En dessous, la révision R2
+      tient, et le découpage reste inutile.
 
-**Attendu** : AE2 propose le craft. C'est la preuve que `postPatternChange()` a bien eu lieu.
+## T15 — Instance réelle
 
-4. Supprime la recette depuis le terminal.
-5. Redemande le craft.
-
-**Attendu** : AE2 ne propose plus le craft.
-
-## T5 — Types de recettes (lot 3)
-
-Répète T4 pour chaque type : `Crafting`, `Processing`, `Basic`, `Ultimate`, `Extreme`.
-
-**Attendu** : la grille d'édition change de forme selon le type, d'après
-`IRecipeType.getEnabledSlots()`.
-
-## T6 — Diagnostic (lot 5)
-
-1. Encode une recette `Ultimate` sans poser d'Ultimate Crafter.
-2. Ouvre l'onglet « Machines ».
-
-**Attendu** : le terminal signale la recette orpheline.
-
-## T7 — Sans fil (lot 6)
-
-1. Pose un point d'accès sans fil.
-2. Éloigne-toi jusqu'à sortir de portée.
-
-**Attendu** : le terminal se ferme et explique pourquoi.
-
-## T8 — Instance réelle (lot 7)
-
-1. Copie le jar dans `H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`.
-2. Lance l'instance.
-
-**Attendu** : le mod se charge et le terminal fonctionne avec le fork AE2UEL du joueur.
+- [ ] Copie `build/libs/packagedautoterminals-1.12.2-0.1.0.jar` dans
+      `H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`.
+- [ ] L'instance démarre, et le terminal fonctionne avec ton fork d'AE2UEL.

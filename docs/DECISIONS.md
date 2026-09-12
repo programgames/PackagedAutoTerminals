@@ -54,6 +54,18 @@ Toutes ces lignes ont été validées avec le joueur. Date : 2026-09-12.
 | Coder en dur les niveaux Basic → Ultimate et Extreme dans le cœur du mod | `RecipeTypeRegistry` les fournit déjà. Seule la table de diagnostic R1 est câblée, et elle vit dans les modules d'intégration |
 | Tester un crafter par appel à blanc de `acceptPackage` | la méthode exécute réellement le craft ; aucun mode simulation n'existe |
 
+## Décisions prises pendant la nuit du 12 au 13 septembre 2026
+
+| # | Décision | Motif |
+|---|---|---|
+| D25 | Licence **MIT**, plus un fichier `NOTICE` | même licence que PackagedAuto. Aucun fichier d'AE2 ni de PackagedAuto n'est copié : nous compilons seulement contre eux |
+| D26 | La recette de fabrication est enregistrée **par le code**, pas en JSON | les objets d'AE2 se distinguent par leur métadonnée ; un JSON l'écrirait en dur et casserait à la moindre renumérotation |
+| D27 | Gestionnaire de transfert JEI **universel**, plutôt qu'un par catégorie | il capte les addons qui enregistrent leurs types après le chargement de JEI |
+| D28 | Déplacer un porte-recettes se fait **par le réseau** : retrait, puis reprise | rien ne peut se perdre. Si le réseau refuse l'objet, la machine le garde |
+| D29 | Les quantités vont jusqu'à **4096**, pas 64 | PackagedAuto écrit de grandes quantités par `MiscUtil.saveItemWithLargeCount`, et les recettes de traitement en ont besoin |
+| D30 | La comparaison d'instantané porte sur le **message entier** | comparer les seuls fournisseurs masquait tout changement d'état des machines |
+| D31 | Une tâche Gradle `checkLang` casse le build si les langues divergent | Minecraft retombe en anglais sans rien signaler : la divergence serait invisible |
+
 ## Questions encore ouvertes
 
 | # | Question |

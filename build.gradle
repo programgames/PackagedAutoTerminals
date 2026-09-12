@@ -145,6 +145,68 @@ if (!javaVersion.startsWith('1.8')) {
     )
 }
 
+// Garde-fou : les deux fichiers de langue doivent porter exactement les mêmes clés.
+// Minecraft retombe en anglais pour une clé absente, sans rien signaler. Une divergence
+// passerait donc inaperçue jusqu'à ce qu'un joueur la voie.
+task checkLang {
+    description = 'Echoue si en_us.lang et fr_fr.lang divergent.'
+    group = 'verification'
+
+    def langDir = file('src/main/resources/assets/packagedautoterminals/lang')
+    inputs.files fileTree(dir: langDir, include: '*.lang')
+
+    doLast {
+        def parse = { File file ->
+            def entries = [:]
+            file.getText('UTF-8').readLines().eachWithIndex { line, index ->
+                def trimmed = line.trim()
+                if (trimmed.isEmpty() || trimmed.startsWith('#')) {
+                    return
+                }
+                def separator = line.indexOf('=')
+                if (separator < 0) {
+                    throw new GradleException("${file.name}:${index + 1} ligne sans '=' : ${trimmed}")
+                }
+                entries[line.substring(0, separator).trim()] = line.substring(separator + 1)
+            }
+            return entries
+        }
+
+        def reference = parse(new File(langDir, 'en_us.lang'))
+        def problems = []
+
+        fileTree(dir: langDir, include: '*.lang').sort { it.name }.each { File file ->
+            if (file.name == 'en_us.lang') {
+                return
+            }
+            def entries = parse(file)
+            (reference.keySet() - entries.keySet()).each {
+                problems << "${file.name} : clé absente, ${it}"
+            }
+            (entries.keySet() - reference.keySet()).each {
+                problems << "${file.name} : clé inconnue d'en_us.lang, ${it}"
+            }
+            entries.each { key, value ->
+                if (reference.containsKey(key)) {
+                    def expected = reference[key].count('%s') + reference[key].count('%d')
+                    def found = value.count('%s') + value.count('%d')
+                    if (expected != found) {
+                        problems << "${file.name} : ${key} porte ${found} paramètres, contre ${expected} dans en_us.lang"
+                    }
+                }
+            }
+        }
+
+        if (!problems.isEmpty()) {
+            throw new GradleException('Les traductions divergent :' + System.lineSeparator()
+                    + problems.collect { "  ${it}" }.join(System.lineSeparator()))
+        }
+        logger.lifecycle("Traductions : ${reference.size()} clés, en accord.")
+    }
+}
+
+check.dependsOn checkLang
+
 task printCp {
     doLast { sourceSets.main.compileClasspath.each { println "CP: " + it } }
 }

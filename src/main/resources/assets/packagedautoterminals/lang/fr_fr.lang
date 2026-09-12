@@ -14,7 +14,6 @@ gui.packagedautoterminals.position=Position : %d, %d, %d (dim %d)
 gui.packagedautoterminals.delete_hint=Maj + clic droit : supprimer
 gui.packagedautoterminals.edit_hint=Clic droit : modifier
 gui.packagedautoterminals.save=Enregistrer
-gui.packagedautoterminals.result=Résultat
 gui.packagedautoterminals.no_type=Aucun type de recette
 gui.packagedautoterminals.invalid=Recette invalide
 gui.packagedautoterminals.editor=Éditeur de recette

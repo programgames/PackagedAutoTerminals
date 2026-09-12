@@ -72,7 +72,7 @@ Sept défauts, tous dus à des suppositions non vérifiées sur l'API d'un autre
 comportement d'une classe d'AE2. La lire avec `javap`, ou lire la source amont, avant de
 l'utiliser. Les six premiers défauts auraient été évités par dix minutes de lecture.
 
-## Lot 3 — Écriture — 3 à 4 sessions
+## Lot 3 — Écriture ✅ terminé le 2026-09-13
 
 Éditeur piloté par `IRecipeType.getEnabledSlots()`, `getSlotColor()`, `canSetOutput()`.
 Encodage par `IRecipeInfo.generateFromStacks()`, côté serveur. Validation par `isValid()`.
@@ -81,7 +81,7 @@ Encodage par `IRecipeInfo.generateFromStacks()`, côté serveur. Validation par 
 **Fait quand** : j'ajoute, je modifie et je supprime une recette depuis le terminal, et AE2
 voit le changement sans que je touche au bloc.
 
-## Lot 4 — JEI et confort — 1 à 2 sessions
+## Lot 4 — JEI et confort ✅ écrit le 2026-09-13, non testé en jeu
 
 `IRecipeType.getRecipeTransferMap(IRecipeLayout, String)` existe déjà dans l'API. Le
 transfert JEI est donc peu coûteux, **à condition** que l'éditeur soit un vrai `Container`
@@ -89,7 +89,7 @@ avec des slots fantômes indexés comme ceux de l'Encoder. Recherche, filtres, t
 
 **Fait quand** : le bouton « + » de JEI remplit l'éditeur du terminal.
 
-## Lot 5 — Onglet « Machines » et diagnostic — 1 à 2 sessions
+## Lot 5 — Onglet « Machines » et diagnostic ✅ écrit le 2026-09-13, non testé en jeu
 
 Table de correspondance `type de recette → classe de crafter`, une par module
 d'intégration. Liste des crafters, état `isBusy()`, alerte sur les recettes orphelines.
@@ -103,7 +103,7 @@ Item alimenté, `IWirelessTermHandler`, enregistrement au registre, portée, én
 
 **Fait quand** : le terminal fonctionne à distance et se coupe hors de portée.
 
-## Lot 7 — Intégration, finition, publication — 1 à 2 sessions
+## Lot 7 — Intégration, finition, publication 🔶 partiellement écrit
 
 AE2WUT avec identifiant de mode **configurable**, Baubles, `fr_fr`, workflow GitHub,
 `CHANGELOG.md`, test final dans l'instance réelle.
@@ -118,3 +118,29 @@ Ce n'est ni la GUI, ni le réseau. C'est **la republication des patterns après 
 Si `setPatternStack()` ne notifie pas correctement la grille, AE2 gardera une vue périmée.
 Le joueur verra sa modification à l'écran, sans effet sur ses crafts.
 Ce point se vérifie au début du lot 1, jamais au lot 3.
+
+
+---
+
+## État au 2026-09-13
+
+| Lot | État | Reste |
+|---|---|---|
+| 0, 1, 2 | ✅ testés en jeu | |
+| 3 | ✅ écrit, suppression et édition testées | création, quantités et déplacement **non testés** |
+| 4 | ✅ écrit | transfert JEI et recherche **non testés** |
+| 5 | ✅ écrit | onglet Machines et diagnostic **non testés** |
+| 6 | ⬜ pas commencé | terminal sans fil, sur une branche séparée |
+| 7 | 🔶 licence, notice, journal, CI, configuration, recette de fabrication | AE2WUT, Baubles |
+
+> Tout ce qui porte « non testé » attend la session de tests décrite dans
+> `docs/TESTING.md`. Le code compile, mais n'a jamais tourné.
+
+### Ce qui reste, par ordre de valeur
+
+1. **Dérouler `docs/TESTING.md`**, de T1 à T15. C'est le seul moyen de valider quinze
+   fonctions écrites sans jeu.
+2. **Lot 6**, le terminal sans fil. Il demande de détacher le conteneur de la part câblée,
+   ce qui touche du code qui marche. À faire sur une branche.
+3. **AE2WUT et Baubles**, une fois le sans-fil validé.
+4. **Fluides et gaz**, prévus en version 2 (décision D09).

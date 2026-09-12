@@ -14,7 +14,6 @@ gui.packagedautoterminals.position=Position: %d, %d, %d (dim %d)
 gui.packagedautoterminals.delete_hint=Shift + right click: delete
 gui.packagedautoterminals.edit_hint=Right click: edit
 gui.packagedautoterminals.save=Save
-gui.packagedautoterminals.result=Result
 gui.packagedautoterminals.no_type=No recipe type
 gui.packagedautoterminals.invalid=Invalid recipe
 gui.packagedautoterminals.editor=Recipe editor
