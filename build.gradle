@@ -1,0 +1,105 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        // ForgeGradle 2.3 est la dernière lignée qui gère Minecraft 1.12.2.
+        // Version publiée et épinglée, plutôt que 2.3-SNAPSHOT, pour un build reproductible.
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3.10'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+group = 'fr.julien.packagedautoterminals'
+archivesBaseName = 'packagedautoterminals'
+version = "${mcVersion}-${modVersion}"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+// Sans cela, Gradle compile avec l'encodage par défaut de la plateforme (windows-1252 ici),
+// ce qui transforme tout caractère accentué des sources en mojibake.
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+// PIÈGE : dans le bloc `minecraft { }`, le délégué Groovy est l'extension ForgeGradle, qui
+// possède ses PROPRES propriétés `mcVersion` et `forgeVersion`. Les résoudre ici, dehors.
+def targetMinecraft = "${project.mcVersion}-${project.forgeVersion}".toString()
+def targetMappings = project.mcpMappings.toString()
+
+minecraft {
+    version = targetMinecraft
+    runDir = 'run'
+    mappings = targetMappings
+
+    // Injecte la version dans Reference.VERSION au build. Elle ne vit que dans
+    // gradle.properties.
+    replace '@MOD_VERSION@', project.version.toString()
+}
+
+repositories {
+    // Dépôt de fichiers locaux. Les jars d'AE2UEL et de PackagedAuto vivent dans libs/.
+    // Motif : aucun dépôt Maven officiel n'existe pour AE2UEL (voir docs/PLAN.md, lot 0).
+    flatDir { dirs 'libs' }
+    maven {
+        name = 'CurseMaven'
+        url = 'https://cursemaven.com'
+    }
+}
+
+dependencies {
+    // `deobfProvided` : nécessaire à la compilation, jamais embarqué dans notre jar.
+    // ForgeGradle remappe ces jars publiés (noms SRG) vers les noms MCP du poste de dev.
+    deobfProvided name: 'ae2-uel', version: project.ae2uelVersion
+    deobfProvided name: 'packagedauto', version: project.packagedAutoVersion
+}
+
+processResources {
+    inputs.property 'version', project.version
+    inputs.property 'mcversion', project.minecraft.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand 'version': project.version, 'mcversion': project.minecraft.version
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
+jar {
+    manifest {
+        attributes([
+            'Specification-Title'     : 'packagedautoterminals',
+            'Specification-Version'   : '1',
+            'Implementation-Title'    : project.name,
+            'Implementation-Version'  : project.version,
+            'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+// Le pseudo de développement est aléatoire par défaut (`Player640`, `Player123`, ...).
+// Un pseudo fixe garde les sessions de test comparables d'un lancement à l'autre.
+afterEvaluate {
+    tasks.matching { it.name == 'runClient' }.all {
+        args '--username', 'PAT_Dev'
+    }
+}
+
+// Garde-fou : ForgeGradle 2.3 et Gradle 4.x ne tournent que sous JDK 8. Échouer ici avec un
+// message clair vaut mieux qu'une trace illisible au milieu de setupDecompWorkspace.
+def javaVersion = System.getProperty('java.version')
+if (!javaVersion.startsWith('1.8')) {
+    throw new GradleException(
+        "JDK 8 requis pour ForgeGradle 2.3, mais Gradle tourne sous Java ${javaVersion}.\n" +
+        "  Corrigez JAVA_HOME, par exemple :\n" +
+        "    \$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-8.0.472.8-hotspot'"
+    )
+}

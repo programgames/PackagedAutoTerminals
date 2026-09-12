@@ -1,0 +1,22 @@
+# Sortie de build
+build/
+.gradle/
+*.class
+
+# Environnement de développement Minecraft
+run/
+
+# Jars de dépendances, non versionnés : ils appartiennent à leurs auteurs
+libs/*.jar
+
+# Fichiers générés par `gradlew eclipse` / `gradlew idea`
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+*.launch
+bin/
+out/

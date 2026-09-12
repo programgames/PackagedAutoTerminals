@@ -1,0 +1,3 @@
+// Un seul module au départ. Voir la révision R3 dans docs/DECISIONS.md :
+// `core` naîtra au portage 1.16, quand on saura ce qui est réellement commun.
+rootProject.name = 'packagedautoterminals'
