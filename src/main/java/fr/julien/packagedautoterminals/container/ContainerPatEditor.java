@@ -23,8 +23,10 @@ import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.IRecipeList;
 import thelm.packagedauto.api.IRecipeListItem;
 import thelm.packagedauto.api.RecipeTypeRegistry;
-import thelm.packagedauto.slot.SlotFalseCopy;
-import thelm.packagedauto.slot.SlotPreview;
+import appeng.container.slot.AppEngSlot;
+import appeng.container.slot.SlotFake;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.wrapper.InvWrapper;
 
 /**
  * Éditeur d'une recette, ouvert depuis le terminal.
@@ -84,43 +86,67 @@ public class ContainerPatEditor extends AEBaseContainer {
      * fenêtre.
      */
     private void bindEditorSlots() {
+        IItemHandler handler = new InvWrapper(editor);
         for (int row = 0; row < 9; row++) {
             for (int column = 0; column < 9; column++) {
-                addSlotToContainer(new SlotFalseCopy(editor, row * 9 + column,
+                addSlotToContainer(new SlotFake(handler, row * 9 + column,
                         GRID_LEFT + column * 18, GRID_TOP + row * 18));
             }
         }
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 3; column++) {
-                addSlotToContainer(new SlotFalseCopy(editor,
+                addSlotToContainer(new SlotFake(handler,
                         EditorInventory.INPUT_SLOTS + row * 3 + column,
                         OUTPUT_LEFT + column * 18, OUTPUT_TOP + row * 18));
             }
         }
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 3; column++) {
-                addSlotToContainer(new SlotPreview(editor,
+                addSlotToContainer(new SlotResult(handler,
                         EditorInventory.INPUT_SLOTS + EditorInventory.OUTPUT_SLOTS + row * 3 + column,
                         PREVIEW_LEFT + column * 18, PREVIEW_TOP + row * 18));
             }
         }
     }
 
+    /** Emplacement d'aperçu : il montre le résultat calculé, et refuse toute manipulation. */
+    private static final class SlotResult extends AppEngSlot {
+        SlotResult(IItemHandler inventory, int index, int x, int y) {
+            super(inventory, index, x, y);
+            setNotDraggable();
+        }
+
+        @Override
+        public boolean isItemValid(ItemStack stack) {
+            return false;
+        }
+
+        @Override
+        public boolean canTakeStack(EntityPlayer player) {
+            return false;
+        }
+    }
+
     /**
      * Comportement des emplacements fantômes.
      *
-     * <p>{@link SlotFalseCopy} ne suffit pas : chez PackagedAuto, c'est le conteneur qui
-     * intercepte le clic, dans {@code ContainerTileBase.slotClick}. Sans cette redirection,
-     * un clic sur la grille déplacerait de vrais objets.
+     * <p>Le conteneur, et non l'emplacement, porte ce comportement. C'est aussi le choix de
+     * PackagedAuto, dans {@code ContainerTileBase.slotClick}.
+     *
+     * <p>PIÈGE : {@code AEBaseContainer.addSlotToContainer} refuse tout emplacement qui
+     * n'hérite pas d'{@code AppEngSlot}. Les emplacements de PackagedAuto sont donc
+     * inutilisables ici. AE2 fournit les siens, dont {@link SlotFake}, qui implémente en
+     * prime {@code IJEITargetSlot} : le glisser-déposer depuis JEI arrivera sans travail
+     * supplémentaire.
      */
     @Override
     public ItemStack slotClick(int slotId, int dragType, ClickType clickType, EntityPlayer player) {
         if (slotId >= 0 && slotId < inventorySlots.size()) {
             Slot slot = inventorySlots.get(slotId);
-            if (slot instanceof SlotPreview) {
+            if (slot instanceof SlotResult) {
                 return ItemStack.EMPTY;
             }
-            if (slot instanceof SlotFalseCopy) {
+            if (slot instanceof SlotFake) {
                 if (!editor.isEditable(slot.getSlotIndex())) {
                     return ItemStack.EMPTY;
                 }

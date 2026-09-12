@@ -151,6 +151,22 @@ MCP. Deux causes distinctes se sont succede.
 La tache `gradlew printCp` affiche le chemin de compilation. Elle a servi a trouver les deux
 causes ; garde-la.
 
+### 4.2 bis Tout emplacement d'un conteneur AE2 doit heriter d'AppEngSlot
+
+`AEBaseContainer.addSlotToContainer` leve
+`Invalid Slot [...] for AE Container instead of AppEngSlot`, et la fenetre ne s'ouvre
+jamais. Ce piege est tombe **deux fois** : avec un `Slot` vanilla pour l'inventaire du
+joueur, puis avec `SlotFalseCopy` de PackagedAuto dans l'editeur.
+
+**Regle** : dans un conteneur qui herite d'`AEBaseContainer`, n'utiliser que les
+emplacements d'AE2.
+
+| Besoin | Classe AE2 |
+|---|---|
+| inventaire du joueur | `bindPlayerInventory(inventory, x, y)` |
+| emplacement fantome | `SlotFake`, qui implemente aussi `IJEITargetSlot` |
+| aperçu en lecture seule | `AppEngSlot` avec `isItemValid` et `canTakeStack` a faux |
+
 ### 4.3 Noms MCP de `snapshot_20171003`
 
 Les mappings de 2017 ne connaissent pas les noms recents :
