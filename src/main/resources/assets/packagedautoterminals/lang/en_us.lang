@@ -33,3 +33,6 @@ gui.packagedautoterminals.busy=busy
 gui.packagedautoterminals.idle=idle
 gui.packagedautoterminals.orphan=%s: no crafter on this network
 gui.packagedautoterminals.orphan_help=A recipe of this type cannot be executed.
+gui.packagedautoterminals.remove_holder_hint=Shift + left click: send the holder to the network
+gui.packagedautoterminals.no_holder_here=This machine holds no recipe holder
+gui.packagedautoterminals.network_full=The network cannot store the holder

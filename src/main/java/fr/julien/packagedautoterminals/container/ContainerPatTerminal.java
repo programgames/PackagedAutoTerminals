@@ -212,6 +212,38 @@ public class ContainerPatTerminal extends AEBaseContainer {
         openEditor(dimension, pos, -1);
     }
 
+    /**
+     * Retire le porte-recettes d'une machine, et le range dans le réseau.
+     *
+     * <p>Déplacer un porte-recettes se fait donc en deux gestes : le retirer ici, puis le
+     * reprendre sur l'autre machine. Le réseau sert d'intermédiaire, et rien ne peut se
+     * perdre : si le réseau refuse l'objet, la machine le garde.
+     */
+    public void removeHolder(int dimension, BlockPos pos) {
+        IGridNode node = terminal.getGridNode();
+        IGrid grid = node == null ? null : node.getGrid();
+        IPackageProvidingMachine machine = ProviderScanner.find(grid, dimension, pos);
+        if (machine == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+            return;
+        }
+
+        ItemStack holder = machine.getPatternStack();
+        if (holder.isEmpty()) {
+            tell("gui.packagedautoterminals.no_holder_here");
+            return;
+        }
+
+        ItemStack remainder = NetworkItems.insert(grid, holder, getActionSource());
+        if (!remainder.isEmpty()) {
+            tell("gui.packagedautoterminals.network_full");
+            return;
+        }
+
+        machine.setPatternStack(ItemStack.EMPTY);
+        ticks = 0;
+        lastSent = null;
+    }
+
     /** Prend un porte-recettes vierge sur le réseau, et le pose dans la machine. */
     private boolean insertBlankHolder(IGrid grid, IPackageProvidingMachine machine) {
         Item holderItem = NetworkItems.findRecipeHolder();

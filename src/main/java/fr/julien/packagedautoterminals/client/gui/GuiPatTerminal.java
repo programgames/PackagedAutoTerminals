@@ -241,7 +241,9 @@ public class GuiPatTerminal extends AEBaseGui {
         if (mouseButton == 0 && clicked != null && clicked.machine != null) {
             PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(
                     clicked.machine.dimension, clicked.machine.pos, -1,
-                    PacketRecipeAction.ACTION_NEW));
+                    isShiftKeyDown()
+                            ? PacketRecipeAction.ACTION_REMOVE_HOLDER
+                            : PacketRecipeAction.ACTION_NEW));
             return;
         }
         if (mouseButton == 1) {
@@ -302,6 +304,10 @@ public class GuiPatTerminal extends AEBaseGui {
             lines.add(TextFormatting.GRAY + stateOf(line.machine));
             lines.add("");
             lines.add(TextFormatting.DARK_GRAY + I18n.format("gui.packagedautoterminals.new_hint"));
+            if (line.machine.holderPresent) {
+                lines.add(TextFormatting.DARK_GRAY
+                        + I18n.format("gui.packagedautoterminals.remove_holder_hint"));
+            }
             return lines;
         }
 

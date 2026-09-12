@@ -29,6 +29,8 @@ public class PacketRecipeAction implements IMessage {
     public static final byte ACTION_CYCLE_TYPE = 3;
     /** Ajoute une recette à cette machine, et ouvre l'éditeur dessus. */
     public static final byte ACTION_NEW = 4;
+    /** Retire le porte-recettes de cette machine, et le range dans le réseau. */
+    public static final byte ACTION_REMOVE_HOLDER = 5;
 
     public int dimension;
     public BlockPos pos = BlockPos.ORIGIN;
@@ -73,6 +75,8 @@ public class PacketRecipeAction implements IMessage {
                         container.openEditor(message.dimension, message.pos, message.index);
                     } else if (message.action == ACTION_NEW) {
                         container.newRecipe(message.dimension, message.pos);
+                    } else if (message.action == ACTION_REMOVE_HOLDER) {
+                        container.removeHolder(message.dimension, message.pos);
                     }
                     return;
                 }

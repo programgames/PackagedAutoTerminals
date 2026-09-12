@@ -193,6 +193,9 @@ public class ContainerPatEditor extends AEBaseContainer {
         if ("recipeTypeId".equals(field)) {
             int id = (Integer) newValue;
             editor.recipeType = id < 0 ? null : RecipeTypeRegistry.getRecipeType(id);
+            // Le client doit recalculer son aperçu : un changement de type modifie la
+            // recette sans qu'aucun emplacement ne bouge.
+            editor.updateRecipeInfo();
         }
         super.onUpdate(field, oldValue, newValue);
     }

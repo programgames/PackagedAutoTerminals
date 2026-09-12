@@ -31,7 +31,9 @@ public final class NetworkItems {
      * propre porte-recettes serait donc accepté.
      */
     public static Item findRecipeHolder() {
-        if (searched) {
+        // PIÈGE évité : ne jamais mémoriser un résultat nul. Un appel trop tôt, avant
+        // l'enregistrement des items, figerait l'absence pour toute la partie.
+        if (searched && recipeHolder != null) {
             return recipeHolder;
         }
         searched = true;
@@ -42,6 +44,34 @@ public final class NetworkItems {
             }
         }
         return recipeHolder;
+    }
+
+    /**
+     * Range un objet dans le réseau.
+     *
+     * @return ce qui n'a pas pu être rangé.
+     */
+    public static ItemStack insert(IGrid grid, ItemStack stack, IActionSource source) {
+        if (grid == null || stack.isEmpty()) {
+            return stack;
+        }
+        IStorageGrid storage = grid.getCache(IStorageGrid.class);
+        IEnergyGrid energy = grid.getCache(IEnergyGrid.class);
+        if (storage == null || energy == null) {
+            return stack;
+        }
+
+        IStorageChannel<IAEItemStack> channel =
+                AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class);
+        IMEMonitor<IAEItemStack> inventory = storage.getInventory(channel);
+        IAEItemStack request = inventory == null ? null : channel.createStack(stack);
+        if (request == null) {
+            return stack;
+        }
+
+        IAEItemStack remainder = AEApi.instance().storage()
+                .poweredInsert(energy, inventory, request, source, Actionable.MODULATE);
+        return remainder == null ? ItemStack.EMPTY : remainder.createItemStack();
     }
 
     /**
