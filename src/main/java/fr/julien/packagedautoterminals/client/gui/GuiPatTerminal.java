@@ -1,5 +1,6 @@
 package fr.julien.packagedautoterminals.client.gui;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,6 +9,8 @@ import appeng.client.gui.widgets.GuiScrollbar;
 import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
+import fr.julien.packagedautoterminals.network.PacketRecipeAction;
+import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -16,8 +19,7 @@ import net.minecraft.util.text.TextFormatting;
 import thelm.packagedauto.api.IRecipeInfo;
 
 /**
- * Affichage en lecture seule du lot 2 : une rangée par machine, puis une rangée par
- * recette. L'édition arrive au lot 3.
+ * Liste des machines et de leurs recettes.
  *
  * <p>Trois règles de mise en page, issues de l'échec de la première version :
  *
@@ -131,6 +133,33 @@ public class GuiPatTerminal extends AEBaseGui {
                 y + TEXT_OFFSET, COLOR_DIM);
     }
 
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        // Maj + clic droit supprime la recette survolée. Le clic seul reste libre pour
+        // l'éditeur, qui arrive dans la suite du lot 3.
+        if (mouseButton == 1 && isShiftKeyDown()) {
+            Line line = lineUnder(mouseX - guiLeft, mouseY - guiTop);
+            if (line != null && line.recipe != null) {
+                PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(
+                        line.owner.dimension, line.owner.pos, line.recipeIndex,
+                        PacketRecipeAction.ACTION_REMOVE));
+                return;
+            }
+        }
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    /** Rangée affichée sous la souris, ou {@code null}. Coordonnées relatives. */
+    private Line lineUnder(int x, int y) {
+        int row = rowUnder(x, y);
+        if (row < 0) {
+            return null;
+        }
+        List<Line> lines = buildLines();
+        int index = getScrollBar().getCurrentScroll() + row;
+        return index < lines.size() ? lines.get(index) : null;
+    }
+
     /** Rangée sous la souris, ou -1. Les coordonnées sont relatives à la fenêtre. */
     private int rowUnder(int x, int y) {
         if (x < LIST_LEFT || x > LIST_LEFT + LIST_WIDTH) {
@@ -156,6 +185,8 @@ public class GuiPatTerminal extends AEBaseGui {
         lines.add(line.recipe.getRecipeType().getLocalizedName());
         addStacks(lines, "gui.packagedautoterminals.inputs", line.recipe.getInputs());
         addStacks(lines, "gui.packagedautoterminals.outputs", line.recipe.getOutputs());
+        lines.add("");
+        lines.add(TextFormatting.DARK_GRAY + I18n.format("gui.packagedautoterminals.delete_hint"));
         return lines;
     }
 
@@ -203,21 +234,41 @@ public class GuiPatTerminal extends AEBaseGui {
     private List<Line> buildLines() {
         List<Line> lines = new ArrayList<>();
         for (ProviderSnapshot provider : terminalContainer.providers) {
-            lines.add(new Line(provider, null));
-            for (IRecipeInfo recipe : provider.recipes) {
-                lines.add(new Line(null, recipe));
+            lines.add(Line.machine(provider));
+            for (int index = 0; index < provider.recipes.size(); index++) {
+                lines.add(Line.recipe(provider, provider.recipes.get(index), index));
             }
         }
         return lines;
     }
 
+    /**
+     * Une rangée affichée : soit une machine, soit une recette.
+     *
+     * <p>Une rangée de recette porte aussi sa machine et son indice dans le porte-recettes.
+     * Les ordres d'édition désignent la machine par sa **position**, jamais par son rang
+     * dans la liste : l'ordre du scan peut changer d'un rafraîchissement à l'autre.
+     */
     private static final class Line {
         final ProviderSnapshot machine;
+        final ProviderSnapshot owner;
         final IRecipeInfo recipe;
+        final int recipeIndex;
 
-        Line(ProviderSnapshot machine, IRecipeInfo recipe) {
+        static Line machine(ProviderSnapshot machine) {
+            return new Line(machine, null, null, -1);
+        }
+
+        static Line recipe(ProviderSnapshot owner, IRecipeInfo recipe, int index) {
+            return new Line(null, owner, recipe, index);
+        }
+
+        private Line(ProviderSnapshot machine, ProviderSnapshot owner, IRecipeInfo recipe,
+                     int recipeIndex) {
             this.machine = machine;
+            this.owner = owner;
             this.recipe = recipe;
+            this.recipeIndex = recipeIndex;
         }
     }
 }

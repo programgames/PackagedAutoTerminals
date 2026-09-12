@@ -8,6 +8,7 @@ import appeng.api.networking.IGridHost;
 import appeng.api.networking.IGridNode;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.translation.I18n;
 import thelm.packagedauto.api.IPackageProvidingMachine;
 import thelm.packagedauto.api.IRecipeList;
@@ -47,6 +48,36 @@ public final class ProviderScanner {
             }
         }
         return found;
+    }
+
+    /**
+     * Retrouve une machine par sa position, **sur la grille du terminal**.
+     *
+     * <p>Toute écriture passe par ici. Le client envoie une position ; le serveur ne lui
+     * fait pas confiance. Si la machine n'est pas sur cette grille, la méthode renvoie
+     * {@code null} et l'ordre est ignoré.
+     */
+    public static IPackageProvidingMachine find(IGrid grid, int dimension, BlockPos pos) {
+        if (grid == null) {
+            return null;
+        }
+        for (Class<? extends IGridHost> machineClass : grid.getMachinesClasses()) {
+            if (!IPackageProvidingMachine.class.isAssignableFrom(machineClass)) {
+                continue;
+            }
+            for (IGridNode node : grid.getMachines(machineClass)) {
+                IGridHost machine = node.getMachine();
+                if (!(machine instanceof IPackageProvidingMachine) || !(machine instanceof TileEntity)) {
+                    continue;
+                }
+                TileEntity tile = (TileEntity) machine;
+                if (tile.getPos().equals(pos)
+                        && tile.getWorld().provider.getDimension() == dimension) {
+                    return (IPackageProvidingMachine) machine;
+                }
+            }
+        }
+        return null;
     }
 
     private static ProviderSnapshot describe(int id, IGridNode node, IPackageProvidingMachine machine) {

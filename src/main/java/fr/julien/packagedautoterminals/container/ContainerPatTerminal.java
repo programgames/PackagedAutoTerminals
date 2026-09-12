@@ -3,6 +3,7 @@ package fr.julien.packagedautoterminals.container;
 import java.util.ArrayList;
 import java.util.List;
 
+import appeng.api.config.SecurityPermissions;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.container.AEBaseContainer;
@@ -17,6 +18,11 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.util.math.BlockPos;
+import thelm.packagedauto.api.IPackageProvidingMachine;
+import thelm.packagedauto.api.IRecipeInfo;
+import thelm.packagedauto.api.IRecipeList;
+import thelm.packagedauto.api.IRecipeListItem;
 
 /**
  * Conteneur du terminal. Le serveur reste l'autorité (décision D05) : il construit
@@ -99,6 +105,59 @@ public class ContainerPatTerminal extends AEBaseContainer {
             list.appendTag(snapshot.writeToNBT());
         }
         return list;
+    }
+
+    /**
+     * Supprime une recette du porte-recettes d'une machine.
+     *
+     * <p>Trois vérifications avant toute écriture :
+     *
+     * <ol>
+     *   <li>la machine est sur la grille de ce terminal, et non une position inventée ;
+     *   <li>le joueur possède le droit {@code BUILD} d'AE2 ;
+     *   <li>l'indice existe dans la liste actuelle.
+     * </ol>
+     *
+     * <p>L'écriture se termine par {@code setPatternStack}. C'est cet appel, et lui seul,
+     * qui déclenche {@code updatePatternList} puis {@code postPatternChange} chez
+     * PackagedAuto. Modifier le NBT du porte-recettes sans réécrire l'emplacement
+     * laisserait AE2 sur une vue périmée. Voir docs/PACKAGEDAUTO-MODEL.md, section 7.2.
+     */
+    public void removeRecipe(int dimension, BlockPos pos, int index) {
+        IGridNode node = terminal.getGridNode();
+        IPackageProvidingMachine machine =
+                ProviderScanner.find(node == null ? null : node.getGrid(), dimension, pos);
+        if (machine == null) {
+            return;
+        }
+        if (!hasAccess(SecurityPermissions.BUILD, false)) {
+            return;
+        }
+
+        ItemStack holder = machine.getPatternStack();
+        if (holder.isEmpty() || !(holder.getItem() instanceof IRecipeListItem)) {
+            return;
+        }
+        IRecipeListItem holderItem = (IRecipeListItem) holder.getItem();
+        IRecipeList recipeList = holderItem.getRecipeList(holder);
+        if (recipeList == null) {
+            return;
+        }
+
+        List<IRecipeInfo> recipes = new ArrayList<>(recipeList.getRecipeList());
+        if (index < 0 || index >= recipes.size()) {
+            return;
+        }
+        recipes.remove(index);
+
+        recipeList.setRecipeList(recipes);
+        holderItem.setRecipeList(holder, recipeList);
+        machine.setPatternStack(holder);
+
+        // L'instantané suivant partira au prochain rafraîchissement. On force l'envoi pour
+        // que le joueur voie sa suppression tout de suite.
+        ticks = 0;
+        lastSent = null;
     }
 
     @Override

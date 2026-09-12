@@ -11,3 +11,4 @@ gui.packagedautoterminals.inputs=Entrées
 gui.packagedautoterminals.outputs=Sorties
 gui.packagedautoterminals.more=et %d de plus
 gui.packagedautoterminals.position=Position : %d, %d, %d (dim %d)
+gui.packagedautoterminals.delete_hint=Maj + clic droit : supprimer

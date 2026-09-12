@@ -1,0 +1,70 @@
+package fr.julien.packagedautoterminals.network;
+
+import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+
+/**
+ * Ordre d'édition, du client vers le serveur.
+ *
+ * <p>Le client envoie une **intention**, jamais un NBT de recette (décision D05). Il désigne
+ * la machine par sa position, et non par un identifiant de session : l'ordre d'un scan peut
+ * changer entre deux rafraîchissements. Le serveur vérifie ensuite que cette machine est
+ * bien sur la grille du terminal, et que le joueur a le droit d'y toucher.
+ */
+public class PacketRecipeAction implements IMessage {
+
+    /** Supprime la recette d'indice {@link #index}. */
+    public static final byte ACTION_REMOVE = 0;
+
+    public int dimension;
+    public BlockPos pos = BlockPos.ORIGIN;
+    public int index;
+    public byte action;
+
+    public PacketRecipeAction() {}
+
+    public PacketRecipeAction(int dimension, BlockPos pos, int index, byte action) {
+        this.dimension = dimension;
+        this.pos = pos;
+        this.index = index;
+        this.action = action;
+    }
+
+    @Override
+    public void fromBytes(ByteBuf buf) {
+        dimension = buf.readInt();
+        pos = BlockPos.fromLong(buf.readLong());
+        index = buf.readInt();
+        action = buf.readByte();
+    }
+
+    @Override
+    public void toBytes(ByteBuf buf) {
+        buf.writeInt(dimension);
+        buf.writeLong(pos.toLong());
+        buf.writeInt(index);
+        buf.writeByte(action);
+    }
+
+    public static class Handler implements IMessageHandler<PacketRecipeAction, IMessage> {
+        @Override
+        public IMessage onMessage(PacketRecipeAction message, MessageContext context) {
+            EntityPlayerMP player = context.getServerHandler().player;
+            player.getServerWorld().addScheduledTask(() -> {
+                if (!(player.openContainer instanceof ContainerPatTerminal)) {
+                    return;
+                }
+                ContainerPatTerminal container = (ContainerPatTerminal) player.openContainer;
+                if (message.action == ACTION_REMOVE) {
+                    container.removeRecipe(message.dimension, message.pos, message.index);
+                }
+            });
+            return null;
+        }
+    }
+}

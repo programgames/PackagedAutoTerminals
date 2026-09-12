@@ -11,3 +11,4 @@ gui.packagedautoterminals.inputs=Inputs
 gui.packagedautoterminals.outputs=Outputs
 gui.packagedautoterminals.more=and %d more
 gui.packagedautoterminals.position=Position: %d, %d, %d (dim %d)
+gui.packagedautoterminals.delete_hint=Shift + right click: delete

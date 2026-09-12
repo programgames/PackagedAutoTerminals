@@ -14,5 +14,6 @@ public final class PatNetwork {
 
     public static void init() {
         CHANNEL.registerMessage(PacketProviderList.Handler.class, PacketProviderList.class, 0, Side.CLIENT);
+        CHANNEL.registerMessage(PacketRecipeAction.Handler.class, PacketRecipeAction.class, 1, Side.SERVER);
     }
 }
