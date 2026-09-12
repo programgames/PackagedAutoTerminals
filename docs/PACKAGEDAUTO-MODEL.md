@@ -117,3 +117,93 @@ Le nombre de recettes par holder vient de la configuration : `TileEncoder.patter
 3. La licence amont de PackagedAuto, pour la dépendance de compilation.
 4. Le comportement du `Packager Extension` : il partage les patterns du Packager voisin
    (`InventoryPackager.updatePatternList()` scanne les `TilePackagerExtension`).
+
+---
+
+## 7. Réponses aux points laissés ouverts — vérifiées le 2026-09-12
+
+### 7.1 Où vit le Recipe Holder dans la machine
+
+Source amont, branche `1.12` de `TheLMiffy1111/PackagedAuto` :
+
+```java
+@Override
+public ItemStack getPatternStack() {
+    return inventory.getStackInSlot(10);
+}
+
+@Override
+public void setPatternStack(ItemStack stack) {
+    inventory.setInventorySlotContents(10, stack);
+}
+```
+
+Le holder occupe donc l'**emplacement 10** de l'inventaire du Packager. Le filtre
+d'insertion l'exige :
+
+```java
+case 10: return stack.getItem() instanceof IRecipeListItem
+             || stack.getItem() instanceof IPackageItem;
+```
+
+### 7.2 La republication des patterns est automatique
+
+`InventoryPackager.setInventorySlotContents(10, …)` appelle `updatePatternList()`.
+Cette méthode reconstruit la liste, prévient les `Packager Extension` voisins, puis appelle
+`tile.hostHelper.postPatternChange()` quand le monde existe et n'est pas distant.
+
+`provideCrafting()` republie ensuite chaque pattern sur la grille :
+
+```java
+@Optional.Method(modid="appliedenergistics2")
+@Override
+public void provideCrafting(ICraftingProviderHelper craftingTracker) {
+    if(hostHelper.isActive()) {
+        for(IPackagePattern pattern : patternList) {
+            craftingTracker.addCraftingOption(this, new PackageCraftingPatternHelper(pattern));
+        }
+    }
+}
+```
+
+> **Règle d'implémentation qui en découle.** Après toute modification d'une recette, le
+> terminal doit **réécrire le stack** par `setPatternStack()`. Modifier le contenu NBT du
+> holder en place, sans réécrire l'emplacement, n'appelle pas `updatePatternList()`. AE2
+> garderait alors une vue périmée des recettes.
+
+Ce point était classé « le plus fragile du projet ». Il est désormais résolu et documenté.
+
+### 7.3 Parcours générique de la grille AE2
+
+`appeng.api.networking.IGrid` expose :
+
+```java
+IReadOnlyCollection<Class<? extends IGridHost>> getMachinesClasses();
+IMachineSet getMachines(Class<? extends IGridHost>);
+IReadOnlyCollection<IGridNode> getNodes();
+```
+
+La découverte se fait donc sans connaître aucune classe à l'avance :
+
+1. parcourir `getMachinesClasses()` ;
+2. ne garder que celles où `IPackageProvidingMachine.class.isAssignableFrom(cls)` ;
+3. pour chacune, parcourir `getMachines(cls)` et lire `node.getMachine()`.
+
+C'est préférable à `getNodes()`, qui traverse aussi chaque câble. Tout addon futur est
+capté sans modification du code.
+
+`IGridBlock.getLocation()` fournit la position, et `getMachineRepresentation()` fournit
+l'icône de la machine. Les deux servent directement à l'affichage des lignes du terminal.
+
+### 7.4 Le Packager Extension
+
+`InventoryPackager.updatePatternList()` prévient les `TilePackagerExtension` voisins.
+L'extension partage donc bien les patterns de son Packager. La décision **D04** tient.
+
+### 7.5 Compilation vérifiée
+
+Une sonde temporaire a compilé, le 2026-09-12, contre : `IGrid`, `IGridNode`,
+`IPackageProvidingMachine`, `IRecipeListItem`, `RecipeTypeRegistry`, et les classes
+**internes** `appeng.parts.reporting.AbstractPartTerminal` et
+`appeng.items.tools.powered.powersink.AEBasePoweredItem`. La contrainte **D20** est donc
+satisfaite par le montage `flatDir` + `deobfProvided`.
