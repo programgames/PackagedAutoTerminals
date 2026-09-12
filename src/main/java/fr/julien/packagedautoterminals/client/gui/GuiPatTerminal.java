@@ -186,7 +186,11 @@ public class GuiPatTerminal extends AEBaseGui {
         if (!machine.holderPresent) {
             return I18n.format("gui.packagedautoterminals.no_holder");
         }
-        return I18n.format("gui.packagedautoterminals.recipes", machine.recipes.size());
+        // Le singulier a sa propre clé : « 1 recettes » se voit tout de suite en jeu.
+        int count = machine.recipes.size();
+        return I18n.format(count == 1
+                ? "gui.packagedautoterminals.recipe"
+                : "gui.packagedautoterminals.recipes", count);
     }
 
     private String trim(String text, int maxWidth) {

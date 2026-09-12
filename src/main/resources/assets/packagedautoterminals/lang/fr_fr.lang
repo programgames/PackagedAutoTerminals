@@ -4,6 +4,7 @@ gui.packagedautoterminals.pat_terminal=Terminal PackagedAuto
 gui.packagedautoterminals.empty=Aucune machine PackagedAuto sur ce réseau
 gui.packagedautoterminals.no_holder=aucun porte-recettes
 gui.packagedautoterminals.inactive=inactive
+gui.packagedautoterminals.recipe=%d recette
 gui.packagedautoterminals.recipes=%d recettes
 gui.packagedautoterminals.no_output=Aucune sortie
 gui.packagedautoterminals.inputs=Entrées

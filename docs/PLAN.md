@@ -43,17 +43,34 @@ section 7 :
 ligne `PackagedAuto Terminals`. Puis le test de chargement dans l'instance Cleanroom réelle,
 avec le jar de `build/libs/`.
 
-## Lot 2 — Lecture seule, terminal câblé — 2 à 3 sessions
+## Lot 2 — Lecture seule, terminal câblé ✅ terminé le 2026-09-12
 
 Découverte des `IPackageProvidingMachine` sur la grille. Instantané côté serveur. Paquet
 vers le client. GUI qui liste les machines et leurs recettes. Aucune écriture.
 
-**Fait quand** : je pose un Packager avec un holder encodé, j'ouvre le terminal, je vois la
-recette.
-**Mesure obligatoire** : taille du paquet sur un réseau à forte charge. Elle décide de
-l'ajout, ou non, du découpage en chunks.
+**Résultat** : le terminal se pose sur un câble ME, s'ouvre, et affiche le Packager, son
+état, puis sa recette avec le type `Processing`. Infobulle au survol, ascenseur en place.
 
-> C'est le lot qui prouve la faisabilité du projet.
+**Mesure R2** : **344 octets** pour une machine et une recette. Le découpage en chunks reste
+donc inutile. La mesure sur un réseau chargé est à refaire avant de clore la révision R2.
+
+### Ce que ce lot a coûté, et pourquoi
+
+Sept défauts, tous dus à des suppositions non vérifiées sur l'API d'un autre mod :
+
+| Défaut | Cause |
+|---|---|
+| l'item ne se posait pas | `IPartItem` seul ne suffit pas ; il faut rediriger `onItemUse` vers `PartPlacement` |
+| la fenêtre ne s'ouvrait pas | `AEBaseContainer` refuse un `Slot` vanilla ; il exige un `AppEngSlot` |
+| la fenêtre se refermait | le constructeur à `TileEntity` appelé avec `null` |
+| traductions absentes | pas de `pack.mcmeta` ; Forge appliquait les règles d'avant la 1.11 |
+| planche de fond cassée | bande d'AE2 réutilisée sans la regarder ; c'était un champ de recherche |
+| texte chevauché | deux lignes dans une rangée de 18 pixels |
+| code périmé au lancement | FML charge le mod depuis le jar, pas depuis les classes |
+
+**Règle qui en découle, et qui vaut pour les lots suivants** : ne jamais supposer le
+comportement d'une classe d'AE2. La lire avec `javap`, ou lire la source amont, avant de
+l'utiliser. Les six premiers défauts auraient été évités par dix minutes de lecture.
 
 ## Lot 3 — Écriture — 3 à 4 sessions
 

@@ -4,6 +4,7 @@ gui.packagedautoterminals.pat_terminal=PackagedAuto Terminal
 gui.packagedautoterminals.empty=No PackagedAuto machine on this network
 gui.packagedautoterminals.no_holder=no holder
 gui.packagedautoterminals.inactive=inactive
+gui.packagedautoterminals.recipe=%d recipe
 gui.packagedautoterminals.recipes=%d recipes
 gui.packagedautoterminals.no_output=No output
 gui.packagedautoterminals.inputs=Inputs
