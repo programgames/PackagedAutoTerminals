@@ -79,6 +79,13 @@ afterEvaluate {
     }
 }
 
+// En environnement de dev, FML construit le pack de ressources du mod à partir du dossier
+// où il a trouvé la classe du mod, donc `build/classes/java/main`. Gradle 4 écrit les
+// ressources ailleurs, dans `build/resources/main`. Les fichiers de langue et les textures
+// deviennent alors invisibles, sans la moindre erreur dans le journal.
+// On remet donc les ressources à côté des classes.
+sourceSets.main.output.resourcesDir = file("${buildDir}/classes/java/main")
+
 processResources {
     inputs.property 'version', project.version
     inputs.property 'mcversion', project.minecraft.version
@@ -94,6 +101,11 @@ processResources {
 }
 
 jar {
+    // Conséquence du `resourcesDir` ci-dessus : classes et ressources partagent un dossier,
+    // que Gradle ajoute deux fois. Sans cette ligne, `reobfJar` échoue sur
+    // « duplicate entry: assets/.../en_us.lang ».
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     manifest {
         attributes([
             'Specification-Title'     : 'packagedautoterminals',

@@ -42,6 +42,10 @@ public class GuiPatTerminal extends AEBaseGui {
     public void drawFG(int offsetX, int offsetY, int mouseX, int mouseY) {
         fontRenderer.drawString(I18n.format("gui.packagedautoterminals.pat_terminal"), 8, 6, 0x404040);
 
+        // Mesure du lot 2 : elle décide si le découpage en chunks est nécessaire (révision R2).
+        String size = terminalContainer.lastPayloadBytes + " o";
+        fontRenderer.drawString(size, 168 - fontRenderer.getStringWidth(size), 6, 0xA0A0A0);
+
         List<Line> lines = buildLines();
         getScrollBar().setRange(0, Math.max(0, lines.size() - ROWS), 2);
         int first = getScrollBar().getCurrentScroll();
