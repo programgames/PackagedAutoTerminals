@@ -27,16 +27,26 @@ public class ContainerPatTerminal extends AEBaseContainer {
     /** Intervalle de rafraîchissement, en ticks. Un scan par seconde suffit largement. */
     private static final int REFRESH_TICKS = 20;
 
-    /** Largeur de la fenêtre. Le fond reprend la planche d'AE2. */
+    // Géométrie de la fenêtre. Ces valeurs doivent rester identiques à celles de
+    // tools/make_gui_texture.py, qui dessine la planche.
+    /** Largeur de la fenêtre. */
     public static final int WIDTH = 195;
     /** Hauteur de la fenêtre. */
-    public static final int HEIGHT = 204;
-    /** Nombre de lignes visibles dans la liste. */
-    public static final int ROWS = 5;
-    /** Première ligne de la liste, en pixels. */
-    public static final int LIST_TOP = 19;
-    /** Haut de l'inventaire du joueur, en pixels. */
-    public static final int PLAYER_INVENTORY_TOP = 122;
+    public static final int HEIGHT = 212;
+    /** Nombre de rangées visibles dans la liste. */
+    public static final int ROWS = 6;
+    /** Hauteur d'une rangée, en pixels. */
+    public static final int ROW_HEIGHT = 18;
+    /** Bord gauche de la zone de liste. */
+    public static final int LIST_LEFT = 8;
+    /** Haut de la zone de liste. */
+    public static final int LIST_TOP = 18;
+    /** Largeur de la zone de liste. */
+    public static final int LIST_WIDTH = 160;
+    /** Bord gauche de l'ascenseur. */
+    public static final int SCROLL_LEFT = 171;
+    /** Haut de l'inventaire du joueur. */
+    public static final int PLAYER_INVENTORY_TOP = 130;
 
     private final PartPatTerminal terminal;
     private int ticks;
