@@ -4,7 +4,6 @@ import fr.julien.packagedautoterminals.common.PatDiagnostics;
 import fr.julien.packagedautoterminals.common.PatItems;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
-import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent;
@@ -50,8 +49,5 @@ public class PackagedAutoTerminals {
     @Mod.EventHandler
     public void loadComplete(FMLLoadCompleteEvent event) {
         PatDiagnostics.logRecipeTypes();
-        if (FMLCommonHandler.instance().getSide().isClient()) {
-            fr.julien.packagedautoterminals.client.ClientDiagnostics.logTranslations();
-        }
     }
 }

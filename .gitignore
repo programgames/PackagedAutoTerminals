@@ -9,8 +9,10 @@ run/
 # Jars de dépendances, non versionnés : ils appartiennent à leurs auteurs
 libs/*.jar
 
-# Fichiers générés par `gradlew eclipse` / `gradlew idea`
-.idea/
+# Fichiers générés par `gradlew eclipse` / `gradlew idea`.
+# Les configurations de lancement, elles, sont versionnées : voir docs/IDE-INTELLIJ.md.
+.idea/*
+!.idea/runConfigurations/
 *.iml
 *.ipr
 *.iws

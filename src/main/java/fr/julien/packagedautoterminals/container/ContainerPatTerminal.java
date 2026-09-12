@@ -38,7 +38,11 @@ public class ContainerPatTerminal extends AEBaseContainer {
     public int lastPayloadBytes;
 
     public ContainerPatTerminal(InventoryPlayer inventory, PartPatTerminal terminal) {
-        super(inventory, null, terminal);
+        // PIÈGE : le constructeur (InventoryPlayer, TileEntity, IPart) exige une TileEntity.
+        // Avec `null`, `canInteractWith` échoue et la fenêtre se referme aussitôt, sans
+        // erreur. AE2 utilise lui-même la version (InventoryPlayer, Object) pour ses parts,
+        // qui retrouve seule la tuile hôte.
+        super(inventory, terminal);
         this.terminal = terminal;
         bindPlayerInventory(inventory);
     }

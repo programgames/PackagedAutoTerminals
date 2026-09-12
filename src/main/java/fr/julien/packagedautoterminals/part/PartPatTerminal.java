@@ -40,6 +40,7 @@ public class PartPatTerminal extends AbstractPartDisplay {
             return true;
         }
         BlockPos pos = getTile().getPos();
+        PackagedAutoTerminals.LOGGER.info("Ouverture du terminal en {} face {}", pos, getSide());
         player.openGui(PackagedAutoTerminals.instance, getSide().ordinal(), player.world,
                 pos.getX(), pos.getY(), pos.getZ());
         return true;
