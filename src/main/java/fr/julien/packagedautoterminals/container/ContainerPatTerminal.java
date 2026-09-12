@@ -8,6 +8,7 @@ import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.container.AEBaseContainer;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
+import fr.julien.packagedautoterminals.common.MachineSnapshot;
 import fr.julien.packagedautoterminals.common.NetworkItems;
 import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.common.ProviderScanner;
@@ -66,10 +67,12 @@ public class ContainerPatTerminal extends AEBaseContainer {
 
     private final PartPatTerminal terminal;
     private int ticks;
-    private NBTTagList lastSent;
+    private NBTTagCompound lastSent;
 
     /** Côté client seulement. Rempli par {@link PacketProviderList}. */
     public List<ProviderSnapshot> providers = new ArrayList<>();
+    /** Côté client seulement. Machines d'exécution, pour l'onglet Machines. */
+    public List<MachineSnapshot> machines = new ArrayList<>();
     /** Taille du dernier paquet reçu ou envoyé, en octets. Sert à la mesure du lot 2. */
     public int lastPayloadBytes;
 
@@ -96,13 +99,16 @@ public class ContainerPatTerminal extends AEBaseContainer {
         if (ticks++ % Math.max(1, PatConfig.refreshTicks) != 0) {
             return;
         }
-        NBTTagList payload = buildPayload();
-        if (payload.equals(lastSent)) {
+        // PIÈGE évité : la comparaison doit porter sur l'ENSEMBLE du message. Comparer les
+        // seuls fournisseurs laisserait passer un changement d'état des machines, qui ne
+        // serait alors jamais envoyé.
+        NBTTagCompound wrapper = new NBTTagCompound();
+        wrapper.setTag("Providers", buildPayload());
+        wrapper.setTag("Machines", buildMachinePayload());
+        if (wrapper.equals(lastSent)) {
             return;
         }
-        lastSent = payload;
-        NBTTagCompound wrapper = new NBTTagCompound();
-        wrapper.setTag("Providers", payload);
+        lastSent = wrapper;
         PatNetwork.CHANNEL.sendTo(new PacketProviderList(wrapper),
                 (EntityPlayerMP) getPlayerInv().player);
     }
@@ -168,6 +174,20 @@ public class ContainerPatTerminal extends AEBaseContainer {
         // que le joueur voie sa suppression tout de suite.
         ticks = 0;
         lastSent = null;
+    }
+
+    /** Machines d'exécution du réseau. Vide si l'onglet est désactivé en configuration. */
+    private NBTTagList buildMachinePayload() {
+        NBTTagList list = new NBTTagList();
+        if (!PatConfig.machinesTab) {
+            return list;
+        }
+        IGridNode node = terminal.getGridNode();
+        IGrid grid = node == null ? null : node.getGrid();
+        for (MachineSnapshot snapshot : MachineSnapshot.scan(grid)) {
+            list.appendTag(snapshot.writeToNBT());
+        }
+        return list;
     }
 
     /**

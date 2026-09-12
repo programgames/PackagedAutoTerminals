@@ -3,17 +3,23 @@ package fr.julien.packagedautoterminals.client.gui;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Set;
 
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.widgets.GuiScrollbar;
 import fr.julien.packagedautoterminals.Reference;
+import fr.julien.packagedautoterminals.common.CrafterTypes;
+import fr.julien.packagedautoterminals.common.MachineSnapshot;
 import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
+import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -21,6 +27,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.input.Keyboard;
 import thelm.packagedauto.api.IRecipeInfo;
+import thelm.packagedauto.api.IRecipeType;
 
 /**
  * Liste des machines et de leurs recettes.
@@ -49,9 +56,15 @@ public class GuiPatTerminal extends AEBaseGui {
 
     private static final int COLOR_TEXT = 0x404040;
     private static final int COLOR_DIM = 0x808080;
+    private static final int COLOR_WARNING = 0x803030;
+
+    private static final int BUTTON_VIEW = 0;
 
     private final ContainerPatTerminal terminalContainer;
     private GuiTextField search;
+    private GuiButton viewButton;
+    /** Faux : onglet des patterns. Vrai : onglet des machines. */
+    private boolean machinesView;
 
     public GuiPatTerminal(InventoryPlayer inventory, PartPatTerminal terminal) {
         super(new ContainerPatTerminal(inventory, terminal));
@@ -76,6 +89,13 @@ public class GuiPatTerminal extends AEBaseGui {
         search.setTextColor(COLOR_TEXT);
         search.setText(previous);
 
+        buttonList.clear();
+        if (PatConfig.machinesTab) {
+            viewButton = new GuiButton(BUTTON_VIEW, guiLeft + LIST_LEFT, guiTop + 2, 84, 14, "");
+            buttonList.add(viewButton);
+            updateViewButton();
+        }
+
         getScrollBar()
                 .setLeft(ContainerPatTerminal.SCROLL_LEFT)
                 .setTop(LIST_TOP)
@@ -90,8 +110,12 @@ public class GuiPatTerminal extends AEBaseGui {
 
     @Override
     public void drawFG(int offsetX, int offsetY, int mouseX, int mouseY) {
-        fontRenderer.drawString(trim(I18n.format("gui.packagedautoterminals.pat_terminal"), 84),
-                LIST_LEFT, 6, COLOR_TEXT);
+        // Sans l'onglet Machines, le bouton n'existe pas : le titre reprend sa place.
+        if (!PatConfig.machinesTab) {
+            fontRenderer.drawString(
+                    trim(I18n.format("gui.packagedautoterminals.pat_terminal"), 84),
+                    LIST_LEFT, 6, COLOR_TEXT);
+        }
         search.drawTextBox();
 
         // Libellé de l'inventaire, et taille du dernier paquet. Cette mesure tranche la
@@ -126,6 +150,27 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     private void drawLine(Line line, int y) {
+        if (line.warning != null) {
+            fontRenderer.drawString(trim(line.warning, LIST_WIDTH - 8), LIST_LEFT + 4,
+                    y + TEXT_OFFSET, COLOR_WARNING);
+            return;
+        }
+
+        if (line.crafter != null) {
+            drawItem(LIST_LEFT + 2, y + 1, line.crafter.icon);
+            fontRenderer.drawString(trim(line.crafter.name, 86), LIST_LEFT + 22,
+                    y + TEXT_OFFSET, COLOR_TEXT);
+            String state = I18n.format(!line.crafter.active
+                    ? "gui.packagedautoterminals.inactive"
+                    : (line.crafter.busy
+                            ? "gui.packagedautoterminals.busy"
+                            : "gui.packagedautoterminals.idle"));
+            fontRenderer.drawString(state,
+                    LIST_LEFT + LIST_WIDTH - 4 - fontRenderer.getStringWidth(state),
+                    y + TEXT_OFFSET, COLOR_DIM);
+            return;
+        }
+
         if (line.machine != null) {
             drawItem(LIST_LEFT + 2, y + 1, line.machine.icon);
             fontRenderer.drawString(trim(line.machine.name, 86), LIST_LEFT + 22,
@@ -154,6 +199,24 @@ public class GuiPatTerminal extends AEBaseGui {
                 y + TEXT_OFFSET, COLOR_DIM);
     }
 
+    private void updateViewButton() {
+        if (viewButton != null) {
+            viewButton.displayString = I18n.format(machinesView
+                    ? "gui.packagedautoterminals.tab_machines"
+                    : "gui.packagedautoterminals.tab_patterns");
+        }
+    }
+
+    @Override
+    protected void actionPerformed(GuiButton button) throws IOException {
+        if (button.id == BUTTON_VIEW) {
+            machinesView = !machinesView;
+            updateViewButton();
+            return;
+        }
+        super.actionPerformed(button);
+    }
+
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
         // Échap et la touche d'inventaire doivent fermer la fenêtre, même si le champ a le
@@ -174,7 +237,7 @@ public class GuiPatTerminal extends AEBaseGui {
         search.mouseClicked(mouseX, mouseY, mouseButton);
         // Clic gauche sur une machine : nouvelle recette.
         // Clic droit sur une recette : l'éditer. Maj + clic droit : la supprimer.
-        Line clicked = lineUnder(mouseX - guiLeft, mouseY - guiTop);
+        Line clicked = machinesView ? null : lineUnder(mouseX - guiLeft, mouseY - guiTop);
         if (mouseButton == 0 && clicked != null && clicked.machine != null) {
             PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(
                     clicked.machine.dimension, clicked.machine.pos, -1,
@@ -219,6 +282,18 @@ public class GuiPatTerminal extends AEBaseGui {
 
     private List<String> tooltipFor(Line line) {
         List<String> lines = new ArrayList<>();
+        if (line.warning != null) {
+            lines.add(line.warning);
+            lines.add(TextFormatting.GRAY + I18n.format("gui.packagedautoterminals.orphan_help"));
+            return lines;
+        }
+        if (line.crafter != null) {
+            lines.add(line.crafter.name);
+            lines.add(TextFormatting.GRAY + I18n.format("gui.packagedautoterminals.position",
+                    line.crafter.pos.getX(), line.crafter.pos.getY(), line.crafter.pos.getZ(),
+                    line.crafter.dimension));
+            return lines;
+        }
         if (line.machine != null) {
             lines.add(line.machine.name);
             lines.add(TextFormatting.GRAY + I18n.format("gui.packagedautoterminals.position",
@@ -289,6 +364,48 @@ public class GuiPatTerminal extends AEBaseGui {
      */
     private List<Line> buildLines() {
         String filter = search == null ? "" : search.getText().trim().toLowerCase(Locale.ROOT);
+        return machinesView ? buildMachineLines(filter) : buildPatternLines(filter);
+    }
+
+    /**
+     * Onglet Machines : les crafters du réseau, précédés des recettes orphelines.
+     *
+     * <p>Une recette est orpheline quand aucun crafter du réseau ne sait exécuter son type.
+     * C'est l'erreur la plus fréquente en jeu, et aucun autre mod ne la signale.
+     */
+    private List<Line> buildMachineLines(String filter) {
+        List<Line> lines = new ArrayList<>();
+
+        Set<String> present = new HashSet<>();
+        for (MachineSnapshot machine : terminalContainer.machines) {
+            present.add(machine.machineClass);
+        }
+
+        Set<String> reported = new LinkedHashSet<>();
+        for (ProviderSnapshot provider : terminalContainer.providers) {
+            for (IRecipeInfo recipe : provider.recipes) {
+                IRecipeType type = recipe.getRecipeType();
+                if (!CrafterTypes.isDiagnosable(type)) {
+                    continue;
+                }
+                if (!present.contains(CrafterTypes.machineClassFor(type))) {
+                    reported.add(type.getLocalizedNameShort());
+                }
+            }
+        }
+        for (String type : reported) {
+            lines.add(Line.warning(I18n.format("gui.packagedautoterminals.orphan", type)));
+        }
+
+        for (MachineSnapshot machine : terminalContainer.machines) {
+            if (filter.isEmpty() || machine.name.toLowerCase(Locale.ROOT).contains(filter)) {
+                lines.add(Line.crafter(machine));
+            }
+        }
+        return lines;
+    }
+
+    private List<Line> buildPatternLines(String filter) {
         List<Line> lines = new ArrayList<>();
 
         for (ProviderSnapshot provider : terminalContainer.providers) {
@@ -343,21 +460,33 @@ public class GuiPatTerminal extends AEBaseGui {
         final ProviderSnapshot owner;
         final IRecipeInfo recipe;
         final int recipeIndex;
+        final MachineSnapshot crafter;
+        final String warning;
 
         static Line machine(ProviderSnapshot machine) {
-            return new Line(machine, null, null, -1);
+            return new Line(machine, null, null, -1, null, null);
         }
 
         static Line recipe(ProviderSnapshot owner, IRecipeInfo recipe, int index) {
-            return new Line(null, owner, recipe, index);
+            return new Line(null, owner, recipe, index, null, null);
+        }
+
+        static Line crafter(MachineSnapshot crafter) {
+            return new Line(null, null, null, -1, crafter, null);
+        }
+
+        static Line warning(String warning) {
+            return new Line(null, null, null, -1, null, warning);
         }
 
         private Line(ProviderSnapshot machine, ProviderSnapshot owner, IRecipeInfo recipe,
-                     int recipeIndex) {
+                     int recipeIndex, MachineSnapshot crafter, String warning) {
             this.machine = machine;
             this.owner = owner;
             this.recipe = recipe;
             this.recipeIndex = recipeIndex;
+            this.crafter = crafter;
+            this.warning = warning;
         }
     }
 }
