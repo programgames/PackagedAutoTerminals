@@ -8,6 +8,8 @@ import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.container.AEBaseContainer;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
+import fr.julien.packagedautoterminals.common.NetworkItems;
+import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.common.ProviderScanner;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.network.PacketProviderList;
@@ -17,10 +19,12 @@ import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextComponentTranslation;
 import thelm.packagedauto.api.IPackageProvidingMachine;
 import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.IRecipeList;
@@ -32,8 +36,7 @@ import thelm.packagedauto.api.IRecipeListItem;
  */
 public class ContainerPatTerminal extends AEBaseContainer {
 
-    /** Intervalle de rafraîchissement, en ticks. Un scan par seconde suffit largement. */
-    private static final int REFRESH_TICKS = 20;
+    // L'intervalle de rafraîchissement vient de la configuration, PatConfig.refreshTicks.
 
     // Géométrie de la fenêtre. Ces valeurs doivent rester identiques à celles de
     // tools/make_gui_texture.py, qui dessine la planche.
@@ -85,7 +88,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
         if (!(getPlayerInv().player instanceof EntityPlayerMP)) {
             return;
         }
-        if (ticks++ % REFRESH_TICKS != 0) {
+        if (ticks++ % Math.max(1, PatConfig.refreshTicks) != 0) {
             return;
         }
         NBTTagList payload = buildPayload();
@@ -160,6 +163,50 @@ public class ContainerPatTerminal extends AEBaseContainer {
         // que le joueur voie sa suppression tout de suite.
         ticks = 0;
         lastSent = null;
+    }
+
+    /**
+     * Prépare une nouvelle recette sur cette machine, puis ouvre l'éditeur.
+     *
+     * <p>Si la machine n'a pas de porte-recettes, le terminal en prend un vierge sur le
+     * réseau ME et l'y insère (décision D10). Sans porte-recettes disponible, il refuse et
+     * l'explique dans la barre d'action.
+     */
+    public void newRecipe(int dimension, BlockPos pos) {
+        IGridNode node = terminal.getGridNode();
+        IGrid grid = node == null ? null : node.getGrid();
+        IPackageProvidingMachine machine = ProviderScanner.find(grid, dimension, pos);
+        if (machine == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+            return;
+        }
+
+        if (machine.getPatternStack().isEmpty() && !insertBlankHolder(grid, machine)) {
+            tell("gui.packagedautoterminals.no_blank_holder");
+            return;
+        }
+        openEditor(dimension, pos, -1);
+    }
+
+    /** Prend un porte-recettes vierge sur le réseau, et le pose dans la machine. */
+    private boolean insertBlankHolder(IGrid grid, IPackageProvidingMachine machine) {
+        Item holderItem = NetworkItems.findRecipeHolder();
+        if (holderItem == null) {
+            return false;
+        }
+        ItemStack holder = NetworkItems.extractOne(grid, new ItemStack(holderItem), getActionSource());
+        if (holder.isEmpty()) {
+            return false;
+        }
+        machine.setPatternStack(holder);
+        return true;
+    }
+
+    /** Message court dans la barre d'action du joueur. */
+    private void tell(String key) {
+        EntityPlayer player = getPlayerInv().player;
+        if (player instanceof EntityPlayerMP) {
+            player.sendStatusMessage(new TextComponentTranslation(key), true);
+        }
     }
 
     /**

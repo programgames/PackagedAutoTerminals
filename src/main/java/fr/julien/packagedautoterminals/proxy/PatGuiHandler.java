@@ -69,7 +69,7 @@ public class PatGuiHandler implements IGuiHandler {
         if (target == null) {
             return null;
         }
-        EditorInventory editor = new EditorInventory(world, null);
+        EditorInventory editor = new EditorInventory(world, ContainerPatEditor.defaultRecipeType());
         if (target.recipe != null) {
             editor.load(target.recipe);
         }

@@ -27,6 +27,8 @@ public class PacketRecipeAction implements IMessage {
     public static final byte ACTION_SAVE = 2;
     /** Change le type de recette dans l'éditeur. {@link #index} vaut 1 en avant, 0 en arrière. */
     public static final byte ACTION_CYCLE_TYPE = 3;
+    /** Ajoute une recette à cette machine, et ouvre l'éditeur dessus. */
+    public static final byte ACTION_NEW = 4;
 
     public int dimension;
     public BlockPos pos = BlockPos.ORIGIN;
@@ -69,6 +71,8 @@ public class PacketRecipeAction implements IMessage {
                         container.removeRecipe(message.dimension, message.pos, message.index);
                     } else if (message.action == ACTION_EDIT) {
                         container.openEditor(message.dimension, message.pos, message.index);
+                    } else if (message.action == ACTION_NEW) {
+                        container.newRecipe(message.dimension, message.pos);
                     }
                     return;
                 }

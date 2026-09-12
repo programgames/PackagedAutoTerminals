@@ -7,6 +7,7 @@ import java.util.List;
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.widgets.GuiScrollbar;
 import fr.julien.packagedautoterminals.Reference;
+import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
@@ -135,9 +136,17 @@ public class GuiPatTerminal extends AEBaseGui {
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
-        // Clic droit : ouvrir l'éditeur. Maj + clic droit : supprimer.
+        // Clic gauche sur une machine : nouvelle recette.
+        // Clic droit sur une recette : l'éditer. Maj + clic droit : la supprimer.
+        Line clicked = lineUnder(mouseX - guiLeft, mouseY - guiTop);
+        if (mouseButton == 0 && clicked != null && clicked.machine != null) {
+            PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(
+                    clicked.machine.dimension, clicked.machine.pos, -1,
+                    PacketRecipeAction.ACTION_NEW));
+            return;
+        }
         if (mouseButton == 1) {
-            Line line = lineUnder(mouseX - guiLeft, mouseY - guiTop);
+            Line line = clicked;
             if (line != null && line.recipe != null) {
                 PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(
                         line.owner.dimension, line.owner.pos, line.recipeIndex,
@@ -180,6 +189,8 @@ public class GuiPatTerminal extends AEBaseGui {
                     line.machine.pos.getX(), line.machine.pos.getY(), line.machine.pos.getZ(),
                     line.machine.dimension));
             lines.add(TextFormatting.GRAY + stateOf(line.machine));
+            lines.add("");
+            lines.add(TextFormatting.DARK_GRAY + I18n.format("gui.packagedautoterminals.new_hint"));
             return lines;
         }
 
@@ -202,7 +213,7 @@ public class GuiPatTerminal extends AEBaseGui {
             if (stack.isEmpty()) {
                 continue;
             }
-            if (shown == 8) {
+            if (shown == PatConfig.tooltipStacks) {
                 lines.add(TextFormatting.DARK_GRAY + I18n.format(
                         "gui.packagedautoterminals.more", stacks.size() - shown));
                 return;

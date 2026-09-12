@@ -2,6 +2,7 @@ package fr.julien.packagedautoterminals.container;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NavigableMap;
 
 import appeng.api.config.SecurityPermissions;
 import appeng.api.networking.IGridNode;
@@ -17,11 +18,13 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ClickType;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import thelm.packagedauto.api.IPackageProvidingMachine;
 import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.IRecipeList;
 import thelm.packagedauto.api.IRecipeListItem;
+import thelm.packagedauto.api.IRecipeType;
 import thelm.packagedauto.api.RecipeTypeRegistry;
 import appeng.container.slot.AppEngSlot;
 import appeng.container.slot.SlotFake;
@@ -240,10 +243,35 @@ public class ContainerPatEditor extends AEBaseContainer {
                 host.getX(), host.getY(), host.getZ());
     }
 
-    /** Passe au type de recette suivant ou précédent, puis reconstruit la recette. */
+    /**
+     * Passe au type de recette suivant ou précédent, puis reconstruit la recette.
+     *
+     * <p>Le cas du type nul est traité ici : sur une recette neuve, l'éditeur peut s'ouvrir
+     * sans type, et {@code getNextRecipeType} n'a alors aucun point de départ.
+     */
     public void cycleRecipeType(boolean forward) {
-        editor.recipeType = RecipeTypeRegistry.getNextRecipeType(editor.recipeType, forward);
+        if (editor.recipeType == null) {
+            editor.recipeType = defaultRecipeType();
+        } else {
+            editor.recipeType = RecipeTypeRegistry.getNextRecipeType(editor.recipeType, forward);
+        }
         editor.updateRecipeInfo();
+    }
+
+    /**
+     * Type proposé à l'ouverture d'une recette neuve.
+     *
+     * <p>Le craft de base vient en premier s'il existe : c'est le cas le plus courant. Le
+     * Package Crafter peut être désactivé en configuration, auquel cas ce type n'est pas
+     * enregistré, et le premier type disponible fait l'affaire.
+     */
+    public static IRecipeType defaultRecipeType() {
+        NavigableMap<ResourceLocation, IRecipeType> registry = RecipeTypeRegistry.getRegistry();
+        if (registry.isEmpty()) {
+            return null;
+        }
+        IRecipeType crafting = registry.get(new ResourceLocation("packagedauto", "crafting"));
+        return crafting != null ? crafting : registry.firstEntry().getValue();
     }
 
     @Override
