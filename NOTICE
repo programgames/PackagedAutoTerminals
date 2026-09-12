@@ -1,0 +1,16 @@
+# Dépendances et licences
+
+Ce mod ne contient aucun fichier provenant des mods ci-dessous. Il est seulement compilé
+contre leurs classes, et les appelle à l'exécution.
+
+| Mod | Licence | Usage |
+|---|---|---|
+| Applied Energistics 2 Unofficial Extended Life | LGPL v3 | classes de terminal, de conteneur et de réseau ME |
+| PackagedAuto (TheLMiffy1111) | MIT | API des recettes et des machines |
+| Mouse Tweaks (YaLTeR) | interface publique | `IMTModGuiContainer2`, requise à la compilation car `AEBaseGui` l'implémente |
+
+Le fichier `src/api/java/yalter/mousetweaks/api/IMTModGuiContainer2.java` reproduit une
+interface publique, destinée par son auteur à être embarquée par les mods qui en dépendent.
+
+La documentation de `docs/PACKAGEDAUTO-MODEL.md` cite de courts extraits de PackagedAuto,
+sous licence MIT, à titre de preuve technique.
