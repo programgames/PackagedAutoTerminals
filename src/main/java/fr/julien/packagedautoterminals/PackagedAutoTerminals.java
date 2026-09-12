@@ -1,8 +1,13 @@
 package fr.julien.packagedautoterminals;
 
+import fr.julien.packagedautoterminals.common.PatItems;
+import fr.julien.packagedautoterminals.network.PatNetwork;
+import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.network.NetworkRegistry;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
@@ -21,7 +26,7 @@ import org.apache.logging.log4j.Logger;
 )
 public class PackagedAutoTerminals {
 
-    public static final Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger(Reference.MOD_NAME);
+    public static final Logger LOGGER = LogManager.getLogger(Reference.MOD_NAME);
 
     @Mod.Instance(Reference.MOD_ID)
     public static PackagedAutoTerminals instance;
@@ -29,10 +34,13 @@ public class PackagedAutoTerminals {
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         LOGGER.info("{} {} : pre-init", Reference.MOD_NAME, Reference.VERSION);
+        PatItems.registerPartModels();
+        PatNetwork.init();
     }
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
+        NetworkRegistry.INSTANCE.registerGuiHandler(instance, new PatGuiHandler());
         LOGGER.info("{} : init", Reference.MOD_NAME);
     }
 }

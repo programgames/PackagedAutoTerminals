@@ -43,9 +43,19 @@ minecraft {
 }
 
 repositories {
-    // Dépôt de fichiers locaux. Les jars d'AE2UEL et de PackagedAuto vivent dans libs/.
-    // Motif : aucun dépôt Maven officiel n'existe pour AE2UEL (voir docs/PLAN.md, lot 0).
-    flatDir { dirs 'libs' }
+    // Dépôt Maven LOCAL, pas un `flatDir`.
+    //
+    // PIÈGE : avec `flatDir`, ForgeGradle saute ses tâches de déobfuscation
+    // (`deobfProvidedDeobfDepTask0 SKIPPED`). On compile alors contre les noms SRG
+    // d'AE2 (`func_146976_a`), et tout héritage d'une classe AE2 échoue sur
+    // « is not abstract and does not override abstract method ».
+    // Un vrai dépôt Maven fait de ces jars des modules, et le remappage s'exécute.
+    //
+    // Motif du dépôt local : aucun Maven officiel ne publie AE2UEL (voir docs/PLAN.md, lot 0).
+    maven {
+        name = 'LocalLibs'
+        url = uri("${projectDir}/libs/maven")
+    }
     maven {
         name = 'CurseMaven'
         url = 'https://cursemaven.com'
@@ -55,8 +65,18 @@ repositories {
 dependencies {
     // `deobfProvided` : nécessaire à la compilation, jamais embarqué dans notre jar.
     // ForgeGradle remappe ces jars publiés (noms SRG) vers les noms MCP du poste de dev.
-    deobfProvided name: 'ae2-uel', version: project.ae2uelVersion
-    deobfProvided name: 'packagedauto', version: project.packagedAutoVersion
+    deobfProvided "pat:ae2-uel:${project.ae2uelVersion}@jar"
+    deobfProvided "pat:packagedauto:${project.packagedAutoVersion}@jar"
+}
+
+// PIÈGE, suite. ForgeGradle ajoute bien les jars déobfusqués au chemin de compilation, mais
+// il y laisse AUSSI les jars bruts, et les bruts passent en premier. javac prend donc la
+// première correspondance, donc les noms SRG, et tout héritage d'une classe AE2 échoue.
+// On retire ici les artefacts bruts du dépôt local. Les versions déobfusquées restent.
+afterEvaluate {
+    sourceSets.main.compileClasspath = sourceSets.main.compileClasspath.filter { file ->
+        !file.absolutePath.startsWith(new File(projectDir, 'libs/maven').absolutePath)
+    }
 }
 
 processResources {
@@ -102,4 +122,8 @@ if (!javaVersion.startsWith('1.8')) {
         "  Corrigez JAVA_HOME, par exemple :\n" +
         "    \$env:JAVA_HOME = 'C:/Program Files/Eclipse Adoptium/jdk-8.0.472.8-hotspot'"
     )
+}
+
+task printCp {
+    doLast { sourceSets.main.compileClasspath.each { println "CP: " + it } }
 }

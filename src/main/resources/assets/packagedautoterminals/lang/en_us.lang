@@ -1,1 +1,7 @@
-# PackagedAuto Terminals
+item.packagedautoterminals.pat_terminal.name=PackagedAuto Terminal
+itemGroup.packagedautoterminals=PackagedAuto Terminals
+gui.packagedautoterminals.pat_terminal=PackagedAuto Terminal
+gui.packagedautoterminals.empty=No PackagedAuto machine on this network
+gui.packagedautoterminals.no_holder=No recipe holder
+gui.packagedautoterminals.inactive=Inactive
+gui.packagedautoterminals.recipes=%d recipes

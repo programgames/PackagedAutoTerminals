@@ -116,3 +116,61 @@ PackagedAutoTerminals/
 
 Le module `core` et le dossier `forge-1.12` naîtront au portage 1.16, quand on saura ce qui
 est réellement commun. Voir la révision **R3** dans `docs/DECISIONS.md`.
+
+---
+
+## 4. Pieges rencontres, et leur cause
+
+### 4.1 `DuplicateModsFoundException` au lancement du client de dev
+
+ForgeGradle place les dependances `deobfProvided` sur le chemin d'execution de `runClient`.
+FML les charge donc comme des mods. Mettre les **memes** jars dans `run/mods` produit :
+
+```
+Found a duplicate mod appliedenergistics2 at [.\modse2-uel-v0.56.5.jar, ...\libs\...]
+```
+
+**Regle** : tout jar present dans `libs/` ne doit **jamais** etre copie dans `run/mods`.
+
+### 4.2 Dependances non deobfusquees : deux pieges en serie
+
+Symptome : `GuiPatTerminal is not abstract and does not override abstract method
+drawGuiContainerBackgroundLayer`. Le code herite pourtant d'une classe AE2 qui l'implemente.
+
+Cause : le chemin de compilation portait les noms **SRG** (`func_146976_a`), pas les noms
+MCP. Deux causes distinctes se sont succede.
+
+1. **`flatDir` ne declenche pas la deobfuscation.** Le journal affiche
+   `deobfProvidedDeobfDepTask0 SKIPPED`. Correctif : un vrai depot Maven local, dans
+   `libs/maven`, avec un `.pom` par artefact, et la notation `@jar` sur la dependance.
+   Sans `@jar`, Gradle place le `.pom` lui-meme sur le chemin de compilation.
+2. **ForgeGradle laisse le jar brut sur le chemin, avant le jar deobfusque.** `javac` prend
+   la premiere correspondance, donc le brut. Correctif : le `afterEvaluate` de
+   `build.gradle` filtre `sourceSets.main.compileClasspath`.
+
+La tache `gradlew printCp` affiche le chemin de compilation. Elle a servi a trouver les deux
+causes ; garde-la.
+
+### 4.3 Noms MCP de `snapshot_20171003`
+
+Les mappings de 2017 ne connaissent pas les noms recents :
+
+| Nom recent | Nom attendu ici |
+|---|---|
+| `CreativeTabs.createIcon()` | `getTabIconItem()` |
+| `Item.setTranslationKey()` | `setUnlocalizedName()` |
+
+### 4.4 `cannot access IMTModGuiContainer2`
+
+`appeng.client.gui.AEBaseGui` implemente l'API de Mouse Tweaks. Sans cette interface sur le
+chemin de compilation, toute classe qui en herite echoue. Le projet embarque donc le stub
+`src/api/java/yalter/mousetweaks/api/IMTModGuiContainer2.java`.
+
+### 4.5 Antislash dans une chaine Groovy
+
+`"C:\Program Files\..."` dans `build.gradle` echoue sur `unexpected char: ''`.
+Utiliser des barres obliques.
+
+### 4.6 Le shell casse sur les commandes tres longues
+
+Ecrire les fichiers Java par l'outil d'ecriture directe, pas par un `cat` multiligne.
