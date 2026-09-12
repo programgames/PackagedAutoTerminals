@@ -132,3 +132,34 @@
 - [ ] Copie `build/libs/packagedautoterminals-1.12.2-0.1.0.jar` dans
       `H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`.
 - [ ] L'instance démarre, et le terminal fonctionne avec ton fork d'AE2UEL.
+
+
+---
+
+## Tests de la branche `lot6-sans-fil`
+
+> Ces tests ne valent que sur la branche `lot6-sans-fil`. La branche `master` n'a pas le
+> terminal sans fil.
+
+### T16 — Liaison et ouverture
+
+- [ ] Fabrique le **Terminal PackagedAuto sans fil** : le terminal câblé plus le terminal
+      sans fil d'AE2.
+- [ ] Lie-le à un réseau avec le **Wireless Access Point**, comme un terminal d'AE2.
+- [ ] Sans liaison, le clic droit affiche « Ce terminal n'est lié à aucun réseau ».
+- [ ] Sans énergie, il affiche « Ce terminal n'a plus d'énergie ».
+- [ ] Une fois lié et chargé, le clic droit ouvre le terminal.
+
+### T17 — Portée
+
+- [ ] Éloigne-toi jusqu'à sortir de portée : la fenêtre se referme seule.
+- [ ] Ouvre l'éditeur, puis éloigne-toi : il se referme aussi.
+
+### T18 — Parité avec le terminal câblé
+
+- [ ] La liste, la recherche, l'onglet Machines et l'édition se comportent à l'identique.
+- [ ] La batterie descend lentement pendant que la fenêtre reste ouverte.
+
+> **Le plus grand risque de cette branche** : le terminal câblé a été refondu pour partager
+> son code avec le sans-fil. Déroule donc **aussi** les tests T3 à T13 sur cette branche,
+> pour vérifier que rien n'a régressé.
