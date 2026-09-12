@@ -9,7 +9,7 @@ import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.network.PacketEditorSlot;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
 import fr.julien.packagedautoterminals.network.PatNetwork;
-import fr.julien.packagedautoterminals.part.PartPatTerminal;
+import fr.julien.packagedautoterminals.common.TerminalContext;
 import appeng.container.slot.SlotFake;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.resources.I18n;
@@ -51,7 +51,7 @@ public class GuiPatEditor extends AEBaseGui {
     private final ContainerPatEditor editorContainer;
     private GuiButton saveButton;
 
-    public GuiPatEditor(InventoryPlayer inventory, PartPatTerminal terminal,
+    public GuiPatEditor(InventoryPlayer inventory, TerminalContext terminal,
                         EditorInventory editor, int dimension, BlockPos pos, int index) {
         super(new ContainerPatEditor(inventory, terminal, editor, dimension, pos, index));
         this.editorContainer = (ContainerPatEditor) inventorySlots;

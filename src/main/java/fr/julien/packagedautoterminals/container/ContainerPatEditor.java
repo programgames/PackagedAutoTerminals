@@ -11,7 +11,7 @@ import appeng.container.guisync.GuiSync;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.common.EditorInventory;
 import fr.julien.packagedautoterminals.common.ProviderScanner;
-import fr.julien.packagedautoterminals.part.PartPatTerminal;
+import fr.julien.packagedautoterminals.common.TerminalContext;
 import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -61,7 +61,7 @@ public class ContainerPatEditor extends AEBaseContainer {
     /** Quantité maximale d'un emplacement de recette. */
     public static final int MAX_SLOT_COUNT = 4096;
 
-    private final PartPatTerminal terminal;
+    private final TerminalContext terminal;
     public final EditorInventory editor;
 
     /** Machine visée, et rang de la recette. Un rang négatif signifie « nouvelle recette ». */
@@ -69,9 +69,9 @@ public class ContainerPatEditor extends AEBaseContainer {
     public final BlockPos pos;
     public final int index;
 
-    public ContainerPatEditor(InventoryPlayer inventory, PartPatTerminal terminal,
+    public ContainerPatEditor(InventoryPlayer inventory, TerminalContext terminal,
                               EditorInventory editor, int dimension, BlockPos pos, int index) {
-        super(inventory, terminal);
+        super(inventory, terminal.host());
         this.terminal = terminal;
         this.editor = editor;
         this.dimension = dimension;
@@ -184,6 +184,12 @@ public class ContainerPatEditor extends AEBaseContainer {
 
     @Override
     public void detectAndSendChanges() {
+        // Hors de portée, l'éditeur se referme comme le terminal : il écrit sur le même
+        // réseau, et n'a plus le droit d'y toucher.
+        if (!terminal.stillValid()) {
+            setValidContainer(false);
+            return;
+        }
         recipeTypeId = editor.recipeType == null ? -1 : RecipeTypeRegistry.getId(editor.recipeType);
         super.detectAndSendChanges();
     }
@@ -258,9 +264,8 @@ public class ContainerPatEditor extends AEBaseContainer {
         if (editor.recipeInfo == null) {
             return false;
         }
-        IGridNode node = terminal.getGridNode();
         IPackageProvidingMachine machine =
-                ProviderScanner.find(node == null ? null : node.getGrid(), dimension, pos);
+                ProviderScanner.find(terminal.grid(), dimension, pos);
         if (machine == null || !hasAccess(SecurityPermissions.BUILD, false)) {
             return false;
         }
@@ -292,10 +297,7 @@ public class ContainerPatEditor extends AEBaseContainer {
     /** Referme l'éditeur et rouvre le terminal, à la même part. */
     public void backToTerminal() {
         EntityPlayer player = getPlayerInv().player;
-        BlockPos host = terminal.getTile().getPos();
-        player.openGui(PackagedAutoTerminals.instance,
-                PatGuiHandler.TERMINAL + terminal.getSide().ordinal(), player.world,
-                host.getX(), host.getY(), host.getZ());
+        terminal.openTerminal(player);
     }
 
     /**

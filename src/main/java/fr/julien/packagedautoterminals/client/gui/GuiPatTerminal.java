@@ -18,7 +18,7 @@ import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
 import fr.julien.packagedautoterminals.network.PatNetwork;
-import fr.julien.packagedautoterminals.part.PartPatTerminal;
+import fr.julien.packagedautoterminals.common.TerminalContext;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
@@ -66,7 +66,7 @@ public class GuiPatTerminal extends AEBaseGui {
     /** Faux : onglet des patterns. Vrai : onglet des machines. */
     private boolean machinesView;
 
-    public GuiPatTerminal(InventoryPlayer inventory, PartPatTerminal terminal) {
+    public GuiPatTerminal(InventoryPlayer inventory, TerminalContext terminal) {
         super(new ContainerPatTerminal(inventory, terminal));
         this.terminalContainer = (ContainerPatTerminal) inventorySlots;
         this.xSize = ContainerPatTerminal.WIDTH;

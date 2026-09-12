@@ -45,10 +45,25 @@ public final class PatRecipes {
         ingredients.add(Ingredient.fromStacks(terminal.get()));
         ingredients.add(Ingredient.fromStacks(new ItemStack(holder)));
 
-        ResourceLocation name = new ResourceLocation(Reference.MOD_ID, "pat_terminal");
-        ShapelessRecipes recipe = new ShapelessRecipes(Reference.MOD_ID,
-                new ItemStack(PatItems.TERMINAL), ingredients);
-        recipe.setRegistryName(name);
+        register(event, "pat_terminal", new ItemStack(PatItems.TERMINAL), ingredients);
+
+        // Terminal sans fil : le nôtre, plus le terminal sans fil d'AE2, qui apporte
+        // l'antenne et la batterie.
+        Optional<ItemStack> wireless =
+                AEApi.instance().definitions().items().wirelessTerminal().maybeStack(1);
+        if (wireless.isPresent()) {
+            NonNullList<Ingredient> wirelessIngredients = NonNullList.create();
+            wirelessIngredients.add(Ingredient.fromStacks(new ItemStack(PatItems.TERMINAL)));
+            wirelessIngredients.add(Ingredient.fromStacks(wireless.get()));
+            register(event, "wireless_pat_terminal",
+                    new ItemStack(PatItems.WIRELESS_TERMINAL), wirelessIngredients);
+        }
+    }
+
+    private static void register(RegistryEvent.Register<IRecipe> event, String name,
+                                 ItemStack result, NonNullList<Ingredient> ingredients) {
+        ShapelessRecipes recipe = new ShapelessRecipes(Reference.MOD_ID, result, ingredients);
+        recipe.setRegistryName(new ResourceLocation(Reference.MOD_ID, name));
         event.getRegistry().register(recipe);
     }
 }
