@@ -17,3 +17,5 @@ gui.packagedautoterminals.save=Save
 gui.packagedautoterminals.result=Result
 gui.packagedautoterminals.no_type=No recipe type
 gui.packagedautoterminals.invalid=Invalid recipe
+gui.packagedautoterminals.editor=Recipe editor
+gui.packagedautoterminals.inventory=Inventory

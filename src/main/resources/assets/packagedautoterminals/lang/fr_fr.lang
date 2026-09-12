@@ -17,3 +17,5 @@ gui.packagedautoterminals.save=Enregistrer
 gui.packagedautoterminals.result=Résultat
 gui.packagedautoterminals.no_type=Aucun type de recette
 gui.packagedautoterminals.invalid=Recette invalide
+gui.packagedautoterminals.editor=Éditeur de recette
+gui.packagedautoterminals.inventory=Inventaire

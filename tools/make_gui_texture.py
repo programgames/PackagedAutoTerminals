@@ -117,24 +117,52 @@ def write_png(path, px, width=SHEET, height=SHEET):
 
 
 # --- Planche de l'éditeur -------------------------------------------------------
-# Elle mesure 256 x 512 : la fenêtre fait 276 pixels de haut, donc plus que les 256
-# que suppose `drawTexturedModalRect`. Le dessin passe par
-# `drawModalRectWithCustomSizedTexture`, auquel on donne la taille réelle.
-EDITOR_WIDTH = 236
-EDITOR_HEIGHT = 276
+# La mise en page reprend celle du Package Recipe Encoder de PackagedAuto : grille 9 sur 9
+# à gauche, flèche, sorties en haut à droite, aperçu des colis en dessous, inventaire en
+# bas. Nous retirons seulement la rangée des dix emplacements de motifs, inutile ici : le
+# terminal édite une recette à la fois.
+#
+# La planche mesure 256 sur 512, car la fenêtre dépasse les 256 pixels de haut que suppose
+# `drawTexturedModalRect`.
+EDITOR_WIDTH = 252
+EDITOR_HEIGHT = 282
 EDITOR_SHEET_HEIGHT = 512
 
 GRID_LEFT = 8
 GRID_TOP = 20
-OUTPUT_LEFT = 178
-OUTPUT_TOP = 20
-PREVIEW_LEFT = 178
-PREVIEW_TOP = 80
-EDITOR_INVENTORY_TOP = 194
+RIGHT_COLUMN = 190
+OUTPUT_TOP = 80
+PREVIEW_TOP = 140
+ARROW_LEFT = 166
+ARROW_TOP = 96
+EDITOR_INVENTORY_TOP = 200
+
+ARROW = (120, 120, 120, 255)
+ICON = (170, 170, 170, 255)
 
 
 def new_editor_sheet():
     return [[NONE for _ in range(SHEET)] for _ in range(EDITOR_SHEET_HEIGHT)]
+
+
+def draw_arrow(px, x0, y0):
+    """Flèche vers la droite, comme celle de l'Encoder."""
+    fill(px, x0, y0 + 4, 14, 6, ARROW)
+    for step in range(7):
+        fill(px, x0 + 14 + step, y0 + step, 1, 14 - 2 * step, ARROW)
+
+
+def draw_package(px, x0, y0):
+    """Contour de colis, dessiné au fond des emplacements d'aperçu."""
+    points = [(5, 2), (10, 2), (13, 6), (13, 10), (8, 14), (3, 10), (3, 6)]
+    for index in range(len(points)):
+        ax, ay = points[index]
+        bx, by = points[(index + 1) % len(points)]
+        steps = max(abs(bx - ax), abs(by - ay))
+        for step in range(steps + 1):
+            x = ax + (bx - ax) * step // max(steps, 1)
+            y = ay + (by - ay) * step // max(steps, 1)
+            fill(px, x0 + x, y0 + y, 1, 1, ICON)
 
 
 def build_editor():
@@ -153,10 +181,16 @@ def build_editor():
     for row in range(9):
         for column in range(9):
             recess(px, GRID_LEFT + column * 18, GRID_TOP + row * 18, 16, 16, SLOT)
+
+    draw_arrow(px, ARROW_LEFT, ARROW_TOP)
+
     for row in range(3):
         for column in range(3):
-            recess(px, OUTPUT_LEFT + column * 18, OUTPUT_TOP + row * 18, 16, 16, SLOT)
-            recess(px, PREVIEW_LEFT + column * 18, PREVIEW_TOP + row * 18, 16, 16, SLOT)
+            recess(px, RIGHT_COLUMN + column * 18, OUTPUT_TOP + row * 18, 16, 16, SLOT)
+            x = RIGHT_COLUMN + column * 18
+            y = PREVIEW_TOP + row * 18
+            recess(px, x, y, 16, 16, SLOT)
+            draw_package(px, x, y)
 
     for row in range(3):
         for column in range(9):

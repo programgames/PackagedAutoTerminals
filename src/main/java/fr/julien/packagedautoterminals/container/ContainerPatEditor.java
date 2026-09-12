@@ -40,18 +40,20 @@ import net.minecraftforge.items.wrapper.InvWrapper;
  */
 public class ContainerPatEditor extends AEBaseContainer {
 
-    public static final int WIDTH = 236;
-    public static final int HEIGHT = 276;
-    /** Coin haut-gauche de la grille des entrées. */
+    // Géométrie de la fenêtre. Ces valeurs doivent rester identiques à celles de
+    // tools/make_gui_texture.py. La disposition reprend celle du Package Recipe Encoder.
+    public static final int WIDTH = 252;
+    public static final int HEIGHT = 282;
+    /** Coin haut-gauche de la grille des entrées, 9 sur 9. */
     public static final int GRID_LEFT = 8;
     public static final int GRID_TOP = 20;
-    /** Coin haut-gauche des sorties. */
-    public static final int OUTPUT_LEFT = 178;
-    public static final int OUTPUT_TOP = 20;
-    /** Coin haut-gauche de l'aperçu du résultat. */
-    public static final int PREVIEW_LEFT = 178;
-    public static final int PREVIEW_TOP = 80;
-    public static final int PLAYER_INVENTORY_TOP = 194;
+    /** Coin haut-gauche des sorties, 3 sur 3. */
+    public static final int OUTPUT_LEFT = 190;
+    public static final int OUTPUT_TOP = 80;
+    /** Coin haut-gauche de l'aperçu des colis, 3 sur 3. */
+    public static final int PREVIEW_LEFT = 190;
+    public static final int PREVIEW_TOP = 140;
+    public static final int PLAYER_INVENTORY_TOP = 200;
 
     private final PartPatTerminal terminal;
     public final EditorInventory editor;
