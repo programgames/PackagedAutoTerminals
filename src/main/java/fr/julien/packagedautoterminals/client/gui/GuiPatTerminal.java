@@ -19,7 +19,7 @@ import thelm.packagedauto.api.IRecipeInfo;
  */
 public class GuiPatTerminal extends AEBaseGui {
 
-    private static final int ROWS = 6;
+    private static final int ROWS = ContainerPatTerminal.ROWS;
     private static final int ROW_HEIGHT = 18;
 
     private final ContainerPatTerminal terminalContainer;
@@ -27,15 +27,16 @@ public class GuiPatTerminal extends AEBaseGui {
     public GuiPatTerminal(InventoryPlayer inventory, PartPatTerminal terminal) {
         super(new ContainerPatTerminal(inventory, terminal));
         this.terminalContainer = (ContainerPatTerminal) inventorySlots;
-        this.xSize = 195;
-        this.ySize = 184;
+        this.xSize = ContainerPatTerminal.WIDTH;
+        this.ySize = ContainerPatTerminal.HEIGHT;
         setScrollBar(new GuiScrollbar());
     }
 
     @Override
     public void initGui() {
         super.initGui();
-        getScrollBar().setLeft(175).setTop(19).setHeight(ROWS * ROW_HEIGHT - 2);
+        getScrollBar().setLeft(175).setTop(ContainerPatTerminal.LIST_TOP)
+                .setHeight(ROWS * ROW_HEIGHT - 2);
     }
 
     @Override
@@ -57,7 +58,7 @@ public class GuiPatTerminal extends AEBaseGui {
 
         for (int row = 0; row < ROWS && first + row < lines.size(); row++) {
             Line line = lines.get(first + row);
-            int y = 19 + row * ROW_HEIGHT;
+            int y = ContainerPatTerminal.LIST_TOP + row * ROW_HEIGHT;
             if (line.machine != null) {
                 drawItem(9, y, line.machine.icon);
                 fontRenderer.drawString(line.machine.name, 28, y + 1, 0x404040);
@@ -87,7 +88,15 @@ public class GuiPatTerminal extends AEBaseGui {
     public void drawBG(int offsetX, int offsetY, int mouseX, int mouseY) {
         // Fond repris d'AE2 : aucune ressource n'est copiée, seule la référence est partagée.
         bindTexture("appliedenergistics2", "guis/newinterfaceterminal.png");
-        drawTexturedModalRect(offsetX, offsetY, 0, 0, xSize, ySize);
+        // La planche d'AE2 fait 256x256 et se découpe en trois morceaux : l'entête, les
+        // lignes, puis le bas avec l'inventaire du joueur.
+        drawTexturedModalRect(offsetX, offsetY, 0, 0, xSize, ContainerPatTerminal.LIST_TOP);
+        for (int row = 0; row < ROWS; row++) {
+            drawTexturedModalRect(offsetX, offsetY + ContainerPatTerminal.LIST_TOP + row * ROW_HEIGHT,
+                    0, ContainerPatTerminal.LIST_TOP, xSize, ROW_HEIGHT);
+        }
+        drawTexturedModalRect(offsetX, offsetY + ContainerPatTerminal.PLAYER_INVENTORY_TOP - 14,
+                0, 158, xSize, 96);
     }
 
     private List<Line> buildLines() {

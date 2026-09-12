@@ -14,7 +14,6 @@ import fr.julien.packagedautoterminals.part.PartPatTerminal;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -27,6 +26,17 @@ public class ContainerPatTerminal extends AEBaseContainer {
 
     /** Intervalle de rafraîchissement, en ticks. Un scan par seconde suffit largement. */
     private static final int REFRESH_TICKS = 20;
+
+    /** Largeur de la fenêtre. Le fond reprend la planche d'AE2. */
+    public static final int WIDTH = 195;
+    /** Hauteur de la fenêtre. */
+    public static final int HEIGHT = 204;
+    /** Nombre de lignes visibles dans la liste. */
+    public static final int ROWS = 5;
+    /** Première ligne de la liste, en pixels. */
+    public static final int LIST_TOP = 19;
+    /** Haut de l'inventaire du joueur, en pixels. */
+    public static final int PLAYER_INVENTORY_TOP = 122;
 
     private final PartPatTerminal terminal;
     private int ticks;
@@ -44,19 +54,11 @@ public class ContainerPatTerminal extends AEBaseContainer {
         // qui retrouve seule la tuile hôte.
         super(inventory, terminal);
         this.terminal = terminal;
-        bindPlayerInventory(inventory);
-    }
 
-    private void bindPlayerInventory(InventoryPlayer inventory) {
-        for (int row = 0; row < 3; row++) {
-            for (int column = 0; column < 9; column++) {
-                addSlotToContainer(new Slot(inventory, column + row * 9 + 9,
-                        8 + column * 18, 161 + row * 18));
-            }
-        }
-        for (int column = 0; column < 9; column++) {
-            addSlotToContainer(new Slot(inventory, column, 8 + column * 18, 219));
-        }
+        // PIÈGE : `AEBaseContainer.addSlotToContainer` refuse un `Slot` vanilla et lève
+        // « Invalid Slot […] for AE Container instead of AppEngSlot ». La fenêtre ne s'ouvre
+        // alors jamais. AE2 fournit sa propre liaison d'inventaire, qui pose des AppEngSlot.
+        bindPlayerInventory(inventory, 0, PLAYER_INVENTORY_TOP);
     }
 
     @Override

@@ -123,6 +123,13 @@ afterEvaluate {
     tasks.matching { it.name == 'runClient' }.all {
         args '--username', 'PAT_Dev'
     }
+
+    // En dev, FML charge le mod depuis le JAR de `build/libs`, et non depuis les classes :
+    // le journal affiche « Source du mod : …\build\libs\packagedautoterminals-….jar ».
+    // Sans cette dépendance, `runClient` peut donc lancer du CODE PÉRIMÉ, sans rien signaler.
+    tasks.matching { it.name == 'runClient' || it.name == 'runServer' }.all {
+        dependsOn 'reobfJar'
+    }
 }
 
 // Garde-fou : ForgeGradle 2.3 et Gradle 4.x ne tournent que sous JDK 8. Échouer ici avec un
@@ -138,4 +145,8 @@ if (!javaVersion.startsWith('1.8')) {
 
 task printCp {
     doLast { sourceSets.main.compileClasspath.each { println "CP: " + it } }
+}
+
+task printRcp {
+    doLast { sourceSets.main.runtimeClasspath.findAll { it.path.contains("PackagedAutoTerminals") }.each { println "RCP: " + it } }
 }
