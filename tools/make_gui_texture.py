@@ -98,7 +98,7 @@ def build():
     return px
 
 
-def write_png(path, px):
+def write_png(path, px, width=SHEET, height=SHEET):
     raw = b""
     for row in px:
         raw += b"\x00" + b"".join(bytes(c) for c in row)
@@ -108,12 +108,70 @@ def write_png(path, px):
                 + struct.pack(">I", zlib.crc32(kind + data) & 0xffffffff))
 
     blob = (b"\x89PNG\r\n\x1a\n"
-            + chunk(b"IHDR", struct.pack(">IIBBBBB", SHEET, SHEET, 8, 6, 0, 0, 0))
+            + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
             + chunk(b"IDAT", zlib.compress(raw, 9))
             + chunk(b"IEND", b""))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as handle:
         handle.write(blob)
+
+
+# --- Planche de l'éditeur -------------------------------------------------------
+# Elle mesure 256 x 512 : la fenêtre fait 276 pixels de haut, donc plus que les 256
+# que suppose `drawTexturedModalRect`. Le dessin passe par
+# `drawModalRectWithCustomSizedTexture`, auquel on donne la taille réelle.
+EDITOR_WIDTH = 236
+EDITOR_HEIGHT = 276
+EDITOR_SHEET_HEIGHT = 512
+
+GRID_LEFT = 8
+GRID_TOP = 20
+OUTPUT_LEFT = 178
+OUTPUT_TOP = 20
+PREVIEW_LEFT = 178
+PREVIEW_TOP = 80
+EDITOR_INVENTORY_TOP = 194
+
+
+def new_editor_sheet():
+    return [[NONE for _ in range(SHEET)] for _ in range(EDITOR_SHEET_HEIGHT)]
+
+
+def build_editor():
+    px = new_editor_sheet()
+
+    fill(px, 0, 0, EDITOR_WIDTH, EDITOR_HEIGHT, PANEL)
+    fill(px, 0, 0, EDITOR_WIDTH, 1, BLACK)
+    fill(px, 0, 0, 1, EDITOR_HEIGHT, BLACK)
+    fill(px, 1, 1, EDITOR_WIDTH - 2, 2, WHITE)
+    fill(px, 1, 1, 2, EDITOR_HEIGHT - 2, WHITE)
+    fill(px, EDITOR_WIDTH - 3, 1, 2, EDITOR_HEIGHT - 1, SHADOW)
+    fill(px, 1, EDITOR_HEIGHT - 3, EDITOR_WIDTH - 1, 2, SHADOW)
+    fill(px, EDITOR_WIDTH - 1, 0, 1, EDITOR_HEIGHT, BLACK)
+    fill(px, 0, EDITOR_HEIGHT - 1, EDITOR_WIDTH, 1, BLACK)
+
+    for row in range(9):
+        for column in range(9):
+            recess(px, GRID_LEFT + column * 18, GRID_TOP + row * 18, 16, 16, SLOT)
+    for row in range(3):
+        for column in range(3):
+            recess(px, OUTPUT_LEFT + column * 18, OUTPUT_TOP + row * 18, 16, 16, SLOT)
+            recess(px, PREVIEW_LEFT + column * 18, PREVIEW_TOP + row * 18, 16, 16, SLOT)
+
+    for row in range(3):
+        for column in range(9):
+            recess(px, SLOT_LEFT + column * SLOT_PITCH,
+                   EDITOR_INVENTORY_TOP + row * SLOT_PITCH, 16, 16, SLOT)
+    for column in range(9):
+        recess(px, SLOT_LEFT + column * SLOT_PITCH,
+               EDITOR_INVENTORY_TOP + HOTBAR_GAP, 16, 16, SLOT)
+
+    return px
+
+
+def write_png_sized(path, px, width, height):
+    """Meme ecriture que write_png, mais pour une planche qui n'est pas carree."""
+    write_png(path, px, width, height)
 
 
 if __name__ == "__main__":
@@ -122,3 +180,10 @@ if __name__ == "__main__":
     write_png(target, build())
     print("Ecrit :", target)
     print("Fenetre", WIDTH, "x", HEIGHT, "| liste", ROWS, "rangees de", ROW_HEIGHT)
+
+    editor = os.path.join("src", "main", "resources", "assets", "packagedautoterminals",
+                          "textures", "guis", "pat_editor.png")
+    write_png_sized(editor, build_editor(), SHEET, EDITOR_SHEET_HEIGHT)
+    print("Ecrit :", editor)
+    print("Editeur", EDITOR_WIDTH, "x", EDITOR_HEIGHT, "sur une planche", SHEET,
+          "x", EDITOR_SHEET_HEIGHT)

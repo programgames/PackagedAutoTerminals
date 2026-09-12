@@ -7,11 +7,13 @@ import appeng.api.config.SecurityPermissions;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.container.AEBaseContainer;
+import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.common.ProviderScanner;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.network.PacketProviderList;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
+import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -158,6 +160,39 @@ public class ContainerPatTerminal extends AEBaseContainer {
         // que le joueur voie sa suppression tout de suite.
         ticks = 0;
         lastSent = null;
+    }
+
+    /**
+     * Ouvre l'éditeur sur une recette existante, ou sur une recette vide.
+     *
+     * <p>Les mêmes vérifications que pour la suppression s'appliquent : la machine doit être
+     * sur cette grille, et le joueur doit avoir le droit {@code BUILD}.
+     */
+    public void openEditor(int dimension, BlockPos pos, int index) {
+        IGridNode node = terminal.getGridNode();
+        IPackageProvidingMachine machine =
+                ProviderScanner.find(node == null ? null : node.getGrid(), dimension, pos);
+        if (machine == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+            return;
+        }
+
+        IRecipeInfo recipe = null;
+        ItemStack holder = machine.getPatternStack();
+        if (!holder.isEmpty() && holder.getItem() instanceof IRecipeListItem) {
+            IRecipeList recipeList = ((IRecipeListItem) holder.getItem()).getRecipeList(holder);
+            List<IRecipeInfo> recipes = recipeList == null ? null : recipeList.getRecipeList();
+            if (recipes != null && index >= 0 && index < recipes.size()) {
+                recipe = recipes.get(index);
+            }
+        }
+
+        EntityPlayer player = getPlayerInv().player;
+        PatGuiHandler.setPendingEdit(player, dimension, pos, index);
+        PatGuiHandler.setPendingRecipe(player, recipe);
+        player.openGui(PackagedAutoTerminals.instance,
+                PatGuiHandler.EDITOR + terminal.getSide().ordinal(), player.world,
+                terminal.getTile().getPos().getX(), terminal.getTile().getPos().getY(),
+                terminal.getTile().getPos().getZ());
     }
 
     @Override

@@ -135,14 +135,15 @@ public class GuiPatTerminal extends AEBaseGui {
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
-        // Maj + clic droit supprime la recette survolée. Le clic seul reste libre pour
-        // l'éditeur, qui arrive dans la suite du lot 3.
-        if (mouseButton == 1 && isShiftKeyDown()) {
+        // Clic droit : ouvrir l'éditeur. Maj + clic droit : supprimer.
+        if (mouseButton == 1) {
             Line line = lineUnder(mouseX - guiLeft, mouseY - guiTop);
             if (line != null && line.recipe != null) {
                 PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(
                         line.owner.dimension, line.owner.pos, line.recipeIndex,
-                        PacketRecipeAction.ACTION_REMOVE));
+                        isShiftKeyDown()
+                                ? PacketRecipeAction.ACTION_REMOVE
+                                : PacketRecipeAction.ACTION_EDIT));
                 return;
             }
         }
@@ -186,6 +187,7 @@ public class GuiPatTerminal extends AEBaseGui {
         addStacks(lines, "gui.packagedautoterminals.inputs", line.recipe.getInputs());
         addStacks(lines, "gui.packagedautoterminals.outputs", line.recipe.getOutputs());
         lines.add("");
+        lines.add(TextFormatting.DARK_GRAY + I18n.format("gui.packagedautoterminals.edit_hint"));
         lines.add(TextFormatting.DARK_GRAY + I18n.format("gui.packagedautoterminals.delete_hint"));
         return lines;
     }

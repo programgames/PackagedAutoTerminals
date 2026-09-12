@@ -1,5 +1,6 @@
 package fr.julien.packagedautoterminals.network;
 
+import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -20,6 +21,12 @@ public class PacketRecipeAction implements IMessage {
 
     /** Supprime la recette d'indice {@link #index}. */
     public static final byte ACTION_REMOVE = 0;
+    /** Ouvre l'éditeur sur la recette d'indice {@link #index}. */
+    public static final byte ACTION_EDIT = 1;
+    /** Écrit la recette de l'éditeur, puis revient au terminal. */
+    public static final byte ACTION_SAVE = 2;
+    /** Change le type de recette dans l'éditeur. {@link #index} vaut 1 en avant, 0 en arrière. */
+    public static final byte ACTION_CYCLE_TYPE = 3;
 
     public int dimension;
     public BlockPos pos = BlockPos.ORIGIN;
@@ -56,12 +63,24 @@ public class PacketRecipeAction implements IMessage {
         public IMessage onMessage(PacketRecipeAction message, MessageContext context) {
             EntityPlayerMP player = context.getServerHandler().player;
             player.getServerWorld().addScheduledTask(() -> {
-                if (!(player.openContainer instanceof ContainerPatTerminal)) {
+                if (player.openContainer instanceof ContainerPatTerminal) {
+                    ContainerPatTerminal container = (ContainerPatTerminal) player.openContainer;
+                    if (message.action == ACTION_REMOVE) {
+                        container.removeRecipe(message.dimension, message.pos, message.index);
+                    } else if (message.action == ACTION_EDIT) {
+                        container.openEditor(message.dimension, message.pos, message.index);
+                    }
                     return;
                 }
-                ContainerPatTerminal container = (ContainerPatTerminal) player.openContainer;
-                if (message.action == ACTION_REMOVE) {
-                    container.removeRecipe(message.dimension, message.pos, message.index);
+                if (player.openContainer instanceof ContainerPatEditor) {
+                    ContainerPatEditor editor = (ContainerPatEditor) player.openContainer;
+                    if (message.action == ACTION_SAVE) {
+                        if (editor.save()) {
+                            editor.backToTerminal();
+                        }
+                    } else if (message.action == ACTION_CYCLE_TYPE) {
+                        editor.cycleRecipeType(message.index == 1);
+                    }
                 }
             });
             return null;
