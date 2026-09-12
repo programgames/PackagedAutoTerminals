@@ -3,6 +3,7 @@ package fr.julien.packagedautoterminals.client.gui;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.widgets.GuiScrollbar;
@@ -13,10 +14,12 @@ import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
+import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.text.TextFormatting;
+import org.lwjgl.input.Keyboard;
 import thelm.packagedauto.api.IRecipeInfo;
 
 /**
@@ -48,6 +51,7 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int COLOR_DIM = 0x808080;
 
     private final ContainerPatTerminal terminalContainer;
+    private GuiTextField search;
 
     public GuiPatTerminal(InventoryPlayer inventory, PartPatTerminal terminal) {
         super(new ContainerPatTerminal(inventory, terminal));
@@ -60,6 +64,18 @@ public class GuiPatTerminal extends AEBaseGui {
     @Override
     public void initGui() {
         super.initGui();
+
+        // Le fond du champ est dessiné dans la planche : le widget ne peint que le texte.
+        String previous = search == null ? "" : search.getText();
+        search = new GuiTextField(0, fontRenderer,
+                guiLeft + ContainerPatTerminal.SEARCH_LEFT + 2,
+                guiTop + ContainerPatTerminal.SEARCH_TOP + 2,
+                ContainerPatTerminal.SEARCH_WIDTH - 4, ContainerPatTerminal.SEARCH_HEIGHT - 4);
+        search.setEnableBackgroundDrawing(false);
+        search.setMaxStringLength(64);
+        search.setTextColor(COLOR_TEXT);
+        search.setText(previous);
+
         getScrollBar()
                 .setLeft(ContainerPatTerminal.SCROLL_LEFT)
                 .setTop(LIST_TOP)
@@ -74,13 +90,17 @@ public class GuiPatTerminal extends AEBaseGui {
 
     @Override
     public void drawFG(int offsetX, int offsetY, int mouseX, int mouseY) {
-        fontRenderer.drawString(I18n.format("gui.packagedautoterminals.pat_terminal"),
+        fontRenderer.drawString(trim(I18n.format("gui.packagedautoterminals.pat_terminal"), 84),
                 LIST_LEFT, 6, COLOR_TEXT);
+        search.drawTextBox();
 
-        // Mesure du lot 2 : elle décide si le découpage en chunks est nécessaire (R2).
+        // Libellé de l'inventaire, et taille du dernier paquet. Cette mesure tranche la
+        // révision R2 : elle dira si le découpage en chunks devient nécessaire.
+        fontRenderer.drawString(I18n.format("gui.packagedautoterminals.inventory"),
+                LIST_LEFT, ContainerPatTerminal.PLAYER_INVENTORY_TOP - 11, COLOR_TEXT);
         String size = terminalContainer.lastPayloadBytes + " o";
         fontRenderer.drawString(size, LIST_LEFT + LIST_WIDTH - fontRenderer.getStringWidth(size),
-                6, COLOR_DIM);
+                ContainerPatTerminal.PLAYER_INVENTORY_TOP - 11, COLOR_DIM);
 
         List<Line> lines = buildLines();
         getScrollBar().setRange(0, Math.max(0, lines.size() - ROWS), 2);
@@ -135,7 +155,23 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     @Override
+    protected void keyTyped(char typedChar, int keyCode) throws IOException {
+        // Échap et la touche d'inventaire doivent fermer la fenêtre, même si le champ a le
+        // focus. Sans cette exception, le joueur reste piégé dans le terminal.
+        if (search.isFocused() && keyCode != Keyboard.KEY_ESCAPE
+                && !mc.gameSettings.keyBindInventory.isActiveAndMatches(keyCode)) {
+            if (search.textboxKeyTyped(typedChar, keyCode)) {
+                // La plage de l'ascenseur est recalculée à chaque dessin ; elle se recale
+                // donc seule sur la liste filtrée.
+                return;
+            }
+        }
+        super.keyTyped(typedChar, keyCode);
+    }
+
+    @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        search.mouseClicked(mouseX, mouseY, mouseButton);
         // Clic gauche sur une machine : nouvelle recette.
         // Clic droit sur une recette : l'éditer. Maj + clic droit : la supprimer.
         Line clicked = lineUnder(mouseX - guiLeft, mouseY - guiTop);
@@ -244,15 +280,55 @@ public class GuiPatTerminal extends AEBaseGui {
         return fontRenderer.trimStringToWidth(text, maxWidth - 6) + "…";
     }
 
+    /**
+     * Construit les rangées affichées, filtrées par la recherche.
+     *
+     * <p>Une machine reste visible si son nom correspond, ou si l'une de ses recettes
+     * correspond. Sans cette règle, une recette trouvée apparaîtrait sans sa machine, et le
+     * joueur ne saurait pas où elle se trouve.
+     */
     private List<Line> buildLines() {
+        String filter = search == null ? "" : search.getText().trim().toLowerCase(Locale.ROOT);
         List<Line> lines = new ArrayList<>();
+
         for (ProviderSnapshot provider : terminalContainer.providers) {
-            lines.add(Line.machine(provider));
+            boolean machineMatches = filter.isEmpty()
+                    || provider.name.toLowerCase(Locale.ROOT).contains(filter);
+
+            List<Line> recipes = new ArrayList<>();
             for (int index = 0; index < provider.recipes.size(); index++) {
-                lines.add(Line.recipe(provider, provider.recipes.get(index), index));
+                IRecipeInfo recipe = provider.recipes.get(index);
+                if (machineMatches || matches(recipe, filter)) {
+                    recipes.add(Line.recipe(provider, recipe, index));
+                }
+            }
+
+            if (machineMatches || !recipes.isEmpty()) {
+                lines.add(Line.machine(provider));
+                lines.addAll(recipes);
             }
         }
         return lines;
+    }
+
+    /** Une recette correspond par son type, ses sorties ou ses entrées. */
+    private boolean matches(IRecipeInfo recipe, String filter) {
+        if (recipe.getRecipeType().getLocalizedNameShort().toLowerCase(Locale.ROOT).contains(filter)) {
+            return true;
+        }
+        for (ItemStack stack : recipe.getOutputs()) {
+            if (!stack.isEmpty()
+                    && stack.getDisplayName().toLowerCase(Locale.ROOT).contains(filter)) {
+                return true;
+            }
+        }
+        for (ItemStack stack : recipe.getInputs()) {
+            if (!stack.isEmpty()
+                    && stack.getDisplayName().toLowerCase(Locale.ROOT).contains(filter)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

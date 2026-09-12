@@ -43,7 +43,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
     /** Largeur de la fenêtre. */
     public static final int WIDTH = 195;
     /** Hauteur de la fenêtre. */
-    public static final int HEIGHT = 212;
+    public static final int HEIGHT = 224;
     /** Nombre de rangées visibles dans la liste. */
     public static final int ROWS = 6;
     /** Hauteur d'une rangée, en pixels. */
@@ -57,7 +57,12 @@ public class ContainerPatTerminal extends AEBaseContainer {
     /** Bord gauche de l'ascenseur. */
     public static final int SCROLL_LEFT = 171;
     /** Haut de l'inventaire du joueur. */
-    public static final int PLAYER_INVENTORY_TOP = 130;
+    public static final int PLAYER_INVENTORY_TOP = 142;
+    /** Champ de recherche, sur la ligne de titre. */
+    public static final int SEARCH_LEFT = 96;
+    public static final int SEARCH_TOP = 4;
+    public static final int SEARCH_WIDTH = 72;
+    public static final int SEARCH_HEIGHT = 12;
 
     private final PartPatTerminal terminal;
     private int ticks;

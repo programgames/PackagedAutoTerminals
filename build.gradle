@@ -67,6 +67,8 @@ dependencies {
     // ForgeGradle remappe ces jars publiés (noms SRG) vers les noms MCP du poste de dev.
     deobfProvided "pat:ae2-uel:${project.ae2uelVersion}@jar"
     deobfProvided "pat:packagedauto:${project.packagedAutoVersion}@jar"
+    // JEI, via HadEnoughItems : même API `mezz.jei.api`, même modid `jei`.
+    deobfProvided "pat:hadenoughitems:${project.jeiVersion}@jar"
 }
 
 // PIÈGE, suite. ForgeGradle ajoute bien les jars déobfusqués au chemin de compilation, mais

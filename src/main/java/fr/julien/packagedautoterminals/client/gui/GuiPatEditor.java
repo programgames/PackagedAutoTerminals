@@ -6,12 +6,15 @@ import appeng.client.gui.AEBaseGui;
 import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.common.EditorInventory;
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
+import fr.julien.packagedautoterminals.network.PacketEditorSlot;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
+import appeng.container.slot.SlotFake;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 import thelm.packagedauto.api.IRecipeType;
@@ -89,6 +92,24 @@ public class GuiPatEditor extends AEBaseGui {
     private void send(byte action, int value) {
         PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(
                 editorContainer.dimension, editorContainer.pos, value, action));
+    }
+
+    /**
+     * Molette sur un emplacement : ajuste sa quantité.
+     *
+     * <p>Maj multiplie le pas par dix, Ctrl par soixante-quatre. Les recettes de traitement
+     * demandent souvent des piles entières.
+     */
+    @Override
+    protected void mouseWheelEvent(int x, int y, int wheel) {
+        Slot slot = getSlot(x, y);
+        if (slot instanceof SlotFake && editorContainer.editor.isEditable(slot.getSlotIndex())) {
+            int step = isCtrlKeyDown() ? 64 : (isShiftKeyDown() ? 10 : 1);
+            PatNetwork.CHANNEL.sendToServer(
+                    new PacketEditorSlot(slot.getSlotIndex(), wheel > 0 ? step : -step));
+            return;
+        }
+        super.mouseWheelEvent(x, y, wheel);
     }
 
     @Override

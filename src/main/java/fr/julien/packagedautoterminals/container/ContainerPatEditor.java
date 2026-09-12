@@ -18,6 +18,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ClickType;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import thelm.packagedauto.api.IPackageProvidingMachine;
@@ -57,6 +58,8 @@ public class ContainerPatEditor extends AEBaseContainer {
     public static final int PREVIEW_LEFT = 190;
     public static final int PREVIEW_TOP = 140;
     public static final int PLAYER_INVENTORY_TOP = 200;
+    /** Quantité maximale d'un emplacement de recette. */
+    public static final int MAX_SLOT_COUNT = 4096;
 
     private final PartPatTerminal terminal;
     public final EditorInventory editor;
@@ -192,6 +195,55 @@ public class ContainerPatEditor extends AEBaseContainer {
             editor.recipeType = id < 0 ? null : RecipeTypeRegistry.getRecipeType(id);
         }
         super.onUpdate(field, oldValue, newValue);
+    }
+
+    /**
+     * Remplit l'éditeur depuis une recette de JEI.
+     *
+     * <p>Le serveur ne fait pas confiance à la correspondance reçue : il impose le type,
+     * puis n'écrit que dans les emplacements que ce type active.
+     */
+    public void fillFromRecipe(int typeId, Int2ObjectMap<ItemStack> transfer) {
+        IRecipeType type = RecipeTypeRegistry.getRecipeType(typeId);
+        if (type == null) {
+            return;
+        }
+        editor.clear();
+        editor.recipeType = type;
+
+        for (Int2ObjectMap.Entry<ItemStack> entry : transfer.int2ObjectEntrySet()) {
+            int slot = entry.getIntKey();
+            if (slot < 0 || slot >= EditorInventory.SIZE || !editor.isEditable(slot)) {
+                continue;
+            }
+            ItemStack stack = entry.getValue();
+            if (!stack.isEmpty()) {
+                editor.setInventorySlotContents(slot, stack.copy());
+            }
+        }
+        editor.updateRecipeInfo();
+        detectAndSendChanges();
+    }
+
+    /**
+     * Ajuste la quantité d'un emplacement.
+     *
+     * <p>La limite haute n'est pas 64 : PackagedAuto sait écrire de grandes quantités, par
+     * {@code MiscUtil.saveItemWithLargeCount}. Les recettes de traitement en ont besoin.
+     */
+    public void changeSlotCount(int slot, int delta) {
+        if (!editor.isEditable(slot)) {
+            return;
+        }
+        ItemStack stack = editor.getStackInSlot(slot);
+        if (stack.isEmpty()) {
+            return;
+        }
+        int count = Math.max(1, Math.min(MAX_SLOT_COUNT, stack.getCount() + delta));
+        ItemStack changed = stack.copy();
+        changed.setCount(count);
+        editor.setInventorySlotContents(slot, changed);
+        detectAndSendChanges();
     }
 
     /**

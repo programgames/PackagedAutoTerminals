@@ -19,7 +19,7 @@ import zlib
 # --- Géométrie de la fenêtre. Ces valeurs sont reprises telles quelles dans
 # --- ContainerPatTerminal. Toute modification ici doit y être répercutée.
 WIDTH = 195
-HEIGHT = 212
+HEIGHT = 224
 
 LIST_LEFT = 8
 LIST_TOP = 18
@@ -31,7 +31,13 @@ LIST_HEIGHT = ROWS * ROW_HEIGHT
 SCROLL_LEFT = 171
 SCROLL_WIDTH = 12
 
-PLAYER_INVENTORY_TOP = 130
+PLAYER_INVENTORY_TOP = 142
+
+# Champ de recherche, sur la ligne de titre.
+SEARCH_LEFT = 96
+SEARCH_TOP = 4
+SEARCH_WIDTH = 72
+SEARCH_HEIGHT = 12
 SLOT_LEFT = 8
 SLOT_PITCH = 18
 HOTBAR_GAP = 58
@@ -82,7 +88,8 @@ def build():
     fill(px, WIDTH - 1, 0, 1, HEIGHT, BLACK)
     fill(px, 0, HEIGHT - 1, WIDTH, 1, BLACK)
 
-    # Zone de liste, et piste de l'ascenseur.
+    # Champ de recherche, zone de liste, et piste de l'ascenseur.
+    recess(px, SEARCH_LEFT, SEARCH_TOP, SEARCH_WIDTH, SEARCH_HEIGHT, LIST)
     recess(px, LIST_LEFT, LIST_TOP, LIST_WIDTH, LIST_HEIGHT, LIST)
     recess(px, SCROLL_LEFT, LIST_TOP, SCROLL_WIDTH, LIST_HEIGHT, SLOT)
 
