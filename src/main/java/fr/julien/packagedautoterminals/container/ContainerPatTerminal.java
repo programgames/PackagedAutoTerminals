@@ -46,11 +46,13 @@ public class ContainerPatTerminal extends AEBaseContainer {
     // Géométrie de la fenêtre. Ces valeurs doivent rester identiques à celles de
     // tools/make_gui_texture.py, qui dessine la planche.
     /** Largeur de la fenêtre. */
-    public static final int WIDTH = 256;
-    /** Hauteur de la fenêtre. */
-    public static final int HEIGHT = 228;
-    /** Nombre de rangées visibles dans la liste. */
-    public static final int ROWS = 6;
+    public static final int WIDTH = 320;
+    /** Rangées visibles. La planche en dessine seize : ce nombre peut grandir sans la refaire. */
+    public static final int ROWS = 12;
+    /** Rangées dessinées dans la planche. Sert à retrouver le bas de la fenêtre. */
+    public static final int SHEET_ROWS = 16;
+    /** Hauteur du bas de la fenêtre : libellé, inventaire, marge. */
+    public static final int FOOTER = 100;
     /** Hauteur d'une rangée, en pixels. */
     public static final int ROW_HEIGHT = 18;
     /** Bord gauche de la zone de liste. */
@@ -58,17 +60,19 @@ public class ContainerPatTerminal extends AEBaseContainer {
     /** Haut de la zone de liste. */
     public static final int LIST_TOP = 22;
     /** Largeur de la zone de liste. */
-    public static final int LIST_WIDTH = 224;
+    public static final int LIST_WIDTH = 288;
+    /** Hauteur de la fenêtre, déduite du nombre de rangées. */
+    public static final int HEIGHT = LIST_TOP + ROWS * ROW_HEIGHT + FOOTER;
     /** Bord gauche de l'ascenseur. */
-    public static final int SCROLL_LEFT = 236;
+    public static final int SCROLL_LEFT = 300;
     /** Décalage horizontal de l'inventaire, pour le centrer dans la fenêtre élargie. */
-    public static final int PLAYER_INVENTORY_OFFSET_X = 39;
+    public static final int PLAYER_INVENTORY_OFFSET_X = 71;
     /** Haut de l'inventaire du joueur. */
-    public static final int PLAYER_INVENTORY_TOP = 146;
+    public static final int PLAYER_INVENTORY_TOP = LIST_TOP + ROWS * ROW_HEIGHT + 16;
     /** Champ de recherche, sur la ligne de titre. */
-    public static final int SEARCH_LEFT = 120;
+    public static final int SEARCH_LEFT = 150;
     public static final int SEARCH_TOP = 4;
-    public static final int SEARCH_WIDTH = 112;
+    public static final int SEARCH_WIDTH = 146;
     public static final int SEARCH_HEIGHT = 12;
 
     private final TerminalContext terminal;

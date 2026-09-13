@@ -10,6 +10,7 @@ import java.util.Set;
 
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.widgets.GuiScrollbar;
+import appeng.client.gui.widgets.MEGuiTextField;
 import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.client.BlockHighlighter;
@@ -25,7 +26,6 @@ import fr.julien.packagedautoterminals.network.PacketRecipeAction;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.common.TerminalContext;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
@@ -71,13 +71,15 @@ public class GuiPatTerminal extends AEBaseGui {
     /** Durée d'affichage d'un message, en millisecondes. */
     private static final long MESSAGE_DURATION = 3_000L;
     private static final int COLOR_OK = 0x2E7D32;
+    /** Taille de la planche, en pixels. */
+    private static final int SHEET = 512;
     /** Bord gauche du bouton, dans la rangée d'un groupe. */
     private static final int LOCATE_LEFT = LIST_LEFT + LIST_WIDTH - LOCATE_SIZE - 2;
 
     private static final int BUTTON_VIEW = 0;
 
     private final ContainerPatTerminal terminalContainer;
-    private GuiTextField search;
+    private MEGuiTextField search;
     private GuiButton viewButton;
     /** Faux : onglet des patterns. Vrai : onglet des machines. */
     private boolean machinesView;
@@ -99,14 +101,15 @@ public class GuiPatTerminal extends AEBaseGui {
         super.initGui();
 
         // Le fond du champ est dessiné dans la planche : le widget ne peint que le texte.
+        // PIÈGE : le champ de texte vanilla dessine son texte avec une ombre portée. Sur un
+        // panneau clair, l'ombre se lit comme une seconde lettre décalée, et tout paraît
+        // flou. Le champ d'AE2 est fait pour ces fonds-là.
         String previous = search == null ? "" : search.getText();
-        search = new GuiTextField(0, fontRenderer,
-                guiLeft + ContainerPatTerminal.SEARCH_LEFT + 2,
-                guiTop + ContainerPatTerminal.SEARCH_TOP + 2,
-                ContainerPatTerminal.SEARCH_WIDTH - 4, ContainerPatTerminal.SEARCH_HEIGHT - 4);
-        search.setEnableBackgroundDrawing(false);
+        search = new MEGuiTextField(fontRenderer,
+                guiLeft + ContainerPatTerminal.SEARCH_LEFT + 1,
+                guiTop + ContainerPatTerminal.SEARCH_TOP + 1,
+                ContainerPatTerminal.SEARCH_WIDTH - 2, ContainerPatTerminal.SEARCH_HEIGHT - 2);
         search.setMaxStringLength(64);
-        search.setTextColor(COLOR_TEXT);
         search.setText(previous);
         // Le champ prend le focus tout de suite : le joueur ouvre le terminal pour chercher.
         search.setFocused(true);
@@ -124,10 +127,22 @@ public class GuiPatTerminal extends AEBaseGui {
                 .setHeight(ROWS * ROW_HEIGHT);
     }
 
+    /**
+     * La planche dessine seize rangées ; la fenêtre n'en montre que {@code ROWS}. Le haut se
+     * copie tel quel, puis le bas de la planche vient se poser juste sous la dernière
+     * rangée affichée. Changer le nombre de rangées ne demande donc pas de redessiner.
+     */
     @Override
     public void drawBG(int offsetX, int offsetY, int mouseX, int mouseY) {
         bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
-        drawTexturedModalRect(offsetX, offsetY, 0, 0, xSize, ySize);
+        int listBottom = ContainerPatTerminal.LIST_TOP + ROWS * ROW_HEIGHT;
+        int sheetBottom = ContainerPatTerminal.LIST_TOP
+                + ContainerPatTerminal.SHEET_ROWS * ROW_HEIGHT;
+
+        drawModalRectWithCustomSizedTexture(offsetX, offsetY, 0, 0, xSize, listBottom,
+                SHEET, SHEET);
+        drawModalRectWithCustomSizedTexture(offsetX, offsetY + listBottom, 0, sheetBottom,
+                xSize, ContainerPatTerminal.FOOTER, SHEET, SHEET);
     }
 
     @Override
@@ -158,15 +173,7 @@ public class GuiPatTerminal extends AEBaseGui {
             fontRenderer.drawString(summary, LIST_LEFT, summaryY, COLOR_TEXT);
         }
 
-        int localX = mouseX - offsetX;
-        int localY = mouseY - offsetY;
-        if (localX >= LIST_LEFT && localX <= LIST_LEFT + fontRenderer.getStringWidth(summary)
-                && localY >= summaryY - 1 && localY <= summaryY + 8) {
-            drawTooltip(localX, localY, java.util.Arrays.asList(
-                    summary,
-                    TextFormatting.GRAY + I18n.format("gui.packagedautoterminals.payload",
-                            terminalContainer.lastPayloadBytes)));
-        }
+
 
         List<Line> lines = buildLines();
         getScrollBar().setRange(0, Math.max(0, lines.size() - ROWS), 2);
@@ -174,8 +181,13 @@ public class GuiPatTerminal extends AEBaseGui {
         if (lines.isEmpty()) {
             // Le message est découpé à la largeur du cadre : sinon il déborde sur
             // l'ascenseur, puis hors de la fenêtre.
+            // Deux causes, deux messages : le réseau est vide, ou la recherche ne donne
+            // rien. Les confondre envoyait le joueur vérifier ses câbles pour rien.
+            boolean filtered = search != null && !search.getText().trim().isEmpty();
             List<String> wrapped = fontRenderer.listFormattedStringToWidth(
-                    I18n.format("gui.packagedautoterminals.empty"), LIST_WIDTH - 10);
+                    I18n.format(filtered
+                            ? "gui.packagedautoterminals.no_result"
+                            : "gui.packagedautoterminals.empty"), LIST_WIDTH - 10);
             for (int row = 0; row < wrapped.size(); row++) {
                 fontRenderer.drawString(wrapped.get(row), LIST_LEFT + 4,
                         LIST_TOP + TEXT_OFFSET + row * 10, COLOR_DIM);
@@ -358,10 +370,9 @@ public class GuiPatTerminal extends AEBaseGui {
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
-        // Échap et la touche d'inventaire doivent fermer la fenêtre, même si le champ a le
-        // focus. Sans cette exception, le joueur reste piégé dans le terminal.
-        if (search.isFocused() && keyCode != Keyboard.KEY_ESCAPE
-                && !mc.gameSettings.keyBindInventory.isActiveAndMatches(keyCode)) {
+        // Le champ garde la main sur toutes les lettres, y compris celle de l'inventaire :
+        // taper « e » dans une recherche fermait la fenêtre. Seule Échap en sort.
+        if (search.isFocused() && keyCode != Keyboard.KEY_ESCAPE) {
             if (search.textboxKeyTyped(typedChar, keyCode)) {
                 // La plage de l'ascenseur est recalculée à chaque dessin ; elle se recale
                 // donc seule sur la liste filtrée.
@@ -495,6 +506,8 @@ public class GuiPatTerminal extends AEBaseGui {
             return lines;
         }
 
+        // Les entrées et les sorties ne figurent plus ici : la liste sert à retrouver une
+        // recette, l'éditeur à la lire en détail.
         lines.add(line.recipe.getRecipeType().getLocalizedName());
         if (!line.group.isComplete(line.recipe)) {
             ProviderRole missing = line.group.missingRole(line.recipe);
@@ -502,32 +515,10 @@ public class GuiPatTerminal extends AEBaseGui {
                     I18n.format("gui.packagedautoterminals.role_"
                             + (missing == null ? "unknown" : missing.name().toLowerCase(Locale.ROOT)))));
         }
-        addStacks(lines, "gui.packagedautoterminals.inputs", line.recipe.getInputs());
-        addStacks(lines, "gui.packagedautoterminals.outputs", line.recipe.getOutputs());
         lines.add("");
         lines.add(TextFormatting.DARK_GRAY + I18n.format("gui.packagedautoterminals.edit_hint"));
         lines.add(TextFormatting.DARK_GRAY + I18n.format("gui.packagedautoterminals.delete_hint"));
         return lines;
-    }
-
-    private void addStacks(List<String> lines, String titleKey, List<ItemStack> stacks) {
-        if (stacks == null || stacks.isEmpty()) {
-            return;
-        }
-        lines.add(TextFormatting.GRAY + I18n.format(titleKey));
-        int shown = 0;
-        for (ItemStack stack : stacks) {
-            if (stack.isEmpty()) {
-                continue;
-            }
-            if (shown == PatConfig.tooltipStacks) {
-                lines.add(TextFormatting.DARK_GRAY + I18n.format(
-                        "gui.packagedautoterminals.more", stacks.size() - shown));
-                return;
-            }
-            lines.add("  " + stack.getCount() + " × " + stack.getDisplayName());
-            shown++;
-        }
     }
 
     /** Résumé lisible du réseau : machines porteuses et recettes encodées. */

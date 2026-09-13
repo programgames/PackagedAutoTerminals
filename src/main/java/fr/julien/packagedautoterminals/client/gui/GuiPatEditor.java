@@ -168,19 +168,49 @@ public class GuiPatEditor extends AEBaseGui {
     /**
      * Molette sur un emplacement : ajuste sa quantité.
      *
+     * <p>La détection se fait ici, et non par {@code mouseWheelEvent} d'AE2 : cette méthode
+     * n'est appelée que sur une fenêtre pourvue d'un ascenseur, et l'éditeur n'en a pas. La
+     * molette ne faisait donc rien.
+     *
      * <p>Maj multiplie le pas par dix, Ctrl par soixante-quatre. Les recettes de traitement
      * demandent souvent des piles entières.
      */
     @Override
-    protected void mouseWheelEvent(int x, int y, int wheel) {
-        Slot slot = getSlot(x, y);
-        if (slot instanceof SlotFake && editorContainer.editor.isEditable(slot.getSlotIndex())) {
-            int step = isCtrlKeyDown() ? 64 : (isShiftKeyDown() ? 10 : 1);
-            PatNetwork.CHANNEL.sendToServer(
-                    new PacketEditorSlot(slot.getSlotIndex(), wheel > 0 ? step : -step));
-            return;
+    public void handleMouseInput() throws IOException {
+        int wheel = org.lwjgl.input.Mouse.getEventDWheel();
+        if (wheel != 0) {
+            int x = org.lwjgl.input.Mouse.getEventX() * width / mc.displayWidth;
+            int y = height - org.lwjgl.input.Mouse.getEventY() * height / mc.displayHeight - 1;
+            Slot slot = slotUnder(x, y);
+            if (slot != null) {
+                int step = isCtrlKeyDown() ? 64 : (isShiftKeyDown() ? 10 : 1);
+                PatNetwork.CHANNEL.sendToServer(
+                        new PacketEditorSlot(slot.getSlotIndex(), wheel > 0 ? step : -step));
+                return;
+            }
         }
-        super.mouseWheelEvent(x, y, wheel);
+        super.handleMouseInput();
+    }
+
+    /**
+     * Emplacement modifiable sous ces coordonnées d'écran, ou {@code null}.
+     *
+     * <p>Le calcul est fait ici plutôt que par {@code getSlot} d'AE2 : nous savons exactement
+     * quels emplacements acceptent une quantité.
+     */
+    private Slot slotUnder(int mouseX, int mouseY) {
+        for (Slot slot : inventorySlots.inventorySlots) {
+            if (!(slot instanceof SlotFake)
+                    || !editorContainer.editor.isEditable(slot.getSlotIndex())) {
+                continue;
+            }
+            int x = guiLeft + slot.xPos;
+            int y = guiTop + slot.yPos;
+            if (mouseX >= x && mouseX < x + 16 && mouseY >= y && mouseY < y + 16) {
+                return slot;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -203,9 +233,8 @@ public class GuiPatEditor extends AEBaseGui {
         // Clic du milieu sur une case remplie : saisir la quantité au clavier. La molette
         // reste là pour les ajustements rapides.
         if (mouseButton == 2) {
-            Slot slot = getSlot(mouseX, mouseY);
-            if (slot instanceof SlotFake && editorContainer.editor.isEditable(slot.getSlotIndex())
-                    && !slot.getStack().isEmpty()) {
+            Slot slot = slotUnder(mouseX, mouseY);
+            if (slot != null && !slot.getStack().isEmpty()) {
                 openAmountField(slot);
                 return;
             }

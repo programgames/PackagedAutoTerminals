@@ -34,38 +34,41 @@ SLOT_PITCH = 18
 HOTBAR_GAP = 58
 
 # --- Terminal ---------------------------------------------------------------------
-SHEET = 256
-WIDTH = 256
-HEIGHT = 228
+SHEET = 512
+WIDTH = 320
+# La liste est dessinée pour le maximum de rangées. Le jeu n'en affiche que ce que la
+# hauteur d'écran permet, et reprend le bas de la planche juste en dessous.
+MAX_ROWS = 16
+FOOTER = 100
 
 LIST_LEFT = 8
 LIST_TOP = 22
-LIST_WIDTH = 224
-ROWS = 6
+LIST_WIDTH = 288
 ROW_HEIGHT = 18
-LIST_HEIGHT = ROWS * ROW_HEIGHT
+LIST_HEIGHT = MAX_ROWS * ROW_HEIGHT
+HEIGHT = LIST_TOP + LIST_HEIGHT + FOOTER
 
-SCROLL_LEFT = 236
+SCROLL_LEFT = 300
 SCROLL_WIDTH = 12
 
-SEARCH_LEFT = 120
+SEARCH_LEFT = 150
 SEARCH_TOP = 4
-SEARCH_WIDTH = 112
+SEARCH_WIDTH = 146
 SEARCH_HEIGHT = 12
 
-TERMINAL_INVENTORY_LEFT = 47
-TERMINAL_INVENTORY_TOP = 146
+TERMINAL_INVENTORY_LEFT = 79
+TERMINAL_INVENTORY_TOP = LIST_TOP + LIST_HEIGHT + 16
 
 # Icône « œil », rangée sous la fenêtre, dans la zone libre de la planche.
-EYE_U = 0
-EYE_V = 232
+EYE_U = 330
+EYE_V = 4
 EYE_SIZE = 12
 
 # --- Éditeur ----------------------------------------------------------------------
 # La planche fait 512 sur 512 : la fenêtre dépasse 256 pixels dans les deux sens.
 EDITOR_SHEET = 512
 EDITOR_WIDTH = 258
-EDITOR_HEIGHT = 312
+EDITOR_HEIGHT = 332
 
 NAME_LEFT = 8
 NAME_TOP = 4
@@ -74,20 +77,22 @@ NAME_HEIGHT = 14
 
 TAB_LEFT = 8
 TAB_TOP = 32
-TAB_COUNT = 10
+TAB_COLUMNS = 10
+TAB_ROWS = 2
+TAB_COUNT = TAB_COLUMNS * TAB_ROWS
 
 GRID_LEFT = 8
-GRID_TOP = 52
+GRID_TOP = 72
 
 RIGHT_COLUMN = 190
-OUTPUT_TOP = 92
-PREVIEW_TOP = 152
+OUTPUT_TOP = 112
+PREVIEW_TOP = 172
 
 EDITOR_ARROW_LEFT = 172
-EDITOR_ARROW_TOP = 124
+EDITOR_ARROW_TOP = 144
 
 EDITOR_INVENTORY_LEFT = 20
-EDITOR_INVENTORY_TOP = 230
+EDITOR_INVENTORY_TOP = 250
 
 
 def sheet(width, height):
@@ -162,8 +167,9 @@ def draw_package(px, x0, y0):
 
 def build_terminal():
     px = sheet(SHEET, SHEET)
-    draw_eye(px, EYE_U, EYE_V)
     frame(px, WIDTH, HEIGHT)
+    # L'icône vit à droite de la fenêtre, dans la zone libre de la planche.
+    draw_eye(px, EYE_U, EYE_V)
     recess(px, SEARCH_LEFT, SEARCH_TOP, SEARCH_WIDTH, SEARCH_HEIGHT, LIST)
     recess(px, LIST_LEFT, LIST_TOP, LIST_WIDTH, LIST_HEIGHT, LIST)
     recess(px, SCROLL_LEFT, LIST_TOP, SCROLL_WIDTH, LIST_HEIGHT, SLOT)
@@ -177,8 +183,10 @@ def build_editor():
 
     recess(px, NAME_LEFT + 2, NAME_TOP + 2, NAME_WIDTH - 4, NAME_HEIGHT - 4, LIST)
 
-    for tab in range(TAB_COUNT):
-        recess(px, TAB_LEFT + tab * SLOT_PITCH, TAB_TOP, 16, 16, SLOT)
+    for row in range(TAB_ROWS):
+        for column in range(TAB_COLUMNS):
+            recess(px, TAB_LEFT + column * SLOT_PITCH, TAB_TOP + row * SLOT_PITCH,
+                   16, 16, SLOT)
 
     for row in range(9):
         for column in range(9):
@@ -224,6 +232,6 @@ if __name__ == "__main__":
     base = os.path.join("src", "main", "resources", "assets", "packagedautoterminals",
                         "textures", "guis")
     write_png(os.path.join(base, "pat_terminal.png"), build_terminal())
-    print("Terminal", WIDTH, "x", HEIGHT, "| liste", ROWS, "rangees")
+    print("Terminal", WIDTH, "x", HEIGHT, "| jusqu'a", MAX_ROWS, "rangees")
     write_png(os.path.join(base, "pat_editor.png"), build_editor())
     print("Editeur", EDITOR_WIDTH, "x", EDITOR_HEIGHT, "sur une planche", EDITOR_SHEET)

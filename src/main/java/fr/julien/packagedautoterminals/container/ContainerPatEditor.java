@@ -56,7 +56,7 @@ public class ContainerPatEditor extends AEBaseContainer {
     // Géométrie de la fenêtre. Ces valeurs doivent rester identiques à celles de
     // tools/make_gui_texture.py. La disposition reprend celle du Package Recipe Encoder.
     public static final int WIDTH = 258;
-    public static final int HEIGHT = 312;
+    public static final int HEIGHT = 332;
     /** Champ de nom du groupe, sur la ligne de titre. */
     public static final int NAME_LEFT = 8;
     public static final int NAME_TOP = 4;
@@ -65,17 +65,20 @@ public class ContainerPatEditor extends AEBaseContainer {
     /** Rangée d'onglets : une case par recette du groupe. */
     public static final int TAB_LEFT = 8;
     public static final int TAB_TOP = 32;
-    public static final int TAB_COUNT = 10;
+    /** Dix colonnes sur deux rangées, comme le Package Recipe Encoder. */
+    public static final int TAB_COLUMNS = 10;
+    public static final int TAB_ROWS = 2;
+    public static final int TAB_COUNT = TAB_COLUMNS * TAB_ROWS;
     /** Coin haut-gauche de la grille des entrées, 9 sur 9. */
     public static final int GRID_LEFT = 8;
-    public static final int GRID_TOP = 52;
+    public static final int GRID_TOP = 72;
     /** Coin haut-gauche des sorties, 3 sur 3. */
     public static final int OUTPUT_LEFT = 190;
-    public static final int OUTPUT_TOP = 92;
+    public static final int OUTPUT_TOP = 112;
     /** Coin haut-gauche de l'aperçu des colis, 3 sur 3. */
     public static final int PREVIEW_LEFT = 190;
-    public static final int PREVIEW_TOP = 152;
-    public static final int PLAYER_INVENTORY_TOP = 230;
+    public static final int PREVIEW_TOP = 172;
+    public static final int PLAYER_INVENTORY_TOP = 250;
     /** Décalage horizontal de l'inventaire. AE2 pose ses cases à 8 + colonne * 18 + décalage. */
     public static final int PLAYER_INVENTORY_OFFSET_X = 12;
     /** Quantité maximale d'un emplacement de recette. */
@@ -104,6 +107,9 @@ public class ContainerPatEditor extends AEBaseContainer {
         this.dimension = dimension;
         this.pos = pos;
         this.index = index;
+        // Sans cette ligne, le cadre vert se posait sur l'onglet de création, car
+        // `currentTab` valait -1 tant qu'aucune bascule n'avait eu lieu.
+        this.currentTab = index;
 
         bindEditorSlots();
         bindPlayerInventory(inventory, PLAYER_INVENTORY_OFFSET_X, PLAYER_INVENTORY_TOP);
@@ -135,7 +141,8 @@ public class ContainerPatEditor extends AEBaseContainer {
         IItemHandler tabHandler = new InvWrapper(tabs);
         for (int tab = 0; tab < TAB_COUNT; tab++) {
             addSlotToContainer(new SlotTab(tabHandler, tab,
-                    TAB_LEFT + tab * 18, TAB_TOP));
+                    TAB_LEFT + (tab % TAB_COLUMNS) * 18,
+                    TAB_TOP + (tab / TAB_COLUMNS) * 18));
         }
 
         for (int row = 0; row < 9; row++) {
@@ -167,10 +174,9 @@ public class ContainerPatEditor extends AEBaseContainer {
             setNotDraggable();
         }
 
-        @Override
-        public boolean isItemValid(ItemStack stack) {
-            return false;
-        }
+        // PIÈGE : ne PAS refuser l'objet ici. AE2 peint en rouge tout emplacement qu'il juge
+        // invalide, et l'onglet se retrouvait barré de rouge. Le clic est de toute façon
+        // intercepté par le conteneur, qui ne déplace jamais rien.
 
         @Override
         public boolean canTakeStack(EntityPlayer player) {
@@ -546,6 +552,12 @@ public class ContainerPatEditor extends AEBaseContainer {
         }
         editor.updateRecipeInfo();
         dirty = false;
+
+        // Envoi complet : la synchronisation par différence laissait la grille vide à
+        // l'écran après un changement d'onglet.
+        for (net.minecraft.inventory.IContainerListener listener : listeners) {
+            listener.sendAllContents(this, getInventory());
+        }
     }
 
     /** Supprime la recette en cours, dans toutes les machines du groupe. */
