@@ -5,7 +5,6 @@ import java.util.List;
 
 import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionSource;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import thelm.packagedauto.api.IPackageProvidingMachine;
 import thelm.packagedauto.api.IRecipeInfo;
@@ -42,9 +41,9 @@ public final class RecipeWriter {
      * lors d'une modification. C'est tout l'intérêt : réparer une paire désynchronisée d'un
      * seul geste. Sans cette règle, la machine en retard resterait en retard.
      *
-     * <p>Une machine sans porte-recettes en reçoit un vierge, pris sur le réseau. Si le
-     * réseau n'en a aucun, elle est comptée dans {@link Result#withoutHolder} et le terminal
-     * le dit, plutôt que de l'ignorer en silence.
+     * <p>Une machine **sans porte-recettes est laissée intacte**, et comptée dans
+     * {@link Result#withoutHolder}. Le terminal le dit, mais ne prend rien dans le réseau de
+     * lui-même : sortir un objet du stockage est une décision du joueur.
      *
      * @param oldRecipe recette visée. {@code null} pour un ajout.
      * @param newRecipe recette à écrire. {@code null} pour une suppression.
@@ -79,14 +78,9 @@ public final class RecipeWriter {
 
         ItemStack holder = machine.getPatternStack();
         if (holder.isEmpty()) {
-            // Une suppression n'a rien à faire sur une machine vide.
-            if (newRecipe == null) {
-                return Outcome.UNCHANGED;
-            }
-            holder = takeBlankHolder(grid, source);
-            if (holder.isEmpty()) {
-                return Outcome.NO_HOLDER;
-            }
+            // Une suppression n'a rien à faire sur une machine vide ; une écriture, elle,
+            // exige un porte-recettes que le joueur aura posé lui-même.
+            return newRecipe == null ? Outcome.UNCHANGED : Outcome.NO_HOLDER;
         }
         if (!(holder.getItem() instanceof IRecipeListItem)) {
             return Outcome.UNCHANGED;
@@ -120,14 +114,6 @@ public final class RecipeWriter {
         holderItem.setRecipeList(holder, recipeList);
         machine.setPatternStack(holder);
         return Outcome.CHANGED;
-    }
-
-    private static ItemStack takeBlankHolder(IGrid grid, IActionSource source) {
-        Item holderItem = NetworkItems.findRecipeHolder();
-        if (holderItem == null) {
-            return ItemStack.EMPTY;
-        }
-        return NetworkItems.extractOne(grid, new ItemStack(holderItem), source);
     }
 
     private static int indexOf(List<IRecipeInfo> recipes, IRecipeInfo recipe) {

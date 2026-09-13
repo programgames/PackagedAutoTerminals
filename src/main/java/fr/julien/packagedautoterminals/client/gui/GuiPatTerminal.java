@@ -200,7 +200,7 @@ public class GuiPatTerminal extends AEBaseGui {
     private void drawLine(Line line, int y) {
         if (line.warning != null) {
             fontRenderer.drawString(trim(line.warning, LIST_WIDTH - 8), LIST_LEFT + 4,
-                    y + TEXT_OFFSET, COLOR_WARNING);
+                    y + TEXT_OFFSET, line.section ? COLOR_TEXT : COLOR_WARNING);
             return;
         }
 
@@ -575,8 +575,42 @@ public class GuiPatTerminal extends AEBaseGui {
      * joueur ne saurait pas où elle se trouve.
      */
     private List<Line> buildLines() {
-        String filter = search == null ? "" : search.getText().trim().toLowerCase(Locale.ROOT);
-        return machinesView ? buildMachineLines(filter) : buildPatternLines(filter);
+        Query query = Query.parse(search == null ? "" : search.getText());
+        return machinesView ? buildMachineLines(query) : buildPatternLines(query);
+    }
+
+    /**
+     * Recherche découpée en critères.
+     *
+     * <p>Trois préfixes, repris des terminaux d'AE2 et de JEI : {@code @} vise le mod
+     * d'origine, {@code #} vise le type de recette, et le reste est cherché dans les noms.
+     * Tous les critères doivent être satisfaits à la fois.
+     */
+    private static final class Query {
+        final List<String> text = new ArrayList<>();
+        final List<String> mods = new ArrayList<>();
+        final List<String> types = new ArrayList<>();
+
+        static Query parse(String raw) {
+            Query query = new Query();
+            for (String token : raw.trim().toLowerCase(Locale.ROOT).split(" +")) {
+                if (token.isEmpty()) {
+                    continue;
+                }
+                if (token.startsWith("@") && token.length() > 1) {
+                    query.mods.add(token.substring(1));
+                } else if (token.startsWith("#") && token.length() > 1) {
+                    query.types.add(token.substring(1));
+                } else {
+                    query.text.add(token);
+                }
+            }
+            return query;
+        }
+
+        boolean isEmpty() {
+            return text.isEmpty() && mods.isEmpty() && types.isEmpty();
+        }
     }
 
     /**
@@ -585,7 +619,7 @@ public class GuiPatTerminal extends AEBaseGui {
      * <p>Une recette est orpheline quand aucun crafter du réseau ne sait exécuter son type.
      * C'est l'erreur la plus fréquente en jeu, et aucun autre mod ne la signale.
      */
-    private List<Line> buildMachineLines(String filter) {
+    private List<Line> buildMachineLines(Query query) {
         List<Line> lines = new ArrayList<>();
 
         Set<String> present = new HashSet<>();
@@ -609,10 +643,28 @@ public class GuiPatTerminal extends AEBaseGui {
             lines.add(Line.warning(I18n.format("gui.packagedautoterminals.orphan", type)));
         }
 
+        // Les crafters d'abord, puis les aiguilleurs. Un Proxy ressemble à un crafter dans
+        // une liste à plat, alors qu'il ne fabrique rien.
+        List<Line> crafters = new ArrayList<>();
+        List<Line> routers = new ArrayList<>();
         for (MachineSnapshot machine : terminalContainer.machines) {
-            if (filter.isEmpty() || machine.name.toLowerCase(Locale.ROOT).contains(filter)) {
-                lines.add(Line.crafter(machine));
+            if (!query.isEmpty() && !matchesText(query, machine.name)) {
+                continue;
             }
+            if (CrafterTypes.isRouter(machine.machineClass)) {
+                routers.add(Line.crafter(machine));
+            } else {
+                crafters.add(Line.crafter(machine));
+            }
+        }
+
+        if (!crafters.isEmpty()) {
+            lines.add(Line.section(I18n.format("gui.packagedautoterminals.section_crafters")));
+            lines.addAll(crafters);
+        }
+        if (!routers.isEmpty()) {
+            lines.add(Line.section(I18n.format("gui.packagedautoterminals.section_routers")));
+            lines.addAll(routers);
         }
         return lines;
     }
@@ -624,17 +676,18 @@ public class GuiPatTerminal extends AEBaseGui {
      * afficher séparément montrerait deux fois la même chose, et inviterait à n'en modifier
      * qu'une.
      */
-    private List<Line> buildPatternLines(String filter) {
+    private List<Line> buildPatternLines(Query query) {
         List<Line> lines = new ArrayList<>();
 
         for (ProviderPairing.Group group : ProviderPairing.group(terminalContainer.providers)) {
-            boolean titleMatches = filter.isEmpty()
-                    || groupTitle(group).toLowerCase(Locale.ROOT).contains(filter);
+            boolean titleMatches = query.isEmpty()
+                    || (query.types.isEmpty() && query.mods.isEmpty()
+                            && matchesText(query, groupTitle(group)));
 
             List<Line> recipes = new ArrayList<>();
             for (int index = 0; index < group.recipes.size(); index++) {
                 IRecipeInfo recipe = group.recipes.get(index);
-                if (titleMatches || matches(recipe, filter)) {
+                if (titleMatches || matches(recipe, query)) {
                     recipes.add(Line.recipe(group, recipe, index));
                 }
             }
@@ -647,24 +700,79 @@ public class GuiPatTerminal extends AEBaseGui {
         return lines;
     }
 
-    /** Une recette correspond par son type, ses sorties ou ses entrées. */
-    private boolean matches(IRecipeInfo recipe, String filter) {
-        if (recipe.getRecipeType().getLocalizedNameShort().toLowerCase(Locale.ROOT).contains(filter)) {
+    /** Une recette satisfait-elle **tous** les critères ? */
+    private boolean matches(IRecipeInfo recipe, Query query) {
+        if (query.isEmpty()) {
             return true;
         }
-        for (ItemStack stack : recipe.getOutputs()) {
-            if (!stack.isEmpty()
-                    && stack.getDisplayName().toLowerCase(Locale.ROOT).contains(filter)) {
-                return true;
+
+        for (String type : query.types) {
+            String name = recipe.getRecipeType().getLocalizedNameShort().toLowerCase(Locale.ROOT);
+            String id = recipe.getRecipeType().getName().getResourcePath().toLowerCase(Locale.ROOT);
+            if (!name.contains(type) && !id.contains(type)) {
+                return false;
             }
         }
-        for (ItemStack stack : recipe.getInputs()) {
-            if (!stack.isEmpty()
-                    && stack.getDisplayName().toLowerCase(Locale.ROOT).contains(filter)) {
+
+        for (String mod : query.mods) {
+            if (!hasMod(recipe, mod)) {
+                return false;
+            }
+        }
+
+        for (String text : query.text) {
+            if (!hasText(recipe, text)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Un des objets de la recette vient-il de ce mod ? */
+    private boolean hasMod(IRecipeInfo recipe, String mod) {
+        for (ItemStack stack : allStacks(recipe)) {
+            if (stack.getItem().getRegistryName() != null
+                    && stack.getItem().getRegistryName().getResourceDomain()
+                            .toLowerCase(Locale.ROOT).contains(mod)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /** Un des objets de la recette porte-t-il ce texte dans son nom ? */
+    private boolean hasText(IRecipeInfo recipe, String text) {
+        for (ItemStack stack : allStacks(recipe)) {
+            if (stack.getDisplayName().toLowerCase(Locale.ROOT).contains(text)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<ItemStack> allStacks(IRecipeInfo recipe) {
+        List<ItemStack> stacks = new ArrayList<>();
+        for (ItemStack stack : recipe.getOutputs()) {
+            if (!stack.isEmpty()) {
+                stacks.add(stack);
+            }
+        }
+        for (ItemStack stack : recipe.getInputs()) {
+            if (!stack.isEmpty()) {
+                stacks.add(stack);
+            }
+        }
+        return stacks;
+    }
+
+    private boolean matchesText(Query query, String name) {
+        String lower = name.toLowerCase(Locale.ROOT);
+        for (String text : query.text) {
+            if (!lower.contains(text)) {
+                return false;
+            }
+        }
+        return !query.text.isEmpty();
     }
 
     /**
@@ -687,6 +795,7 @@ public class GuiPatTerminal extends AEBaseGui {
         final int recipeIndex;
         final MachineSnapshot crafter;
         final String warning;
+        boolean section;
 
         static Line group(ProviderPairing.Group group) {
             return new Line(group, null, -1, null, null);
@@ -702,6 +811,13 @@ public class GuiPatTerminal extends AEBaseGui {
 
         static Line warning(String warning) {
             return new Line(null, null, -1, null, warning);
+        }
+
+        /** Intertitre de l'onglet Machines : « Crafters », puis « Aiguilleurs ». */
+        static Line section(String title) {
+            Line line = new Line(null, null, -1, null, title);
+            line.section = true;
+            return line;
         }
 
         boolean isGroupHeader() {

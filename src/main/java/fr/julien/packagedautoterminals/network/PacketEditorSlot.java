@@ -18,24 +18,33 @@ public class PacketEditorSlot implements IMessage {
 
     public int slot;
     public int delta;
+    /** Vrai : {@link #delta} est la quantité voulue. Faux : c'est un pas à ajouter. */
+    public boolean absolute;
 
     public PacketEditorSlot() {}
 
     public PacketEditorSlot(int slot, int delta) {
+        this(slot, delta, false);
+    }
+
+    public PacketEditorSlot(int slot, int amount, boolean absolute) {
         this.slot = slot;
-        this.delta = delta;
+        this.delta = amount;
+        this.absolute = absolute;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
         slot = buf.readInt();
         delta = buf.readInt();
+        absolute = buf.readBoolean();
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
         buf.writeInt(slot);
         buf.writeInt(delta);
+        buf.writeBoolean(absolute);
     }
 
     public static class Handler implements IMessageHandler<PacketEditorSlot, IMessage> {
@@ -44,8 +53,12 @@ public class PacketEditorSlot implements IMessage {
             EntityPlayerMP player = context.getServerHandler().player;
             player.getServerWorld().addScheduledTask(() -> {
                 if (player.openContainer instanceof ContainerPatEditor) {
-                    ((ContainerPatEditor) player.openContainer)
-                            .changeSlotCount(message.slot, message.delta);
+                    ContainerPatEditor editor = (ContainerPatEditor) player.openContainer;
+                    if (message.absolute) {
+                        editor.setSlotCount(message.slot, message.delta);
+                    } else {
+                        editor.changeSlotCount(message.slot, message.delta);
+                    }
                 }
             });
             return null;

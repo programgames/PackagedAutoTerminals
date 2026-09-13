@@ -68,3 +68,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=Wireless PackagedAuto Term
 gui.packagedautoterminals.not_linked=This terminal is not linked to a network
 gui.packagedautoterminals.no_power=This terminal has no power left
 gui.packagedautoterminals.out_of_range=Out of range
+gui.packagedautoterminals.insert_holder_first=Insert a Package Recipe Holder into this machine first
+gui.packagedautoterminals.skipped_no_holder=%d machines have no recipe holder and were left alone
+gui.packagedautoterminals.section_crafters=Crafters
+gui.packagedautoterminals.section_routers=Routers

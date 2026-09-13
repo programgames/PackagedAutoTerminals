@@ -308,6 +308,11 @@ public class ContainerPatEditor extends AEBaseContainer {
      * <p>La limite haute n'est pas 64 : PackagedAuto sait écrire de grandes quantités, par
      * {@code MiscUtil.saveItemWithLargeCount}. Les recettes de traitement en ont besoin.
      */
+    /** Fixe la quantité d'un emplacement, saisie au clavier. */
+    public void setSlotCount(int slot, int amount) {
+        changeSlotCount(slot, amount - editor.getStackInSlot(slot).getCount());
+    }
+
     public void changeSlotCount(int slot, int delta) {
         if (!editor.isEditable(slot)) {
             return;
@@ -379,7 +384,7 @@ public class ContainerPatEditor extends AEBaseContainer {
                         : "gui.packagedautoterminals.applied_to",
                 result.changed);
         if (result.withoutHolder > 0) {
-            tell("gui.packagedautoterminals.no_blank_holder");
+            tell("gui.packagedautoterminals.skipped_no_holder", result.withoutHolder);
         } else if (result.changed == 1 && missing != null) {
             tell("gui.packagedautoterminals.no_partner");
         }

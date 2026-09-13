@@ -43,7 +43,30 @@ public final class CrafterTypes {
         map("packagedavaritia", "extreme", "thelm.packagedavaritia.tile.TileExtremeCrafter");
     }
 
+    /**
+     * Machines qui **transmettent** un colis sans rien fabriquer.
+     *
+     * <ul>
+     *   <li>le Positioned Package Distributor envoie chaque colis à une position marquée,
+     *       pour le type de recette {@code Positioned} ;
+     *   <li>le Package Crafting Machine Proxy relaie vers une machine désignée par un
+     *       marqueur, souvent trop loin pour toucher l'Unpackager.
+     * </ul>
+     *
+     * <p>Les deux acceptent des colis, donc l'API les donne pour des machines d'exécution.
+     * Les mêler aux crafters ferait croire qu'ils savent produire.
+     */
+    private static final java.util.Set<String> ROUTERS = new java.util.HashSet<>(
+            java.util.Arrays.asList(
+                    "thelm.packagedauto.tile.TileDistributor",
+                    "thelm.packagedauto.tile.TileCraftingProxy"));
+
     private CrafterTypes() {}
+
+    /** Cette machine se contente-t-elle d'aiguiller les colis ? */
+    public static boolean isRouter(String machineClass) {
+        return ROUTERS.contains(machineClass);
+    }
 
     private static void map(String modid, String type, String machineClass) {
         MACHINE_BY_TYPE.put(new ResourceLocation(modid, type), machineClass);

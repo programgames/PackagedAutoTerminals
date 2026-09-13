@@ -66,6 +66,9 @@ public class GuiPatEditor extends AEBaseGui {
     private GuiButton saveButton;
     private GuiButton deleteButton;
     private GuiTextField nameField;
+    /** Petite boîte de saisie de quantité, ouverte au clic du milieu. */
+    private GuiTextField amountField;
+    private int amountSlot = -1;
 
     private int lastFeedbackCount;
     private String message = "";
@@ -184,6 +187,9 @@ public class GuiPatEditor extends AEBaseGui {
     public void updateScreen() {
         super.updateScreen();
         nameField.updateCursorCounter();
+        if (amountField != null) {
+            amountField.updateCursorCounter();
+        }
 
         // Le nom vient du serveur. On ne l'écrase que si le joueur n'est pas en train de
         // l'écrire, sans quoi chaque cycle effacerait sa saisie.
@@ -194,12 +200,72 @@ public class GuiPatEditor extends AEBaseGui {
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        // Clic du milieu sur une case remplie : saisir la quantité au clavier. La molette
+        // reste là pour les ajustements rapides.
+        if (mouseButton == 2) {
+            Slot slot = getSlot(mouseX, mouseY);
+            if (slot instanceof SlotFake && editorContainer.editor.isEditable(slot.getSlotIndex())
+                    && !slot.getStack().isEmpty()) {
+                openAmountField(slot);
+                return;
+            }
+        }
+        if (amountField != null) {
+            closeAmountField();
+        }
+
         nameField.mouseClicked(mouseX, mouseY, mouseButton);
         super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
+    private void openAmountField(Slot slot) {
+        amountSlot = slot.getSlotIndex();
+        amountField = new GuiTextField(1, fontRenderer,
+                guiLeft + slot.xPos - 2, guiTop + slot.yPos - 12, 40, 11);
+        amountField.setMaxStringLength(4);
+        amountField.setText(String.valueOf(slot.getStack().getCount()));
+        amountField.setFocused(true);
+        amountField.setSelectionPos(0);
+        nameField.setFocused(false);
+    }
+
+    private void closeAmountField() {
+        amountField = null;
+        amountSlot = -1;
+    }
+
+    private void applyAmountField() {
+        if (amountField == null) {
+            return;
+        }
+        try {
+            int amount = Integer.parseInt(amountField.getText().trim());
+            PatNetwork.CHANNEL.sendToServer(new PacketEditorSlot(amountSlot, amount, true));
+        } catch (NumberFormatException ignored) {
+            // Une saisie vide ou fautive ne change rien, et ne mérite pas d'erreur.
+        }
+        closeAmountField();
+    }
+
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
+        if (amountField != null) {
+            if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
+                applyAmountField();
+                return;
+            }
+            if (keyCode == Keyboard.KEY_ESCAPE) {
+                closeAmountField();
+                return;
+            }
+            // Seuls les chiffres et l'effacement ont un sens ici.
+            if (Character.isDigit(typedChar) || keyCode == Keyboard.KEY_BACK
+                    || keyCode == Keyboard.KEY_DELETE || keyCode == Keyboard.KEY_LEFT
+                    || keyCode == Keyboard.KEY_RIGHT) {
+                amountField.textboxKeyTyped(typedChar, keyCode);
+            }
+            return;
+        }
         if (nameField.isFocused()) {
             if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
                 sendName();
@@ -223,6 +289,12 @@ public class GuiPatEditor extends AEBaseGui {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         super.drawScreen(mouseX, mouseY, partialTicks);
         nameField.drawTextBox();
+        if (amountField != null) {
+            // Un fond plein derrière la boîte : posée sur la grille, elle serait illisible.
+            drawRect(amountField.x - 2, amountField.y - 2,
+                    amountField.x + amountField.width + 2, amountField.y + 12, 0xFF202020);
+            amountField.drawTextBox();
+        }
     }
 
     @Override

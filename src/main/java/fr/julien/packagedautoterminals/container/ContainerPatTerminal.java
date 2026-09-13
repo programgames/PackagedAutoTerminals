@@ -185,21 +185,21 @@ public class ContainerPatTerminal extends AEBaseContainer {
     }
 
     /**
-     * Prépare une nouvelle recette sur cette machine, puis ouvre l'éditeur.
+     * Ouvre l'éditeur sur une recette neuve.
      *
-     * <p>Si la machine n'a pas de porte-recettes, le terminal en prend un vierge sur le
-     * réseau ME et l'y insère (décision D10). Sans porte-recettes disponible, il refuse et
-     * l'explique dans la barre d'action.
+     * <p>Le terminal ne sort **rien** du réseau de lui-même : si la machine n'a pas de
+     * porte-recettes, il refuse et le dit. Sortir un objet du stockage reste une décision du
+     * joueur.
      */
     public void newRecipe(int dimension, BlockPos pos) {
-        IGrid grid = terminal.grid();
+        IGrid grid = grid();
         IPackageProvidingMachine machine = ProviderScanner.find(grid, dimension, pos);
         if (machine == null || !hasAccess(SecurityPermissions.BUILD, false)) {
             return;
         }
 
-        if (machine.getPatternStack().isEmpty() && !insertBlankHolder(grid, machine)) {
-            tell("gui.packagedautoterminals.no_blank_holder");
+        if (machine.getPatternStack().isEmpty()) {
+            tell("gui.packagedautoterminals.insert_holder_first");
             return;
         }
         openEditor(dimension, pos, -1);
@@ -251,22 +251,13 @@ public class ContainerPatTerminal extends AEBaseContainer {
             tell("gui.packagedautoterminals.network_full");
         } else if (removed == 0) {
             tell("gui.packagedautoterminals.no_holder_here");
+        } else {
+            tell(removed == 1
+                            ? "gui.packagedautoterminals.applied_to_one"
+                            : "gui.packagedautoterminals.applied_to",
+                    removed);
         }
         refreshNow();
-    }
-
-    /** Prend un porte-recettes vierge sur le réseau, et le pose dans la machine. */
-    private boolean insertBlankHolder(IGrid grid, IPackageProvidingMachine machine) {
-        Item holderItem = NetworkItems.findRecipeHolder();
-        if (holderItem == null) {
-            return false;
-        }
-        ItemStack holder = NetworkItems.extractOne(grid, new ItemStack(holderItem), getActionSource());
-        if (holder.isEmpty()) {
-            return false;
-        }
-        machine.setPatternStack(holder);
-        return true;
     }
 
     /** Message affiché dans la fenêtre, et non dans la barre d'action. */
