@@ -88,6 +88,8 @@ public class GuiPatTerminal extends AEBaseGui {
         search.setMaxStringLength(64);
         search.setTextColor(COLOR_TEXT);
         search.setText(previous);
+        // Le champ prend le focus tout de suite : le joueur ouvre le terminal pour chercher.
+        search.setFocused(true);
 
         buttonList.clear();
         if (PatConfig.machinesTab) {
@@ -116,15 +118,27 @@ public class GuiPatTerminal extends AEBaseGui {
                     trim(I18n.format("gui.packagedautoterminals.pat_terminal"), 84),
                     LIST_LEFT, 6, COLOR_TEXT);
         }
-        search.drawTextBox();
 
-        // Libellé de l'inventaire, et taille du dernier paquet. Cette mesure tranche la
-        // révision R2 : elle dira si le découpage en chunks devient nécessaire.
+        // Libellé de l'inventaire, et résumé du réseau. Le résumé parle au joueur ; la
+        // taille du paquet, qui ne dit rien à personne, passe dans l'infobulle. Elle sert à
+        // trancher la révision R2.
+        int summaryY = ContainerPatTerminal.PLAYER_INVENTORY_TOP - 11;
         fontRenderer.drawString(I18n.format("gui.packagedautoterminals.inventory"),
-                LIST_LEFT, ContainerPatTerminal.PLAYER_INVENTORY_TOP - 11, COLOR_TEXT);
-        String size = terminalContainer.lastPayloadBytes + " o";
-        fontRenderer.drawString(size, LIST_LEFT + LIST_WIDTH - fontRenderer.getStringWidth(size),
-                ContainerPatTerminal.PLAYER_INVENTORY_TOP - 11, COLOR_DIM);
+                LIST_LEFT, summaryY, COLOR_TEXT);
+
+        String summary = networkSummary();
+        int summaryX = LIST_LEFT + LIST_WIDTH - fontRenderer.getStringWidth(summary);
+        fontRenderer.drawString(summary, summaryX, summaryY, COLOR_DIM);
+
+        int localX = mouseX - offsetX;
+        int localY = mouseY - offsetY;
+        if (localX >= summaryX && localX <= LIST_LEFT + LIST_WIDTH
+                && localY >= summaryY - 1 && localY <= summaryY + 8) {
+            drawTooltip(localX, localY, java.util.Arrays.asList(
+                    summary,
+                    TextFormatting.GRAY + I18n.format("gui.packagedautoterminals.payload",
+                            terminalContainer.lastPayloadBytes)));
+        }
 
         List<Line> lines = buildLines();
         getScrollBar().setRange(0, Math.max(0, lines.size() - ROWS), 2);
@@ -215,6 +229,28 @@ public class GuiPatTerminal extends AEBaseGui {
             return;
         }
         super.actionPerformed(button);
+    }
+
+    @Override
+    public void updateScreen() {
+        super.updateScreen();
+        // Sans cet appel, le trait du curseur ne clignote jamais : le joueur croit que le
+        // champ n'a pas le focus.
+        search.updateCursorCounter();
+    }
+
+    /**
+     * Le champ de recherche se dessine ici, et non dans {@code drawFG}.
+     *
+     * <p>PIÈGE corrigé : il porte des coordonnées **absolues**, car {@code mouseClicked} lui
+     * transmet des coordonnées absolues. Or {@code drawFG} dessine dans un repère déjà
+     * décalé à l'angle de la fenêtre. Le texte partait donc deux fois plus loin, hors de
+     * l'écran : ni le texte saisi, ni le curseur n'étaient visibles.
+     */
+    @Override
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        super.drawScreen(mouseX, mouseY, partialTicks);
+        search.drawTextBox();
     }
 
     @Override
@@ -338,6 +374,16 @@ public class GuiPatTerminal extends AEBaseGui {
             lines.add("  " + stack.getCount() + " × " + stack.getDisplayName());
             shown++;
         }
+    }
+
+    /** Résumé lisible du réseau : machines porteuses et recettes encodées. */
+    private String networkSummary() {
+        int recipes = 0;
+        for (ProviderSnapshot provider : terminalContainer.providers) {
+            recipes += provider.recipes.size();
+        }
+        return I18n.format("gui.packagedautoterminals.summary",
+                terminalContainer.providers.size(), recipes);
     }
 
     private String stateOf(ProviderSnapshot machine) {

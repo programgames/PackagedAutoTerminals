@@ -19,10 +19,10 @@ import zlib
 # --- Géométrie de la fenêtre. Ces valeurs sont reprises telles quelles dans
 # --- ContainerPatTerminal. Toute modification ici doit y être répercutée.
 WIDTH = 195
-HEIGHT = 224
+HEIGHT = 228
 
 LIST_LEFT = 8
-LIST_TOP = 18
+LIST_TOP = 22
 LIST_WIDTH = 160
 ROWS = 6
 ROW_HEIGHT = 18
@@ -31,7 +31,7 @@ LIST_HEIGHT = ROWS * ROW_HEIGHT
 SCROLL_LEFT = 171
 SCROLL_WIDTH = 12
 
-PLAYER_INVENTORY_TOP = 142
+PLAYER_INVENTORY_TOP = 146
 
 # Champ de recherche, sur la ligne de titre.
 SEARCH_LEFT = 96

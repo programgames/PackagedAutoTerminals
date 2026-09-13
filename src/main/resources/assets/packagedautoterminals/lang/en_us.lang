@@ -35,3 +35,5 @@ gui.packagedautoterminals.orphan_help=A recipe of this type cannot be executed.
 gui.packagedautoterminals.remove_holder_hint=Shift + left click: send the holder to the network
 gui.packagedautoterminals.no_holder_here=This machine holds no recipe holder
 gui.packagedautoterminals.network_full=The network cannot store the holder
+gui.packagedautoterminals.summary=%d machines, %d recipes
+gui.packagedautoterminals.payload=Network snapshot: %d bytes
