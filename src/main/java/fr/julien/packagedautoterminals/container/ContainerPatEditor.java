@@ -11,6 +11,7 @@ import appeng.container.AEBaseContainer;
 import appeng.container.guisync.GuiSync;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.common.EditorInventory;
+import fr.julien.packagedautoterminals.common.GroupNames;
 import fr.julien.packagedautoterminals.common.ProviderPairing;
 import fr.julien.packagedautoterminals.common.ProviderRole;
 import fr.julien.packagedautoterminals.common.ProviderScanner;
@@ -26,6 +27,7 @@ import net.minecraft.item.ItemStack;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.world.World;
 import net.minecraft.util.math.BlockPos;
 import thelm.packagedauto.api.IPackageProvidingMachine;
 import thelm.packagedauto.api.IRecipeInfo;
@@ -73,7 +75,14 @@ public class ContainerPatEditor extends AEBaseContainer {
     /** Machine visée, et rang de la recette. Un rang négatif signifie « nouvelle recette ». */
     public final int dimension;
     public final BlockPos pos;
-    public final int index;
+    /**
+     * Rang de la recette dans le groupe. Négatif tant qu'elle n'existe pas.
+     *
+     * <p>Il n'est pas final : après l'enregistrement d'une recette neuve, l'éditeur bascule
+     * sur la recette créée. Sans cela, un second appui sur Enregistrer en ajouterait une
+     * copie.
+     */
+    private int index;
 
     public ContainerPatEditor(InventoryPlayer inventory, PartPatTerminal terminal,
                               EditorInventory editor, int dimension, BlockPos pos, int index) {
@@ -191,6 +200,12 @@ public class ContainerPatEditor extends AEBaseContainer {
     @Override
     public void detectAndSendChanges() {
         recipeTypeId = editor.recipeType == null ? -1 : RecipeTypeRegistry.getId(editor.recipeType);
+
+        // Le nom est relu à chaque cycle : une autre fenêtre a pu le changer.
+        World world = getPlayerInv().player.world;
+        if (!world.isRemote) {
+            groupName = GroupNames.get(world).get(pos);
+        }
         super.detectAndSendChanges();
     }
 
@@ -315,8 +330,63 @@ public class ContainerPatEditor extends AEBaseContainer {
         } else if (result.changed == 1 && missing != null) {
             tell("gui.packagedautoterminals.no_partner");
         }
+
+        // L'éditeur suit la recette qu'il vient d'écrire : le prochain enregistrement la
+        // modifiera, au lieu d'en créer une copie.
+        ProviderPairing.Group after =
+                ProviderPairing.groupOf(ProviderPairing.group(ProviderScanner.scan(grid)),
+                        dimension, pos);
+        if (after != null) {
+            for (int i = 0; i < after.recipes.size(); i++) {
+                if (after.recipes.get(i).equals(editor.recipeInfo)) {
+                    index = i;
+                    break;
+                }
+            }
+        }
         return true;
     }
+
+    /**
+     * Écrit le nom du groupe dans **toutes** ses machines.
+     *
+     * <p>Le nom est rangé par machine, car un groupe se recompose à chaque scan. Voir
+     * {@link GroupNames}.
+     */
+    public void renameGroup(String name) {
+        IGridNode node = terminal.getGridNode();
+        IGrid grid = node == null ? null : node.getGrid();
+        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+            return;
+        }
+        ProviderPairing.Group group =
+                ProviderPairing.groupOf(ProviderPairing.group(ProviderScanner.scan(grid)),
+                        dimension, pos);
+        if (group == null) {
+            return;
+        }
+
+        World world = getPlayerInv().player.world;
+        for (ProviderSnapshot machine : group.machines) {
+            World target = world.provider.getDimension() == machine.dimension
+                    ? world
+                    : net.minecraftforge.common.DimensionManager.getWorld(machine.dimension);
+            if (target != null) {
+                GroupNames.get(target).set(machine.pos, name);
+            }
+        }
+        groupName = name == null ? "" : name;
+        tell("gui.packagedautoterminals.renamed");
+    }
+
+    /**
+     * Nom courant du groupe.
+     *
+     * <p>{@code SyncData} d'AE2 sait transmettre une chaîne : le champ part donc vers le
+     * client sans paquet supplémentaire.
+     */
+    @GuiSync(1)
+    public String groupName = "";
 
     /** Message court dans la barre d'action du joueur. */
     private void tell(String key, Object... arguments) {

@@ -71,21 +71,38 @@ public final class ProviderPairing {
             return null;
         }
 
-        /**
-         * Nom affiché du groupe.
-         *
-         * <p>Volontairement court : le nom de la première machine, puis le nombre des
-         * autres. Les noms complets tiennent dans l'infobulle. Aligner « Packager +
-         * Unpackager » sur une rangée obligerait à couper le texte dès qu'un addon choisit
-         * un nom long.
-         */
-        public String title() {
+        /** Nom donné par le joueur, ou {@code null}. Le premier trouvé fait foi. */
+        public String customName() {
+            for (ProviderSnapshot machine : machines) {
+                if (machine.customName != null && !machine.customName.isEmpty()) {
+                    return machine.customName;
+                }
+            }
+            return null;
+        }
+
+        /** Le groupe est-il exactement une paire Packager et Unpackager ? */
+        public boolean isPair() {
+            if (machines.size() != 2) {
+                return false;
+            }
+            ProviderRole first = machines.get(0).role;
+            ProviderRole second = machines.get(1).role;
+            return first.needsPartner() && second == first.partner();
+        }
+
+        /** Nom de la seule machine du groupe. */
+        public String singleName() {
             Set<String> names = new LinkedHashSet<>();
             for (ProviderSnapshot machine : machines) {
                 names.add(machine.name);
             }
-            String first = names.iterator().next();
-            return names.size() == 1 ? first : first + " +" + (names.size() - 1);
+            return names.iterator().next();
+        }
+
+        /** Machines distinctes, pour l'infobulle. */
+        public int size() {
+            return machines.size();
         }
     }
 

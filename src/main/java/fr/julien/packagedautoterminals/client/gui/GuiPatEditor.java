@@ -8,15 +8,18 @@ import fr.julien.packagedautoterminals.common.EditorInventory;
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.network.PacketEditorSlot;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
+import fr.julien.packagedautoterminals.network.PacketRenameGroup;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
 import appeng.container.slot.SlotFake;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
+import org.lwjgl.input.Keyboard;
 import thelm.packagedauto.api.IRecipeType;
 
 /**
@@ -35,6 +38,7 @@ public class GuiPatEditor extends AEBaseGui {
     private static final int BUTTON_PREVIOUS_TYPE = 0;
     private static final int BUTTON_NEXT_TYPE = 1;
     private static final int BUTTON_SAVE = 2;
+    private static final int BUTTON_BACK = 3;
 
     private static final int SHEET_WIDTH = 256;
     private static final int SHEET_HEIGHT = 512;
@@ -50,6 +54,7 @@ public class GuiPatEditor extends AEBaseGui {
 
     private final ContainerPatEditor editorContainer;
     private GuiButton saveButton;
+    private GuiTextField nameField;
 
     public GuiPatEditor(InventoryPlayer inventory, PartPatTerminal terminal,
                         EditorInventory editor, int dimension, BlockPos pos, int index) {
@@ -62,6 +67,14 @@ public class GuiPatEditor extends AEBaseGui {
     @Override
     public void initGui() {
         super.initGui();
+
+        String previous = nameField == null ? editorContainer.groupName : nameField.getText();
+        nameField = new GuiTextField(0, fontRenderer, guiLeft + 10, guiTop + 6, 172, 10);
+        nameField.setEnableBackgroundDrawing(false);
+        nameField.setMaxStringLength(32);
+        nameField.setTextColor(COLOR_TEXT);
+        nameField.setText(previous == null ? "" : previous);
+
         buttonList.clear();
         saveButton = new GuiButton(BUTTON_SAVE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
                 guiTop + 20, 54, 18, I18n.format("gui.packagedautoterminals.save"));
@@ -70,6 +83,8 @@ public class GuiPatEditor extends AEBaseGui {
                 guiLeft + ContainerPatEditor.OUTPUT_LEFT - 2, guiTop + 54, 10, 18, "<"));
         buttonList.add(new GuiButton(BUTTON_NEXT_TYPE,
                 guiLeft + ContainerPatEditor.OUTPUT_LEFT + 44, guiTop + 54, 10, 18, ">"));
+        buttonList.add(new GuiButton(BUTTON_BACK, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
+                guiTop + 2, 54, 16, I18n.format("gui.packagedautoterminals.back")));
     }
 
     @Override
@@ -82,7 +97,13 @@ public class GuiPatEditor extends AEBaseGui {
                 send(PacketRecipeAction.ACTION_CYCLE_TYPE, 1);
                 break;
             case BUTTON_SAVE:
+                // Le nom part avec la recette : le joueur n'a pas à valider deux fois.
+                sendName();
                 send(PacketRecipeAction.ACTION_SAVE, 0);
+                break;
+            case BUTTON_BACK:
+                sendName();
+                send(PacketRecipeAction.ACTION_BACK, 0);
                 break;
             default:
                 super.actionPerformed(button);
@@ -112,6 +133,57 @@ public class GuiPatEditor extends AEBaseGui {
         super.mouseWheelEvent(x, y, wheel);
     }
 
+    private void sendName() {
+        if (nameField != null && !nameField.getText().equals(editorContainer.groupName)) {
+            PatNetwork.CHANNEL.sendToServer(new PacketRenameGroup(nameField.getText()));
+        }
+    }
+
+    @Override
+    public void updateScreen() {
+        super.updateScreen();
+        nameField.updateCursorCounter();
+
+        // Le nom vient du serveur. On ne l'écrase que si le joueur n'est pas en train de
+        // l'écrire, sans quoi chaque cycle effacerait sa saisie.
+        if (!nameField.isFocused() && !nameField.getText().equals(editorContainer.groupName)) {
+            nameField.setText(editorContainer.groupName == null ? "" : editorContainer.groupName);
+        }
+    }
+
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        nameField.mouseClicked(mouseX, mouseY, mouseButton);
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    protected void keyTyped(char typedChar, int keyCode) throws IOException {
+        if (nameField.isFocused()) {
+            if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
+                sendName();
+                nameField.setFocused(false);
+                return;
+            }
+            // Échap ferme la fenêtre, même depuis le champ : sans cette exception, le joueur
+            // resterait piégé dans l'éditeur.
+            if (keyCode != Keyboard.KEY_ESCAPE && nameField.textboxKeyTyped(typedChar, keyCode)) {
+                return;
+            }
+        }
+        super.keyTyped(typedChar, keyCode);
+    }
+
+    /**
+     * Le champ se dessine ici, hors du repère décalé de {@code drawFG}, car il porte des
+     * coordonnées absolues. Même piège que dans le terminal.
+     */
+    @Override
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        super.drawScreen(mouseX, mouseY, partialTicks);
+        nameField.drawTextBox();
+    }
+
     @Override
     public void drawBG(int offsetX, int offsetY, int mouseX, int mouseY) {
         bindTexture(Reference.MOD_ID, "guis/pat_editor.png");
@@ -123,8 +195,11 @@ public class GuiPatEditor extends AEBaseGui {
     public void drawFG(int offsetX, int offsetY, int mouseX, int mouseY) {
         EditorInventory editor = editorContainer.editor;
 
-        String title = I18n.format("gui.packagedautoterminals.editor");
-        fontRenderer.drawString(title, 8, 6, COLOR_TEXT);
+        // Le champ de nom occupe la ligne de titre. Vide, il annonce ce qu'il attend.
+        if (nameField != null && nameField.getText().isEmpty() && !nameField.isFocused()) {
+            fontRenderer.drawString(I18n.format("gui.packagedautoterminals.name_hint"),
+                    10, 6, COLOR_DIM);
+        }
 
         // Un avertissement en haut à droite, là où rien d'autre ne s'affiche. Il ne peut
         // donc chevaucher aucun emplacement.

@@ -11,6 +11,8 @@ import java.util.Set;
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.widgets.GuiScrollbar;
 import fr.julien.packagedautoterminals.Reference;
+import fr.julien.packagedautoterminals.Reference;
+import fr.julien.packagedautoterminals.client.BlockHighlighter;
 import fr.julien.packagedautoterminals.common.CrafterTypes;
 import fr.julien.packagedautoterminals.common.MachineSnapshot;
 import fr.julien.packagedautoterminals.common.PatConfig;
@@ -26,6 +28,7 @@ import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.input.Keyboard;
 import thelm.packagedauto.api.IRecipeInfo;
@@ -59,6 +62,13 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int COLOR_TEXT = 0x404040;
     private static final int COLOR_DIM = 0x808080;
     private static final int COLOR_WARNING = 0x803030;
+
+    /** Icône « localiser » : position dans la planche, et taille. */
+    private static final int LOCATE_U = 0;
+    private static final int LOCATE_V = 232;
+    private static final int LOCATE_SIZE = 12;
+    /** Bord gauche du bouton, dans la rangée d'un groupe. */
+    private static final int LOCATE_LEFT = LIST_LEFT + LIST_WIDTH - LOCATE_SIZE - 2;
 
     private static final int BUTTON_VIEW = 0;
 
@@ -191,9 +201,18 @@ public class GuiPatTerminal extends AEBaseGui {
 
         if (line.isGroupHeader()) {
             drawItem(LIST_LEFT + 2, y + 1, line.anchor().icon);
-            fontRenderer.drawString(trim(line.group.title(), 86), LIST_LEFT + 22,
+            fontRenderer.drawString(trim(groupTitle(line.group), 96), LIST_LEFT + 22,
                     y + TEXT_OFFSET, COLOR_TEXT);
-            drawRight(groupState(line.group), y, COLOR_DIM);
+
+            String state = groupState(line.group);
+            fontRenderer.drawString(state,
+                    LOCATE_LEFT - 4 - fontRenderer.getStringWidth(state), y + TEXT_OFFSET,
+                    COLOR_DIM);
+
+            // La planche est reliée pour l'icône, puis le rendu du texte reprend la main.
+            bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
+            drawTexturedModalRect(LOCATE_LEFT, y + 3, LOCATE_U, LOCATE_V,
+                    LOCATE_SIZE, LOCATE_SIZE);
             return;
         }
 
@@ -219,6 +238,26 @@ public class GuiPatTerminal extends AEBaseGui {
         fontRenderer.drawString(text,
                 LIST_LEFT + LIST_WIDTH - 4 - fontRenderer.getStringWidth(text),
                 y + TEXT_OFFSET, color);
+    }
+
+    /**
+     * Étiquette d'un groupe.
+     *
+     * <p>Le nom donné par le joueur prime. Sinon, une paire s'annonce comme telle : c'est
+     * plus parlant que « Packager +1 », et cela ne dépend pas de la longueur des noms.
+     */
+    private String groupTitle(ProviderPairing.Group group) {
+        String custom = group.customName();
+        if (custom != null) {
+            return custom;
+        }
+        if (group.isPair()) {
+            return I18n.format("gui.packagedautoterminals.pair");
+        }
+        if (group.size() == 1) {
+            return group.singleName();
+        }
+        return I18n.format("gui.packagedautoterminals.group_of", group.size());
     }
 
     /** État d'un groupe : nombre de recettes, ou rôle manquant. */
@@ -298,6 +337,11 @@ public class GuiPatTerminal extends AEBaseGui {
         // Clic gauche sur une machine : nouvelle recette.
         // Clic droit sur une recette : l'éditer. Maj + clic droit : la supprimer.
         Line clicked = machinesView ? null : lineUnder(mouseX - guiLeft, mouseY - guiTop);
+        if (clicked != null && clicked.isGroupHeader()
+                && overLocate(mouseX - guiLeft, mouseY - guiTop)) {
+            locate(clicked.group);
+            return;
+        }
         if (clicked != null && clicked.group != null) {
             ProviderSnapshot anchor = clicked.anchor();
             if (mouseButton == 0 && clicked.isGroupHeader()) {
@@ -314,6 +358,31 @@ public class GuiPatTerminal extends AEBaseGui {
             }
         }
         super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    /** La souris est-elle sur le bouton de repérage de la rangée survolée ? */
+    private boolean overLocate(int x, int y) {
+        int row = rowUnder(x, y);
+        if (row < 0) {
+            return false;
+        }
+        int top = LIST_TOP + row * ROW_HEIGHT + 3;
+        return x >= LOCATE_LEFT && x < LOCATE_LEFT + LOCATE_SIZE
+                && y >= top && y < top + LOCATE_SIZE;
+    }
+
+    /**
+     * Fait clignoter les machines du groupe, et ferme la fenêtre.
+     *
+     * <p>Sans la fermeture, le joueur ne verrait pas le monde, donc rien du tout.
+     */
+    private void locate(ProviderPairing.Group group) {
+        List<BlockPos> positions = new ArrayList<>();
+        for (ProviderSnapshot machine : group.machines) {
+            positions.add(machine.pos);
+        }
+        BlockHighlighter.highlight(group.machines.get(0).dimension, positions);
+        mc.player.closeScreen();
     }
 
     private void send(ProviderSnapshot anchor, int index, byte action) {
@@ -361,7 +430,7 @@ public class GuiPatTerminal extends AEBaseGui {
         }
 
         if (line.isGroupHeader()) {
-            lines.add(line.group.title());
+            lines.add(groupTitle(line.group));
             for (ProviderSnapshot machine : line.group.machines) {
                 lines.add(TextFormatting.GRAY + machine.name + " : "
                         + I18n.format("gui.packagedautoterminals.position",
@@ -381,6 +450,8 @@ public class GuiPatTerminal extends AEBaseGui {
             lines.add(TextFormatting.DARK_GRAY + I18n.format("gui.packagedautoterminals.new_hint"));
             lines.add(TextFormatting.DARK_GRAY
                     + I18n.format("gui.packagedautoterminals.remove_holder_hint"));
+            lines.add(TextFormatting.DARK_GRAY
+                    + I18n.format("gui.packagedautoterminals.locate_hint"));
             return lines;
         }
 
@@ -518,7 +589,7 @@ public class GuiPatTerminal extends AEBaseGui {
 
         for (ProviderPairing.Group group : ProviderPairing.group(terminalContainer.providers)) {
             boolean titleMatches = filter.isEmpty()
-                    || group.title().toLowerCase(Locale.ROOT).contains(filter);
+                    || groupTitle(group).toLowerCase(Locale.ROOT).contains(filter);
 
             List<Line> recipes = new ArrayList<>();
             for (int index = 0; index < group.recipes.size(); index++) {

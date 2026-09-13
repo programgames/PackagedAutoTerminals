@@ -33,6 +33,8 @@ public class ProviderSnapshot {
     public boolean holderPresent;
     /** Packager, Unpackager, ou machine qui se suffit. Décide de l'appariement. */
     public ProviderRole role = ProviderRole.UNKNOWN;
+    /** Nom donné par le joueur, ou chaîne vide. Stocké par notre mod, pas par PackagedAuto. */
+    public String customName = "";
     public List<IRecipeInfo> recipes = new ArrayList<>();
 
     public NBTTagCompound writeToNBT() {
@@ -45,6 +47,7 @@ public class ProviderSnapshot {
         tag.setBoolean("Active", active);
         tag.setBoolean("Holder", holderPresent);
         tag.setInteger("Role", role.ordinal());
+        tag.setString("CustomName", customName == null ? "" : customName);
         tag.setTag("Recipes", MiscUtil.writeRecipeListToNBT(new NBTTagList(), recipes));
         return tag;
     }
@@ -59,6 +62,7 @@ public class ProviderSnapshot {
         snapshot.active = tag.getBoolean("Active");
         snapshot.holderPresent = tag.getBoolean("Holder");
         snapshot.role = ProviderRole.fromOrdinal(tag.getInteger("Role"));
+        snapshot.customName = tag.getString("CustomName");
         snapshot.recipes = MiscUtil.readRecipeListFromNBT(tag.getTagList("Recipes", 10));
         return snapshot;
     }

@@ -74,8 +74,28 @@ def recess(px, x0, y0, w, h, color):
     fill(px, x0 + w, y0, 1, h + 1, WHITE)
 
 
+# Icône « localiser », rangée sous la fenêtre, dans la zone libre de la planche.
+LOCATE_U = 0
+LOCATE_V = 232
+LOCATE_SIZE = 12
+
+
+def draw_locate(px, x0, y0):
+    """Cible : un cercle grossier et une croix centrale."""
+    ring = [(3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1),
+            (2, 2), (9, 2), (1, 3), (10, 3), (1, 4), (10, 4),
+            (1, 5), (10, 5), (1, 6), (10, 6), (1, 7), (10, 7),
+            (2, 8), (9, 8), (3, 9), (4, 9), (5, 9), (6, 9), (7, 9), (8, 9)]
+    for x, y in ring:
+        fill(px, x0 + x, y0 + y, 1, 1, EDGE)
+    for step in range(3):
+        fill(px, x0 + 5 - 1 + step, y0 + 5, 1, 1, EDGE)
+        fill(px, x0 + 5, y0 + 5 - 1 + step, 1, 1, EDGE)
+
+
 def build():
     px = new_sheet()
+    draw_locate(px, LOCATE_U, LOCATE_V)
 
     # Panneau et son biseau, comme les fenêtres du jeu.
     fill(px, 0, 0, WIDTH, HEIGHT, PANEL)

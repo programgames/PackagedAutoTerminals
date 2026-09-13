@@ -17,5 +17,6 @@ public final class PatNetwork {
         CHANNEL.registerMessage(PacketRecipeAction.Handler.class, PacketRecipeAction.class, 1, Side.SERVER);
         CHANNEL.registerMessage(PacketEditorSlot.Handler.class, PacketEditorSlot.class, 2, Side.SERVER);
         CHANNEL.registerMessage(PacketEditorFill.Handler.class, PacketEditorFill.class, 3, Side.SERVER);
+        CHANNEL.registerMessage(PacketRenameGroup.Handler.class, PacketRenameGroup.class, 4, Side.SERVER);
     }
 }

@@ -94,6 +94,9 @@ public final class ProviderScanner {
             TileEntity tile = (TileEntity) machine;
             snapshot.pos = tile.getPos();
             snapshot.dimension = tile.getWorld().provider.getDimension();
+            if (!tile.getWorld().isRemote) {
+                snapshot.customName = GroupNames.get(tile.getWorld()).get(tile.getPos());
+            }
         }
 
         ItemStack holder = machine.getPatternStack();

@@ -31,6 +31,8 @@ public class PacketRecipeAction implements IMessage {
     public static final byte ACTION_NEW = 4;
     /** Retire le porte-recettes de cette machine, et le range dans le réseau. */
     public static final byte ACTION_REMOVE_HOLDER = 5;
+    /** Referme l'éditeur et rouvre le terminal. */
+    public static final byte ACTION_BACK = 6;
 
     public int dimension;
     public BlockPos pos = BlockPos.ORIGIN;
@@ -83,9 +85,11 @@ public class PacketRecipeAction implements IMessage {
                 if (player.openContainer instanceof ContainerPatEditor) {
                     ContainerPatEditor editor = (ContainerPatEditor) player.openContainer;
                     if (message.action == ACTION_SAVE) {
-                        if (editor.save()) {
-                            editor.backToTerminal();
-                        }
+                        // On reste dans l'éditeur : le joueur doit voir le message, et
+                        // pouvoir enchaîner une seconde modification.
+                        editor.save();
+                    } else if (message.action == ACTION_BACK) {
+                        editor.backToTerminal();
                     } else if (message.action == ACTION_CYCLE_TYPE) {
                         editor.cycleRecipeType(message.index == 1);
                     }
