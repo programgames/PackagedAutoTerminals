@@ -122,17 +122,15 @@ public class GuiPatTerminal extends AEBaseGui {
         // Libellé de l'inventaire, et résumé du réseau. Le résumé parle au joueur ; la
         // taille du paquet, qui ne dit rien à personne, passe dans l'infobulle. Elle sert à
         // trancher la révision R2.
+        // Le résumé occupe toute la ligne. Le libellé « Inventaire » a disparu : il tenait
+        // la moitié de la place, et n'apprenait rien à personne.
         int summaryY = ContainerPatTerminal.PLAYER_INVENTORY_TOP - 11;
-        fontRenderer.drawString(I18n.format("gui.packagedautoterminals.inventory"),
-                LIST_LEFT, summaryY, COLOR_TEXT);
-
         String summary = networkSummary();
-        int summaryX = LIST_LEFT + LIST_WIDTH - fontRenderer.getStringWidth(summary);
-        fontRenderer.drawString(summary, summaryX, summaryY, COLOR_DIM);
+        fontRenderer.drawString(summary, LIST_LEFT, summaryY, COLOR_TEXT);
 
         int localX = mouseX - offsetX;
         int localY = mouseY - offsetY;
-        if (localX >= summaryX && localX <= LIST_LEFT + LIST_WIDTH
+        if (localX >= LIST_LEFT && localX <= LIST_LEFT + fontRenderer.getStringWidth(summary)
                 && localY >= summaryY - 1 && localY <= summaryY + 8) {
             drawTooltip(localX, localY, java.util.Arrays.asList(
                     summary,
@@ -144,8 +142,14 @@ public class GuiPatTerminal extends AEBaseGui {
         getScrollBar().setRange(0, Math.max(0, lines.size() - ROWS), 2);
 
         if (lines.isEmpty()) {
-            fontRenderer.drawString(I18n.format("gui.packagedautoterminals.empty"),
-                    LIST_LEFT + 4, LIST_TOP + TEXT_OFFSET, COLOR_DIM);
+            // Le message est découpé à la largeur du cadre : sinon il déborde sur
+            // l'ascenseur, puis hors de la fenêtre.
+            List<String> wrapped = fontRenderer.listFormattedStringToWidth(
+                    I18n.format("gui.packagedautoterminals.empty"), LIST_WIDTH - 10);
+            for (int row = 0; row < wrapped.size(); row++) {
+                fontRenderer.drawString(wrapped.get(row), LIST_LEFT + 4,
+                        LIST_TOP + TEXT_OFFSET + row * 10, COLOR_DIM);
+            }
             return;
         }
 
@@ -382,8 +386,14 @@ public class GuiPatTerminal extends AEBaseGui {
         for (ProviderSnapshot provider : terminalContainer.providers) {
             recipes += provider.recipes.size();
         }
-        return I18n.format("gui.packagedautoterminals.summary",
-                terminalContainer.providers.size(), recipes);
+        int machines = terminalContainer.providers.size();
+        return I18n.format(machines == 1
+                        ? "gui.packagedautoterminals.summary_machine"
+                        : "gui.packagedautoterminals.summary_machines", machines)
+                + " · "
+                + I18n.format(recipes == 1
+                        ? "gui.packagedautoterminals.summary_recipe"
+                        : "gui.packagedautoterminals.summary_recipes", recipes);
     }
 
     private String stateOf(ProviderSnapshot machine) {
