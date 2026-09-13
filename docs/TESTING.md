@@ -1,165 +1,251 @@
-# Tests manuels en jeu
+# Protocole de test interactif
 
-> Le mod touche à un réseau ME et à des recettes encodées. Aucun test automatique ne couvre
-> cela. Tout le code écrit pendant la nuit du 12 au 13 septembre 2026 **n'a jamais tourné
-> en jeu**. Cette liste existe pour le vérifier en une seule session.
+> **Règle du jeu.** Un test à la fois, dans l'ordre. Tu réponds **OK**, ou tu décris ce que
+> tu vois. Au premier échec, on corrige avant d'avancer : un défaut en masque souvent un
+> autre.
 >
-> Coche au fur et à mesure. Au premier échec, note le message du journal
-> (`run/logs/latest.log`) : il porte presque toujours la cause exacte.
-
-## Préparer
-
-1. Vérifie que le **Gradle JVM d'IntelliJ pointe sur le JDK 8**.
-2. Lance la configuration **Gradle runClient**.
-3. Monde créatif superplat, avec : contrôleur ME, Creative Energy Cell, câble, Packager,
-   Unpackager, Package Recipe Encoder, quelques Package Recipe Holders, un Package Crafter,
-   un Ultimate Crafter, et des objets de base.
-
-> ⚠️ Ne copie jamais dans `run/mods` un jar déjà présent dans `libs/maven`. FML refuse de
-> démarrer. Voir CLAUDE.md, section 4.1.
+> **En cas d'échec** : une capture suffit. Le journal, je le lis moi-même dans
+> `run/logs/latest.log`.
+>
+> **État du code** : tout ce qui porte 🆕 n'a **jamais** tourné en jeu.
 
 ---
 
-## T1 — Le mod se charge
+## Préparation
 
-- [ ] Le menu **Mods** liste `PackagedAuto Terminals`.
-- [ ] Le journal affiche `Types de recettes enregistres : 10`.
-- [ ] Le journal affiche `Traductions chargees`, et **pas** `NE sont PAS chargees`.
+### P1 — Lancer
 
-## T2 — Fabrication *(nouveau, lot 7d)*
+```bash
+cd /c/Users/Julien/Desktop/PackagedAutoTerminals && ./gradlew runClient
+```
 
-- [ ] Dans JEI, la recette du **Terminal PackagedAuto** apparaît : un terminal ME plus un
-      Package Recipe Holder.
-- [ ] La fabrication fonctionne en table de craft.
+### P2 — Le banc d'essai
 
-> Si la recette est absente, cherche dans le journal `Recette du terminal non enregistree`.
+Dans un monde créatif superplat, monte ceci :
 
-## T3 — Pose et ouverture
-
-- [ ] Le terminal se pose sur un câble ME.
-- [ ] Le clic droit ouvre la fenêtre.
-- [ ] La liste montre le Packager, son état, puis ses recettes.
-
-## T4 — Recherche *(nouveau, lot 4c)*
-
-- [ ] Le champ de recherche apparaît en haut à droite de la fenêtre.
-- [ ] Taper le nom d'une machine filtre la liste.
-- [ ] Taper le nom d'un objet **produit** garde la machine ET sa recette.
-- [ ] Taper le nom d'un objet **consommé** fonctionne aussi.
-- [ ] **Échap** ferme la fenêtre même quand le champ a le focus.
-- [ ] La touche d'inventaire ferme aussi la fenêtre.
-
-## T5 — Suppression
-
-- [ ] **Maj + clic droit** sur une recette la supprime.
-- [ ] Le terminal de craft d'AE2 ne propose plus l'objet correspondant.
-
-## T6 — Édition
-
-- [ ] **Clic droit** sur une recette ouvre l'éditeur, rempli.
-- [ ] Les libellés ne se chevauchent pas.
-- [ ] L'icône du type apparaît entre les flèches `<` et `>`.
-- [ ] Les flèches changent le type, et les cases actives suivent.
-- [ ] **Enregistrer** ramène au terminal, et AE2 voit la nouvelle recette.
-
-## T7 — Quantités *(nouveau, lot 3d)*
-
-- [ ] La molette au-dessus d'une case occupée change la quantité.
-- [ ] **Maj + molette** avance de dix.
-- [ ] **Ctrl + molette** avance de soixante-quatre.
-- [ ] La quantité ne descend jamais sous un, et ne dépasse pas 4096.
-- [ ] La molette sur une case grisée ne fait rien.
-
-## T8 — Création *(nouveau, lot 3c)*
-
-- [ ] **Clic gauche** sur une machine qui porte un porte-recettes ouvre un éditeur vide.
-- [ ] Le type proposé est **Crafting**.
-- [ ] Après enregistrement, la recette s'ajoute à la suite des autres.
-- [ ] Sur une machine **sans** porte-recettes, le clic gauche en prend un sur le réseau ME,
-      puis ouvre l'éditeur.
-- [ ] Sans porte-recettes vierge sur le réseau, le message
-      « Aucun porte-recettes vierge sur le réseau » s'affiche.
-
-## T9 — Déplacer un porte-recettes *(nouveau, lot 3e)*
-
-- [ ] **Maj + clic gauche** sur une machine renvoie son porte-recettes au réseau.
-- [ ] Le porte-recettes apparaît dans le terminal ME, avec ses recettes.
-- [ ] La machine n'en porte plus, et AE2 ne propose plus ses recettes.
-
-## T10 — Transfert depuis JEI *(nouveau, lot 4a)*
-
-- [ ] Dans l'éditeur, ouvre une recette dans JEI, puis clique le bouton **+**.
-- [ ] La grille se remplit, et le type bascule sur celui qui convient.
-- [ ] Sur une catégorie qu'aucun type n'accepte, JEI affiche
-      « Aucun type PackagedAuto n'accepte cette catégorie ».
-
-## T11 — Onglet Machines *(nouveau, lot 5)*
-
-- [ ] Le bouton en haut à gauche bascule entre **Patterns** et **Machines**.
-- [ ] L'onglet Machines liste les crafters, avec **prête** ou **occupée**.
-- [ ] Encode une recette **Ultimate** sans poser d'Ultimate Crafter : l'onglet Machines
-      affiche `Ultimate : aucun crafter sur ce réseau`, en rouge.
-- [ ] Pose l'Ultimate Crafter : l'avertissement disparaît.
-- [ ] Une recette de type **Processing** ne déclenche aucun avertissement : ce type n'exige
-      aucune machine reconnue.
-
-## T12 — Configuration *(nouveau, lot 7c)*
-
-- [ ] Le fichier `run/config/packagedautoterminals.cfg` existe.
-- [ ] `machinesTab = false` fait disparaître le bouton d'onglet, et le titre revient.
-- [ ] `refreshTicks = 100` ralentit visiblement la mise à jour de la liste.
-
-## T13 — Cas limites
-
-| Cas | Attendu |
+| Élément | Rôle dans les tests |
 |---|---|
-| Packager sans porte-recettes | ligne « aucun porte-recettes » |
-| Packager sans énergie | ligne « inactive » |
-| Unpackager et Packaging Provider | ils apparaissent aussi |
-| Deux réseaux distincts | seul le réseau du terminal apparaît |
-| Casser la machine pendant l'édition | l'enregistrement échoue sans planter |
-| Plus de six rangées | l'ascenseur fonctionne |
+| Contrôleur ME, Creative Energy Cell, câbles | le réseau |
+| **Packager** et **Unpackager**, reliés | la paire de référence |
+| **Package Recipe Encoder** | encoder à la main, pour comparer |
+| 4 **Package Recipe Holders** | deux pour la paire, deux en réserve |
+| **Package Crafter** et **Ultimate Crafter** | l'onglet Machines et le diagnostic |
+| **Positioned Package Distributor** | vérifier la section « Aiguilleurs » |
+| Un terminal ME classique | vérifier qu'AE2 voit bien nos recettes |
+| Fer, or, redstone, diamants | de quoi encoder |
 
-## T14 — Mesure de la révision R2
-
-- [ ] Sur un réseau chargé, note la **taille du paquet** affichée à droite du libellé
-      « Inventaire ».
-- [ ] Au-delà de 30 000 octets, il faudra découper les paquets. En dessous, la révision R2
-      tient, et le découpage reste inutile.
-
-## T15 — Instance réelle
-
-- [ ] Copie `build/libs/packagedautoterminals-1.12.2-0.1.0.jar` dans
-      `H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`.
-- [ ] L'instance démarre, et le terminal fonctionne avec ton fork d'AE2UEL.
-
+Garde un **second Unpackager** de côté : il servira au test du rôle manquant.
 
 ---
 
-## Tests de la branche `lot6-sans-fil`
+## A — Le socle
 
-> Ces tests ne valent que sur la branche `lot6-sans-fil`. La branche `master` n'a pas le
-> terminal sans fil.
+### A1 — Chargement
+Ouvre le menu **Mods**.
+→ `PackagedAuto Terminals` figure dans la liste.
 
-### T16 — Liaison et ouverture
+### A2 — Fabrication
+Cherche `Terminal PackagedAuto` dans JEI, puis fabrique-le.
+→ La recette demande un terminal ME et un Package Recipe Holder.
 
-- [ ] Fabrique le **Terminal PackagedAuto sans fil** : le terminal câblé plus le terminal
-      sans fil d'AE2.
-- [ ] Lie-le à un réseau avec le **Wireless Access Point**, comme un terminal d'AE2.
-- [ ] Sans liaison, le clic droit affiche « Ce terminal n'est lié à aucun réseau ».
-- [ ] Sans énergie, il affiche « Ce terminal n'a plus d'énergie ».
-- [ ] Une fois lié et chargé, le clic droit ouvre le terminal.
+### A3 — Pose
+Pose le terminal sur un câble, puis clic droit.
+→ La fenêtre s'ouvre. Largeur **256**, aucun texte coupé.
 
-### T17 — Portée
+---
 
-- [ ] Éloigne-toi jusqu'à sortir de portée : la fenêtre se referme seule.
-- [ ] Ouvre l'éditeur, puis éloigne-toi : il se referme aussi.
+## B — Lecture et recherche
 
-### T18 — Parité avec le terminal câblé
+### B1 — La paire
+Encode la même recette dans les deux porte-recettes avec l'Encoder, place-les dans le
+Packager et l'Unpackager, puis ouvre le terminal.
+→ **Une seule ligne** d'en-tête, « Paire Packager/Unpackager », suivie d'**une seule**
+ligne de recette.
 
-- [ ] La liste, la recherche, l'onglet Machines et l'édition se comportent à l'identique.
-- [ ] La batterie descend lentement pendant que la fenêtre reste ouverte.
+### B2 — Le résumé
+Regarde la ligne au-dessus de l'inventaire.
+→ « 2 machines · 1 recette ». Le survol donne la taille du paquet.
 
-> **Le plus grand risque de cette branche** : le terminal câblé a été refondu pour partager
-> son code avec le sans-fil. Déroule donc **aussi** les tests T3 à T13 sur cette branche,
-> pour vérifier que rien n'a régressé.
+### B3 — Recherche libre
+Tape le nom de l'objet produit, puis `zzz`.
+→ Le filtre suit, et le message de liste vide tient dans le cadre.
+
+### B4 — Préfixe de mod 🆕
+Tape `@minecraft`.
+→ Seules les recettes dont un objet vient de Minecraft restent.
+
+### B5 — Préfixe de type 🆕
+Tape `#processing`, puis `#ultimate`.
+→ Le filtre suit le type de la recette.
+
+### B6 — Sortie de la recherche
+Échap, puis rouvre et appuie sur **E** avec le champ actif.
+→ La fenêtre se ferme dans les deux cas.
+
+---
+
+## C — L'œil et le nom
+
+### C1 — Repérage 🆕
+Clique l'**œil**, à droite de la ligne de groupe.
+→ La fenêtre se ferme, et les deux blocs clignotent en cyan cinq secondes, même derrière un
+mur.
+
+### C2 — Nommer 🆕
+Clic droit sur la recette, tape `Fer` dans le champ du haut, **Entrée**.
+→ Message vert « Groupe renommé ».
+
+### C3 — Le nom vit
+**Retour**, puis regarde la liste.
+→ La ligne affiche « Fer » à la place de « Paire Packager/Unpackager ».
+
+---
+
+## D — L'éditeur fusionné 🆕
+
+### D1 — Ouverture
+Clic droit sur la recette.
+→ La fenêtre reprend la disposition de l'Encoder. L'onglet de la recette porte un **cadre
+vert**.
+
+### D2 — Les onglets
+Regarde la rangée du haut.
+→ Une case par recette, montrant l'objet produit, puis **une case vide**.
+
+### D3 — Modifier
+Change un ingrédient, puis **Enregistrer**.
+→ Message vert « Appliqué à 2 machines ». La fenêtre **reste ouverte**.
+
+### D4 — Pas de doublon
+Appuie une seconde fois sur **Enregistrer**.
+→ Toujours une seule recette dans la rangée d'onglets.
+
+### D5 — Créer
+Clique la **case vide**, remplis la grille, **Enregistrer**.
+→ Un nouvel onglet apparaît, et le terminal comptera deux recettes.
+
+### D6 — Quitter sans enregistrer
+Modifie une case, puis clique un autre onglet.
+→ Message rouge « Recette non enregistrée ». Un second clic bascule.
+
+### D7 — Quantité à la molette
+Molette sur une case remplie, puis Maj et Ctrl.
+→ Pas de 1, de 10, puis de 64. Jamais sous 1.
+
+### D8 — Quantité au clavier 🆕
+**Clic du milieu** sur une case remplie, tape `128`, **Entrée**.
+→ La case affiche 128. Échap ailleurs annule sans rien changer.
+
+### D9 — Type de recette
+Les flèches `<` et `>` sous le nom du type.
+→ Le nom, l'icône et les cases actives changent ensemble.
+
+### D10 — Vider et supprimer
+**Vider**, puis **Supprimer**.
+→ La grille se vide sans rien écrire ; la suppression retire la recette des deux machines.
+
+### D11 — Transfert JEI
+Ouvre une recette dans JEI, clique son bouton **+**.
+→ La grille se remplit, et le type bascule sur celui qui convient.
+
+---
+
+## E — La paire, et ses accidents 🆕
+
+### E1 — Recette d'un seul côté
+Avec l'Encoder, retire la recette du **Packager** seulement.
+→ Dans le terminal, la ligne passe en **rouge**, et l'infobulle dit d'encoder aussi dans un
+Packager.
+
+### E2 — Réparer
+Clic droit sur la ligne rouge, puis **Enregistrer** sans rien changer.
+→ « Appliqué à 2 machines », et la ligne redevient noire.
+
+### E3 — Machine sans porte-recettes
+Retire le porte-recettes du Packager, puis clique sa ligne dans le terminal.
+→ Message « Insère d'abord un porte-recettes ». **Rien ne sort du réseau ME.**
+
+### E4 — Paire neuve
+Vide les deux porte-recettes.
+→ Une seule ligne, « aucune recette », et **aucune** phrase rouge.
+
+### E5 — Rôle manquant
+Pose le second Unpackager, relié, sans porte-recettes.
+→ Il apparaît sur sa propre ligne : le terminal ne devine pas quand deux machines peuvent
+prétendre au même rôle.
+
+### E6 — Retrait groupé
+**Maj + clic gauche** sur la ligne de la paire.
+→ Les deux porte-recettes reviennent dans le terminal ME, avec leurs recettes.
+
+---
+
+## F — L'onglet Machines 🆕
+
+### F1 — Bascule
+Clique le bouton **Patterns** en haut à gauche.
+→ Il passe à **Machines**.
+
+### F2 — Les deux sections
+→ **Crafters** d'abord, puis **Aiguilleurs** avec le Distributor.
+
+### F3 — État
+→ Chaque machine affiche « prête » ou « occupée ».
+
+### F4 — Recette orpheline
+Encode une recette **Ultimate** sans poser d'Ultimate Crafter.
+→ Un avertissement rouge en tête de liste. Pose le crafter : il disparaît.
+
+### F5 — Pas de faux positif
+Vérifie qu'une recette **Processing** ne déclenche aucun avertissement.
+→ Ce type n'exige aucune machine reconnue.
+
+---
+
+## G — Le sans-fil 🆕
+
+> La partie la plus risquée : elle n'a jamais tourné, et la refonte du conteneur touche
+> aussi le terminal câblé. Si A à F cassent, dis-le avant d'attaquer G.
+
+### G1 — Fabrication
+→ Le **Terminal PackagedAuto sans fil** se fabrique avec le nôtre et le terminal sans fil
+d'AE2.
+
+### G2 — Sans liaison
+Clic droit sans l'avoir lié.
+→ « Ce terminal n'est lié à aucun réseau ».
+
+### G3 — Lié
+Lie-le à un Wireless Access Point, puis clic droit.
+→ Le terminal s'ouvre, identique au câblé.
+
+### G4 — Hors de portée
+Éloigne-toi.
+→ La fenêtre se referme seule. Même chose depuis l'éditeur.
+
+---
+
+## H — Réglages et instance réelle
+
+### H1 — Configuration
+Dans `run/config/packagedautoterminals.cfg`, passe `machinesTab` à `false`.
+→ Le bouton d'onglet disparaît, et le titre revient.
+
+### H2 — Instance réelle
+Copie `build/libs/packagedautoterminals-1.12.2-0.1.0.jar` dans
+`H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`.
+→ L'instance démarre, et le terminal fonctionne avec ton fork d'AE2UEL.
+
+---
+
+## Là où je m'attends à des ennuis
+
+Par probabilité décroissante :
+
+1. **Les onglets de l'éditeur** (D2) : ils passent par de vrais emplacements, et la
+   synchronisation de leurs icônes n'a jamais été observée.
+2. **La boîte de quantité** (D8) : sa position vient de l'emplacement cliqué, sans garde
+   contre le bord de l'écran.
+3. **Le sans-fil** (G) : la refonte du conteneur n'a aucun essai derrière elle.
+4. **Le transfert JEI** (D11) : il dépend d'une méthode de PackagedAuto jamais exercée.
+5. **Le repérage** (C1) : le rendu dans le monde touche à l'état d'OpenGL.
