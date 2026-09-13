@@ -14,6 +14,8 @@ import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.common.CrafterTypes;
 import fr.julien.packagedautoterminals.common.MachineSnapshot;
 import fr.julien.packagedautoterminals.common.PatConfig;
+import fr.julien.packagedautoterminals.common.ProviderPairing;
+import fr.julien.packagedautoterminals.common.ProviderRole;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
@@ -183,21 +185,15 @@ public class GuiPatTerminal extends AEBaseGui {
                     : (line.crafter.busy
                             ? "gui.packagedautoterminals.busy"
                             : "gui.packagedautoterminals.idle"));
-            fontRenderer.drawString(state,
-                    LIST_LEFT + LIST_WIDTH - 4 - fontRenderer.getStringWidth(state),
-                    y + TEXT_OFFSET, COLOR_DIM);
+            drawRight(state, y, COLOR_DIM);
             return;
         }
 
-        if (line.machine != null) {
-            drawItem(LIST_LEFT + 2, y + 1, line.machine.icon);
-            fontRenderer.drawString(trim(line.machine.name, 86), LIST_LEFT + 22,
+        if (line.isGroupHeader()) {
+            drawItem(LIST_LEFT + 2, y + 1, line.anchor().icon);
+            fontRenderer.drawString(trim(line.group.title(), 86), LIST_LEFT + 22,
                     y + TEXT_OFFSET, COLOR_TEXT);
-
-            String state = stateOf(line.machine);
-            fontRenderer.drawString(state,
-                    LIST_LEFT + LIST_WIDTH - 4 - fontRenderer.getStringWidth(state),
-                    y + TEXT_OFFSET, COLOR_DIM);
+            drawRight(groupState(line.group), y, COLOR_DIM);
             return;
         }
 
@@ -208,13 +204,34 @@ public class GuiPatTerminal extends AEBaseGui {
         String output = outputs.isEmpty()
                 ? I18n.format("gui.packagedautoterminals.no_output")
                 : outputs.get(0).getDisplayName();
-        fontRenderer.drawString(trim(output, 82), LIST_LEFT + INDENT + 20, y + TEXT_OFFSET,
-                COLOR_TEXT);
 
-        String type = line.recipe.getRecipeType().getLocalizedNameShort();
-        fontRenderer.drawString(type,
-                LIST_LEFT + LIST_WIDTH - 4 - fontRenderer.getStringWidth(type),
-                y + TEXT_OFFSET, COLOR_DIM);
+        // Une recette présente d'un seul côté de la paire s'affiche en rouge : AE2 ne peut
+        // pas l'exécuter.
+        boolean complete = line.group.isComplete(line.recipe);
+        fontRenderer.drawString(trim(output, 82), LIST_LEFT + INDENT + 20, y + TEXT_OFFSET,
+                complete ? COLOR_TEXT : COLOR_WARNING);
+        drawRight(line.recipe.getRecipeType().getLocalizedNameShort(), y,
+                complete ? COLOR_DIM : COLOR_WARNING);
+    }
+
+    /** Texte aligné à droite de la zone de liste. */
+    private void drawRight(String text, int y, int color) {
+        fontRenderer.drawString(text,
+                LIST_LEFT + LIST_WIDTH - 4 - fontRenderer.getStringWidth(text),
+                y + TEXT_OFFSET, color);
+    }
+
+    /** État d'un groupe : nombre de recettes, ou rôle manquant. */
+    private String groupState(ProviderPairing.Group group) {
+        ProviderRole missing = ProviderPairing.missingRoleOf(group);
+        if (missing != null) {
+            return I18n.format("gui.packagedautoterminals.missing_"
+                    + missing.name().toLowerCase(Locale.ROOT));
+        }
+        int count = group.recipes.size();
+        return I18n.format(count == 1
+                ? "gui.packagedautoterminals.recipe"
+                : "gui.packagedautoterminals.recipes", count);
     }
 
     private void updateViewButton() {
@@ -278,26 +295,27 @@ public class GuiPatTerminal extends AEBaseGui {
         // Clic gauche sur une machine : nouvelle recette.
         // Clic droit sur une recette : l'éditer. Maj + clic droit : la supprimer.
         Line clicked = machinesView ? null : lineUnder(mouseX - guiLeft, mouseY - guiTop);
-        if (mouseButton == 0 && clicked != null && clicked.machine != null) {
-            PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(
-                    clicked.machine.dimension, clicked.machine.pos, -1,
-                    isShiftKeyDown()
-                            ? PacketRecipeAction.ACTION_REMOVE_HOLDER
-                            : PacketRecipeAction.ACTION_NEW));
-            return;
-        }
-        if (mouseButton == 1) {
-            Line line = clicked;
-            if (line != null && line.recipe != null) {
-                PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(
-                        line.owner.dimension, line.owner.pos, line.recipeIndex,
-                        isShiftKeyDown()
-                                ? PacketRecipeAction.ACTION_REMOVE
-                                : PacketRecipeAction.ACTION_EDIT));
+        if (clicked != null && clicked.group != null) {
+            ProviderSnapshot anchor = clicked.anchor();
+            if (mouseButton == 0 && clicked.isGroupHeader()) {
+                send(anchor, -1, isShiftKeyDown()
+                        ? PacketRecipeAction.ACTION_REMOVE_HOLDER
+                        : PacketRecipeAction.ACTION_NEW);
+                return;
+            }
+            if (mouseButton == 1 && clicked.recipe != null) {
+                send(anchor, clicked.recipeIndex, isShiftKeyDown()
+                        ? PacketRecipeAction.ACTION_REMOVE
+                        : PacketRecipeAction.ACTION_EDIT);
                 return;
             }
         }
         super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    private void send(ProviderSnapshot anchor, int index, byte action) {
+        PatNetwork.CHANNEL.sendToServer(
+                new PacketRecipeAction(anchor.dimension, anchor.pos, index, action));
     }
 
     /** Rangée affichée sous la souris, ou {@code null}. Coordonnées relatives. */
@@ -324,11 +342,13 @@ public class GuiPatTerminal extends AEBaseGui {
 
     private List<String> tooltipFor(Line line) {
         List<String> lines = new ArrayList<>();
+
         if (line.warning != null) {
             lines.add(line.warning);
             lines.add(TextFormatting.GRAY + I18n.format("gui.packagedautoterminals.orphan_help"));
             return lines;
         }
+
         if (line.crafter != null) {
             lines.add(line.crafter.name);
             lines.add(TextFormatting.GRAY + I18n.format("gui.packagedautoterminals.position",
@@ -336,22 +356,35 @@ public class GuiPatTerminal extends AEBaseGui {
                     line.crafter.dimension));
             return lines;
         }
-        if (line.machine != null) {
-            lines.add(line.machine.name);
-            lines.add(TextFormatting.GRAY + I18n.format("gui.packagedautoterminals.position",
-                    line.machine.pos.getX(), line.machine.pos.getY(), line.machine.pos.getZ(),
-                    line.machine.dimension));
-            lines.add(TextFormatting.GRAY + stateOf(line.machine));
+
+        if (line.isGroupHeader()) {
+            lines.add(line.group.title());
+            for (ProviderSnapshot machine : line.group.machines) {
+                lines.add(TextFormatting.GRAY + machine.name + " : "
+                        + I18n.format("gui.packagedautoterminals.position",
+                                machine.pos.getX(), machine.pos.getY(), machine.pos.getZ(),
+                                machine.dimension));
+            }
+            ProviderRole missing = ProviderPairing.missingRoleOf(line.group);
+            if (missing != null) {
+                lines.add(TextFormatting.RED + I18n.format("gui.packagedautoterminals.missing_help",
+                        I18n.format("gui.packagedautoterminals.role_"
+                                + missing.name().toLowerCase(Locale.ROOT))));
+            }
             lines.add("");
             lines.add(TextFormatting.DARK_GRAY + I18n.format("gui.packagedautoterminals.new_hint"));
-            if (line.machine.holderPresent) {
-                lines.add(TextFormatting.DARK_GRAY
-                        + I18n.format("gui.packagedautoterminals.remove_holder_hint"));
-            }
+            lines.add(TextFormatting.DARK_GRAY
+                    + I18n.format("gui.packagedautoterminals.remove_holder_hint"));
             return lines;
         }
 
         lines.add(line.recipe.getRecipeType().getLocalizedName());
+        if (!line.group.isComplete(line.recipe)) {
+            ProviderRole missing = line.group.missingRole(line.recipe);
+            lines.add(TextFormatting.RED + I18n.format("gui.packagedautoterminals.missing_help",
+                    I18n.format("gui.packagedautoterminals.role_"
+                            + (missing == null ? "unknown" : missing.name().toLowerCase(Locale.ROOT)))));
+        }
         addStacks(lines, "gui.packagedautoterminals.inputs", line.recipe.getInputs());
         addStacks(lines, "gui.packagedautoterminals.outputs", line.recipe.getOutputs());
         lines.add("");
@@ -467,23 +500,30 @@ public class GuiPatTerminal extends AEBaseGui {
         return lines;
     }
 
+    /**
+     * Onglet Patterns : un en-tête par groupe de machines, puis ses recettes, une seule fois.
+     *
+     * <p>PackagedAuto demande la même recette dans le Packager et dans l'Unpackager. Les
+     * afficher séparément montrerait deux fois la même chose, et inviterait à n'en modifier
+     * qu'une.
+     */
     private List<Line> buildPatternLines(String filter) {
         List<Line> lines = new ArrayList<>();
 
-        for (ProviderSnapshot provider : terminalContainer.providers) {
-            boolean machineMatches = filter.isEmpty()
-                    || provider.name.toLowerCase(Locale.ROOT).contains(filter);
+        for (ProviderPairing.Group group : ProviderPairing.group(terminalContainer.providers)) {
+            boolean titleMatches = filter.isEmpty()
+                    || group.title().toLowerCase(Locale.ROOT).contains(filter);
 
             List<Line> recipes = new ArrayList<>();
-            for (int index = 0; index < provider.recipes.size(); index++) {
-                IRecipeInfo recipe = provider.recipes.get(index);
-                if (machineMatches || matches(recipe, filter)) {
-                    recipes.add(Line.recipe(provider, recipe, index));
+            for (int index = 0; index < group.recipes.size(); index++) {
+                IRecipeInfo recipe = group.recipes.get(index);
+                if (titleMatches || matches(recipe, filter)) {
+                    recipes.add(Line.recipe(group, recipe, index));
                 }
             }
 
-            if (machineMatches || !recipes.isEmpty()) {
-                lines.add(Line.machine(provider));
+            if (titleMatches || !recipes.isEmpty()) {
+                lines.add(Line.group(group));
                 lines.addAll(recipes);
             }
         }
@@ -517,34 +557,48 @@ public class GuiPatTerminal extends AEBaseGui {
      * Les ordres d'édition désignent la machine par sa **position**, jamais par son rang
      * dans la liste : l'ordre du scan peut changer d'un rafraîchissement à l'autre.
      */
+    /**
+     * Une rangée affichée.
+     *
+     * <p>Une rangée de recette porte son **groupe** et l'indice de la recette dans ce
+     * groupe. Les ordres d'édition désignent ainsi une recette unique, et non une copie
+     * parmi deux.
+     */
     private static final class Line {
-        final ProviderSnapshot machine;
-        final ProviderSnapshot owner;
+        final ProviderPairing.Group group;
         final IRecipeInfo recipe;
         final int recipeIndex;
         final MachineSnapshot crafter;
         final String warning;
 
-        static Line machine(ProviderSnapshot machine) {
-            return new Line(machine, null, null, -1, null, null);
+        static Line group(ProviderPairing.Group group) {
+            return new Line(group, null, -1, null, null);
         }
 
-        static Line recipe(ProviderSnapshot owner, IRecipeInfo recipe, int index) {
-            return new Line(null, owner, recipe, index, null, null);
+        static Line recipe(ProviderPairing.Group group, IRecipeInfo recipe, int index) {
+            return new Line(group, recipe, index, null, null);
         }
 
         static Line crafter(MachineSnapshot crafter) {
-            return new Line(null, null, null, -1, crafter, null);
+            return new Line(null, null, -1, crafter, null);
         }
 
         static Line warning(String warning) {
-            return new Line(null, null, null, -1, null, warning);
+            return new Line(null, null, -1, null, warning);
         }
 
-        private Line(ProviderSnapshot machine, ProviderSnapshot owner, IRecipeInfo recipe,
-                     int recipeIndex, MachineSnapshot crafter, String warning) {
-            this.machine = machine;
-            this.owner = owner;
+        boolean isGroupHeader() {
+            return group != null && recipe == null;
+        }
+
+        /** Machine qui sert de point d'entrée aux ordres. N'importe laquelle du groupe suffit. */
+        ProviderSnapshot anchor() {
+            return group.machines.get(0);
+        }
+
+        private Line(ProviderPairing.Group group, IRecipeInfo recipe, int recipeIndex,
+                     MachineSnapshot crafter, String warning) {
+            this.group = group;
             this.recipe = recipe;
             this.recipeIndex = recipeIndex;
             this.crafter = crafter;

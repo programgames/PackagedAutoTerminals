@@ -84,6 +84,7 @@ public final class ProviderScanner {
         ProviderSnapshot snapshot = new ProviderSnapshot();
         snapshot.id = id;
         snapshot.active = node.isActive();
+        snapshot.role = ProviderRole.of(machine);
         snapshot.icon = node.getGridBlock().getMachineRepresentation();
         snapshot.name = snapshot.icon.isEmpty()
                 ? machine.getClass().getSimpleName()

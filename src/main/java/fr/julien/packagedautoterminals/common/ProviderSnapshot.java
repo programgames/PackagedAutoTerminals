@@ -31,6 +31,8 @@ public class ProviderSnapshot {
     public boolean active;
     /** Un Package Recipe Holder occupe l'emplacement de la machine. */
     public boolean holderPresent;
+    /** Packager, Unpackager, ou machine qui se suffit. Décide de l'appariement. */
+    public ProviderRole role = ProviderRole.UNKNOWN;
     public List<IRecipeInfo> recipes = new ArrayList<>();
 
     public NBTTagCompound writeToNBT() {
@@ -42,6 +44,7 @@ public class ProviderSnapshot {
         tag.setLong("Pos", pos.toLong());
         tag.setBoolean("Active", active);
         tag.setBoolean("Holder", holderPresent);
+        tag.setInteger("Role", role.ordinal());
         tag.setTag("Recipes", MiscUtil.writeRecipeListToNBT(new NBTTagList(), recipes));
         return tag;
     }
@@ -55,6 +58,7 @@ public class ProviderSnapshot {
         snapshot.pos = BlockPos.fromLong(tag.getLong("Pos"));
         snapshot.active = tag.getBoolean("Active");
         snapshot.holderPresent = tag.getBoolean("Holder");
+        snapshot.role = ProviderRole.fromOrdinal(tag.getInteger("Role"));
         snapshot.recipes = MiscUtil.readRecipeListFromNBT(tag.getTagList("Recipes", 10));
         return snapshot;
     }

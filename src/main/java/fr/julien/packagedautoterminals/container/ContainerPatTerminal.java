@@ -11,7 +11,10 @@ import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.common.MachineSnapshot;
 import fr.julien.packagedautoterminals.common.NetworkItems;
 import fr.julien.packagedautoterminals.common.PatConfig;
+import fr.julien.packagedautoterminals.common.ProviderPairing;
+import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.common.ProviderScanner;
+import fr.julien.packagedautoterminals.common.RecipeWriter;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.network.PacketProviderList;
 import fr.julien.packagedautoterminals.network.PatNetwork;
@@ -28,8 +31,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentTranslation;
 import thelm.packagedauto.api.IPackageProvidingMachine;
 import thelm.packagedauto.api.IRecipeInfo;
-import thelm.packagedauto.api.IRecipeList;
-import thelm.packagedauto.api.IRecipeListItem;
+import thelm.packagedauto.api.IRecipeInfo;
 
 /**
  * Conteneur du terminal. Le serveur reste l'autorité (décision D05) : il construit
@@ -124,70 +126,51 @@ public class ContainerPatTerminal extends AEBaseContainer {
     }
 
     /**
-     * Supprime une recette du porte-recettes d'une machine.
+     * Supprime une recette, **de toutes les machines du groupe**.
      *
-     * <p>Trois vérifications avant toute écriture :
+     * <p>PackagedAuto exige la même recette dans le Packager et dans l'Unpackager. La
+     * supprimer d'un seul côté casserait l'automatisation sans le moindre message.
      *
-     * <ol>
-     *   <li>la machine est sur la grille de ce terminal, et non une position inventée ;
-     *   <li>le joueur possède le droit {@code BUILD} d'AE2 ;
-     *   <li>l'indice existe dans la liste actuelle.
-     * </ol>
-     *
-     * <p>L'écriture se termine par {@code setPatternStack}. C'est cet appel, et lui seul,
-     * qui déclenche {@code updatePatternList} puis {@code postPatternChange} chez
-     * PackagedAuto. Modifier le NBT du porte-recettes sans réécrire l'emplacement
-     * laisserait AE2 sur une vue périmée. Voir docs/PACKAGEDAUTO-MODEL.md, section 7.2.
+     * <p>L'indice porte sur la liste du **groupe**, telle que le terminal l'affiche, et non
+     * sur celle d'une machine : le client et le serveur calculent le même regroupement, à
+     * partir des mêmes données.
      */
-    public void removeRecipe(int dimension, BlockPos pos, int index) {
-        IGridNode node = terminal.getGridNode();
-        IPackageProvidingMachine machine =
-                ProviderScanner.find(node == null ? null : node.getGrid(), dimension, pos);
-        if (machine == null) {
-            return;
-        }
-        if (!hasAccess(SecurityPermissions.BUILD, false)) {
-            return;
-        }
-
-        ItemStack holder = machine.getPatternStack();
-        if (holder.isEmpty() || !(holder.getItem() instanceof IRecipeListItem)) {
-            return;
-        }
-        IRecipeListItem holderItem = (IRecipeListItem) holder.getItem();
-        IRecipeList recipeList = holderItem.getRecipeList(holder);
-        if (recipeList == null) {
-            return;
-        }
-
-        List<IRecipeInfo> recipes = new ArrayList<>(recipeList.getRecipeList());
-        if (index < 0 || index >= recipes.size()) {
-            return;
-        }
-        recipes.remove(index);
-
-        recipeList.setRecipeList(recipes);
-        holderItem.setRecipeList(holder, recipeList);
-        machine.setPatternStack(holder);
-
-        // L'instantané suivant partira au prochain rafraîchissement. On force l'envoi pour
-        // que le joueur voie sa suppression tout de suite.
-        ticks = 0;
-        lastSent = null;
-    }
-
     /** Machines d'exécution du réseau. Vide si l'onglet est désactivé en configuration. */
     private NBTTagList buildMachinePayload() {
         NBTTagList list = new NBTTagList();
         if (!PatConfig.machinesTab) {
             return list;
         }
-        IGridNode node = terminal.getGridNode();
-        IGrid grid = node == null ? null : node.getGrid();
-        for (MachineSnapshot snapshot : MachineSnapshot.scan(grid)) {
+        for (MachineSnapshot snapshot : MachineSnapshot.scan(grid())) {
             list.appendTag(snapshot.writeToNBT());
         }
         return list;
+    }
+
+    /** Grille du terminal, ou {@code null} s'il n'est relié à rien. */
+    private IGrid grid() {
+        IGridNode node = terminal.getGridNode();
+        return node == null ? null : node.getGrid();
+    }
+
+    public void removeRecipe(int dimension, BlockPos pos, int index) {
+        IGrid grid = grid();
+        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+            return;
+        }
+
+        List<ProviderSnapshot> all = ProviderScanner.scan(grid);
+        ProviderPairing.Group group =
+                ProviderPairing.groupOf(ProviderPairing.group(all), dimension, pos);
+        if (group == null || index < 0 || index >= group.recipes.size()) {
+            return;
+        }
+
+        int changed = RecipeWriter.apply(grid, group.machines, group.recipes.get(index), null);
+        if (changed > 1) {
+            tell("gui.packagedautoterminals.applied_to", changed);
+        }
+        refreshNow();
     }
 
     /**
@@ -213,35 +196,53 @@ public class ContainerPatTerminal extends AEBaseContainer {
     }
 
     /**
-     * Retire le porte-recettes d'une machine, et le range dans le réseau.
+     * Renvoie au réseau les porte-recettes de **tout le groupe**.
      *
-     * <p>Déplacer un porte-recettes se fait donc en deux gestes : le retirer ici, puis le
-     * reprendre sur l'autre machine. Le réseau sert d'intermédiaire, et rien ne peut se
-     * perdre : si le réseau refuse l'objet, la machine le garde.
+     * <p>Les deux machines d'une paire portent la même recette. Ne vider qu'un côté
+     * laisserait une automatisation à moitié déclarée. Le groupe part donc ensemble.
+     *
+     * <p>Si le réseau refuse un porte-recettes, faute de place, la machine le garde. Rien ne
+     * peut se perdre.
      */
     public void removeHolder(int dimension, BlockPos pos) {
-        IGridNode node = terminal.getGridNode();
-        IGrid grid = node == null ? null : node.getGrid();
-        IPackageProvidingMachine machine = ProviderScanner.find(grid, dimension, pos);
-        if (machine == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+        IGrid grid = grid();
+        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
             return;
         }
 
-        ItemStack holder = machine.getPatternStack();
-        if (holder.isEmpty()) {
-            tell("gui.packagedautoterminals.no_holder_here");
+        ProviderPairing.Group group =
+                ProviderPairing.groupOf(ProviderPairing.group(ProviderScanner.scan(grid)),
+                        dimension, pos);
+        if (group == null) {
             return;
         }
 
-        ItemStack remainder = NetworkItems.insert(grid, holder, getActionSource());
-        if (!remainder.isEmpty()) {
+        int removed = 0;
+        boolean refused = false;
+        for (ProviderSnapshot snapshot : group.machines) {
+            IPackageProvidingMachine machine =
+                    ProviderScanner.find(grid, snapshot.dimension, snapshot.pos);
+            if (machine == null) {
+                continue;
+            }
+            ItemStack holder = machine.getPatternStack();
+            if (holder.isEmpty()) {
+                continue;
+            }
+            if (!NetworkItems.insert(grid, holder, getActionSource()).isEmpty()) {
+                refused = true;
+                continue;
+            }
+            machine.setPatternStack(ItemStack.EMPTY);
+            removed++;
+        }
+
+        if (refused) {
             tell("gui.packagedautoterminals.network_full");
-            return;
+        } else if (removed == 0) {
+            tell("gui.packagedautoterminals.no_holder_here");
         }
-
-        machine.setPatternStack(ItemStack.EMPTY);
-        ticks = 0;
-        lastSent = null;
+        refreshNow();
     }
 
     /** Prend un porte-recettes vierge sur le réseau, et le pose dans la machine. */
@@ -259,36 +260,34 @@ public class ContainerPatTerminal extends AEBaseContainer {
     }
 
     /** Message court dans la barre d'action du joueur. */
-    private void tell(String key) {
+    private void tell(String key, Object... arguments) {
         EntityPlayer player = getPlayerInv().player;
         if (player instanceof EntityPlayerMP) {
-            player.sendStatusMessage(new TextComponentTranslation(key), true);
+            player.sendStatusMessage(new TextComponentTranslation(key, arguments), true);
         }
     }
 
     /**
-     * Ouvre l'éditeur sur une recette existante, ou sur une recette vide.
+     * Ouvre l'éditeur sur une recette du groupe, ou sur une recette vide.
      *
      * <p>Les mêmes vérifications que pour la suppression s'appliquent : la machine doit être
      * sur cette grille, et le joueur doit avoir le droit {@code BUILD}.
      */
     public void openEditor(int dimension, BlockPos pos, int index) {
-        IGridNode node = terminal.getGridNode();
-        IPackageProvidingMachine machine =
-                ProviderScanner.find(node == null ? null : node.getGrid(), dimension, pos);
-        if (machine == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+        IGrid grid = grid();
+        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+            return;
+        }
+        if (ProviderScanner.find(grid, dimension, pos) == null) {
             return;
         }
 
-        IRecipeInfo recipe = null;
-        ItemStack holder = machine.getPatternStack();
-        if (!holder.isEmpty() && holder.getItem() instanceof IRecipeListItem) {
-            IRecipeList recipeList = ((IRecipeListItem) holder.getItem()).getRecipeList(holder);
-            List<IRecipeInfo> recipes = recipeList == null ? null : recipeList.getRecipeList();
-            if (recipes != null && index >= 0 && index < recipes.size()) {
-                recipe = recipes.get(index);
-            }
-        }
+        ProviderPairing.Group group =
+                ProviderPairing.groupOf(ProviderPairing.group(ProviderScanner.scan(grid)),
+                        dimension, pos);
+        IRecipeInfo recipe = group != null && index >= 0 && index < group.recipes.size()
+                ? group.recipes.get(index)
+                : null;
 
         EntityPlayer player = getPlayerInv().player;
         PatGuiHandler.setPendingEdit(player, dimension, pos, index);
@@ -297,6 +296,12 @@ public class ContainerPatTerminal extends AEBaseContainer {
                 PatGuiHandler.EDITOR + terminal.getSide().ordinal(), player.world,
                 terminal.getTile().getPos().getX(), terminal.getTile().getPos().getY(),
                 terminal.getTile().getPos().getZ());
+    }
+
+    /** Force l'envoi d'un nouvel instantané, pour que le joueur voie le changement aussitôt. */
+    private void refreshNow() {
+        ticks = 0;
+        lastSent = null;
     }
 
     @Override

@@ -5,12 +5,17 @@ import java.util.List;
 import java.util.NavigableMap;
 
 import appeng.api.config.SecurityPermissions;
+import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.container.AEBaseContainer;
 import appeng.container.guisync.GuiSync;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.common.EditorInventory;
+import fr.julien.packagedautoterminals.common.ProviderPairing;
+import fr.julien.packagedautoterminals.common.ProviderRole;
 import fr.julien.packagedautoterminals.common.ProviderScanner;
+import fr.julien.packagedautoterminals.common.ProviderSnapshot;
+import fr.julien.packagedautoterminals.common.RecipeWriter;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
 import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
@@ -20,6 +25,7 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.math.BlockPos;
 import thelm.packagedauto.api.IPackageProvidingMachine;
 import thelm.packagedauto.api.IRecipeInfo;
@@ -250,42 +256,61 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
-     * Écrit la recette courante dans le porte-recettes de la machine.
+     * Écrit la recette dans **toutes les machines du groupe**.
      *
-     * @return vrai si l'écriture a eu lieu.
+     * <p>PackagedAuto exige la même recette dans le Packager et dans l'Unpackager. Écrire
+     * d'un seul côté casserait l'automatisation en silence.
+     *
+     * <p>Cas d'un groupe incomplet, fréquent : le joueur vient de poser une paire et encode
+     * sa première recette, si bien que les deux porte-recettes ne partagent encore rien. Si
+     * le réseau ne compte qu'une seule machine du rôle manquant, elle rejoint la cible. S'il
+     * y en a plusieurs, le terminal n'invente rien et le dit.
+     *
+     * @return vrai si au moins une machine a été modifiée.
      */
     public boolean save() {
         if (editor.recipeInfo == null) {
             return false;
         }
         IGridNode node = terminal.getGridNode();
-        IPackageProvidingMachine machine =
-                ProviderScanner.find(node == null ? null : node.getGrid(), dimension, pos);
-        if (machine == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+        IGrid grid = node == null ? null : node.getGrid();
+        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
             return false;
         }
 
-        ItemStack holder = machine.getPatternStack();
-        if (holder.isEmpty() || !(holder.getItem() instanceof IRecipeListItem)) {
-            return false;
-        }
-        IRecipeListItem holderItem = (IRecipeListItem) holder.getItem();
-        IRecipeList recipeList = holderItem.getRecipeList(holder);
-        if (recipeList == null) {
+        List<ProviderSnapshot> all = ProviderScanner.scan(grid);
+        ProviderPairing.Group group =
+                ProviderPairing.groupOf(ProviderPairing.group(all), dimension, pos);
+        if (group == null) {
             return false;
         }
 
-        List<IRecipeInfo> recipes = new ArrayList<>(recipeList.getRecipeList());
-        if (index >= 0 && index < recipes.size()) {
-            recipes.set(index, editor.recipeInfo);
-        } else {
-            recipes.add(editor.recipeInfo);
+        IRecipeInfo oldRecipe = index >= 0 && index < group.recipes.size()
+                ? group.recipes.get(index)
+                : null;
+
+        List<ProviderSnapshot> targets = new ArrayList<>(group.machines);
+        ProviderRole missing = ProviderPairing.missingRoleOf(group);
+        if (oldRecipe == null && missing != null) {
+            ProviderSnapshot partner = ProviderPairing.findLonePartner(all, group, missing);
+            if (partner != null) {
+                targets.add(partner);
+            }
         }
 
-        recipeList.setRecipeList(recipes);
-        holderItem.setRecipeList(holder, recipeList);
-        // Seul cet appel prévient AE2. Voir docs/PACKAGEDAUTO-MODEL.md, section 7.2.
-        machine.setPatternStack(holder);
+        int changed = RecipeWriter.apply(grid, targets, oldRecipe, editor.recipeInfo);
+        if (changed == 0) {
+            return false;
+        }
+
+        EntityPlayer player = getPlayerInv().player;
+        if (changed == 1 && missing != null) {
+            player.sendStatusMessage(new TextComponentTranslation(
+                    "gui.packagedautoterminals.no_partner"), true);
+        } else if (changed > 1) {
+            player.sendStatusMessage(new TextComponentTranslation(
+                    "gui.packagedautoterminals.applied_to", changed), true);
+        }
         return true;
     }
 
