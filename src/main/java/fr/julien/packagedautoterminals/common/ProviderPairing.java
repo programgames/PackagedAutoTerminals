@@ -130,8 +130,49 @@ public final class ProviderPairing {
             }
         }
 
+        mergeLonePartners(groups);
         mergeEmptyPair(groups);
         return groups;
+    }
+
+    /**
+     * Rattache une machine vide au groupe qui attend justement son rôle.
+     *
+     * <p>Cas courant, et déroutant sans cette règle : le joueur a encodé une recette dans
+     * l'Unpackager, mais pas encore dans le Packager. Les deux ne partagent donc aucune
+     * recette, forment deux groupes, et chacun se plaint de l'absence de l'autre alors
+     * qu'ils sont posés côte à côte.
+     *
+     * <p>Après rattachement, l'en-tête cesse de crier au rôle manquant, car le groupe porte
+     * bien les deux machines. Seule la **recette** reste signalée en rouge, car elle n'est
+     * encore que d'un côté. C'est exactement l'information utile.
+     *
+     * <p>La fusion n'a lieu que si le choix est certain : une seule machine vide de ce rôle,
+     * et un seul groupe qui l'attend.
+     */
+    private static void mergeLonePartners(List<Group> groups) {
+        for (ProviderRole role : new ProviderRole[] {ProviderRole.PACKAGER, ProviderRole.UNPACKAGER}) {
+            Group candidate = null;
+            Group needy = null;
+            int candidates = 0;
+            int needies = 0;
+
+            for (Group group : groups) {
+                if (group.recipes.isEmpty() && group.machines.size() == 1
+                        && group.machines.get(0).role == role) {
+                    candidate = group;
+                    candidates++;
+                } else if (missingRoleOf(group) == role) {
+                    needy = group;
+                    needies++;
+                }
+            }
+
+            if (candidates == 1 && needies == 1) {
+                needy.machines.addAll(candidate.machines);
+                groups.remove(candidate);
+            }
+        }
     }
 
     /**
