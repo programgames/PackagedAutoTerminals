@@ -48,3 +48,5 @@ gui.packagedautoterminals.role_packager=un Packager
 gui.packagedautoterminals.role_unpackager=un Unpackager
 gui.packagedautoterminals.role_unknown=la machine appariée
 gui.packagedautoterminals.missing_help=Encode aussi cette recette dans %s, sinon AE2 ne peut pas l'exécuter.
+gui.packagedautoterminals.no_recipe_yet=aucune recette
+gui.packagedautoterminals.missing_group_help=Ces recettes demandent aussi %s, sinon AE2 ne peut pas les exécuter.

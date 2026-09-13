@@ -48,3 +48,5 @@ gui.packagedautoterminals.role_packager=a Packager
 gui.packagedautoterminals.role_unpackager=an Unpackager
 gui.packagedautoterminals.role_unknown=the paired machine
 gui.packagedautoterminals.missing_help=Also encode this recipe into %s, or AE2 cannot run it.
+gui.packagedautoterminals.no_recipe_yet=no recipe yet
+gui.packagedautoterminals.missing_group_help=These recipes also need %s, or AE2 cannot run them.

@@ -44,7 +44,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
     // Géométrie de la fenêtre. Ces valeurs doivent rester identiques à celles de
     // tools/make_gui_texture.py, qui dessine la planche.
     /** Largeur de la fenêtre. */
-    public static final int WIDTH = 195;
+    public static final int WIDTH = 222;
     /** Hauteur de la fenêtre. */
     public static final int HEIGHT = 228;
     /** Nombre de rangées visibles dans la liste. */
@@ -56,15 +56,17 @@ public class ContainerPatTerminal extends AEBaseContainer {
     /** Haut de la zone de liste. */
     public static final int LIST_TOP = 22;
     /** Largeur de la zone de liste. */
-    public static final int LIST_WIDTH = 160;
+    public static final int LIST_WIDTH = 190;
     /** Bord gauche de l'ascenseur. */
-    public static final int SCROLL_LEFT = 171;
+    public static final int SCROLL_LEFT = 202;
+    /** Décalage horizontal de l'inventaire, pour le centrer dans la fenêtre élargie. */
+    public static final int PLAYER_INVENTORY_OFFSET_X = 22;
     /** Haut de l'inventaire du joueur. */
     public static final int PLAYER_INVENTORY_TOP = 146;
     /** Champ de recherche, sur la ligne de titre. */
-    public static final int SEARCH_LEFT = 96;
+    public static final int SEARCH_LEFT = 110;
     public static final int SEARCH_TOP = 4;
-    public static final int SEARCH_WIDTH = 72;
+    public static final int SEARCH_WIDTH = 87;
     public static final int SEARCH_HEIGHT = 12;
 
     private final PartPatTerminal terminal;
@@ -89,7 +91,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
         // PIÈGE : `AEBaseContainer.addSlotToContainer` refuse un `Slot` vanilla et lève
         // « Invalid Slot […] for AE Container instead of AppEngSlot ». La fenêtre ne s'ouvre
         // alors jamais. AE2 fournit sa propre liaison d'inventaire, qui pose des AppEngSlot.
-        bindPlayerInventory(inventory, 0, PLAYER_INVENTORY_TOP);
+        bindPlayerInventory(inventory, PLAYER_INVENTORY_OFFSET_X, PLAYER_INVENTORY_TOP);
     }
 
     @Override

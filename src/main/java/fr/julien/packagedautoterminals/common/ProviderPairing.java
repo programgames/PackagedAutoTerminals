@@ -71,13 +71,21 @@ public final class ProviderPairing {
             return null;
         }
 
-        /** Nom affiché du groupe : les machines qui le composent. */
+        /**
+         * Nom affiché du groupe.
+         *
+         * <p>Volontairement court : le nom de la première machine, puis le nombre des
+         * autres. Les noms complets tiennent dans l'infobulle. Aligner « Packager +
+         * Unpackager » sur une rangée obligerait à couper le texte dès qu'un addon choisit
+         * un nom long.
+         */
         public String title() {
             Set<String> names = new LinkedHashSet<>();
             for (ProviderSnapshot machine : machines) {
                 names.add(machine.name);
             }
-            return String.join(" + ", names);
+            String first = names.iterator().next();
+            return names.size() == 1 ? first : first + " +" + (names.size() - 1);
         }
     }
 
@@ -121,7 +129,45 @@ public final class ProviderPairing {
                 addDistinct(target.recipes, recipe);
             }
         }
+
+        mergeEmptyPair(groups);
         return groups;
+    }
+
+    /**
+     * Réunit une paire toute neuve, dont les deux porte-recettes sont encore vides.
+     *
+     * <p>Sans recette, aucune ne peut être partagée : les deux machines formeraient deux
+     * groupes, et le terminal afficherait deux lignes pour ce qui est déjà une paire. La
+     * fusion n'a lieu que si le choix est certain : exactement un groupe vide de chaque
+     * rôle. Au-delà, nous ne devinons pas.
+     */
+    private static void mergeEmptyPair(List<Group> groups) {
+        Group packager = null;
+        Group unpackager = null;
+
+        for (Group group : groups) {
+            if (!group.recipes.isEmpty() || group.machines.size() != 1) {
+                continue;
+            }
+            ProviderRole role = group.machines.get(0).role;
+            if (role == ProviderRole.PACKAGER) {
+                if (packager != null) {
+                    return;
+                }
+                packager = group;
+            } else if (role == ProviderRole.UNPACKAGER) {
+                if (unpackager != null) {
+                    return;
+                }
+                unpackager = group;
+            }
+        }
+
+        if (packager != null && unpackager != null) {
+            packager.machines.addAll(unpackager.machines);
+            groups.remove(unpackager);
+        }
     }
 
     /** Groupe qui contient cette machine, ou {@code null}. */
@@ -164,8 +210,17 @@ public final class ProviderPairing {
         return found;
     }
 
-    /** Rôle absent du groupe, alors qu'une de ses machines l'attend. */
+    /**
+     * Rôle absent du groupe, alors qu'une de ses machines l'attend.
+     *
+     * <p>Un groupe **sans aucune recette** ne manque de rien : le joueur vient de poser ses
+     * machines, et n'a encore rien encodé. Reprocher une absence à ce stade n'aurait aucun
+     * sens.
+     */
     public static ProviderRole missingRoleOf(Group group) {
+        if (group.recipes.isEmpty()) {
+            return null;
+        }
         boolean packager = false;
         boolean unpackager = false;
         for (ProviderSnapshot machine : group.machines) {

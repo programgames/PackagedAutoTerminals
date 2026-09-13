@@ -223,6 +223,9 @@ public class GuiPatTerminal extends AEBaseGui {
 
     /** État d'un groupe : nombre de recettes, ou rôle manquant. */
     private String groupState(ProviderPairing.Group group) {
+        if (group.recipes.isEmpty()) {
+            return I18n.format("gui.packagedautoterminals.no_recipe_yet");
+        }
         ProviderRole missing = ProviderPairing.missingRoleOf(group);
         if (missing != null) {
             return I18n.format("gui.packagedautoterminals.missing_"
@@ -367,7 +370,10 @@ public class GuiPatTerminal extends AEBaseGui {
             }
             ProviderRole missing = ProviderPairing.missingRoleOf(line.group);
             if (missing != null) {
-                lines.add(TextFormatting.RED + I18n.format("gui.packagedautoterminals.missing_help",
+                // Ce message ne s'affiche que si le groupe porte au moins une recette :
+                // `missingRoleOf` rend `null` sur un groupe vide.
+                lines.add(TextFormatting.RED + I18n.format(
+                        "gui.packagedautoterminals.missing_group_help",
                         I18n.format("gui.packagedautoterminals.role_"
                                 + missing.name().toLowerCase(Locale.ROOT))));
             }
