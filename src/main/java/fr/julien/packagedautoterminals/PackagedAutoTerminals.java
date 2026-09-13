@@ -37,6 +37,7 @@ public class PackagedAutoTerminals {
     public void preInit(FMLPreInitializationEvent event) {
         LOGGER.info("{} {} : pre-init", Reference.MOD_NAME, Reference.VERSION);
         PatItems.registerPartModels();
+        PatItems.registerWirelessHandler();
         PatNetwork.init();
     }
 

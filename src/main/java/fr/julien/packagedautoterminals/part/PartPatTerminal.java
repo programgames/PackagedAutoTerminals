@@ -3,13 +3,12 @@ package fr.julien.packagedautoterminals.part;
 import appeng.api.parts.IPartModel;
 import appeng.parts.PartModel;
 import appeng.parts.reporting.AbstractPartDisplay;
-import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.Reference;
+import fr.julien.packagedautoterminals.common.TerminalContext;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -39,10 +38,7 @@ public class PartPatTerminal extends AbstractPartDisplay {
         if (player.world.isRemote) {
             return true;
         }
-        BlockPos pos = getTile().getPos();
-        PackagedAutoTerminals.LOGGER.info("Ouverture du terminal en {} face {}", pos, getSide());
-        player.openGui(PackagedAutoTerminals.instance, getSide().ordinal(), player.world,
-                pos.getX(), pos.getY(), pos.getZ());
+        TerminalContext.ofPart(this).openTerminal(player);
         return true;
     }
 

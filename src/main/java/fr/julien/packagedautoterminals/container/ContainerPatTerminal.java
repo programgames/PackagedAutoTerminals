@@ -20,7 +20,7 @@ import fr.julien.packagedautoterminals.common.RecipeWriter;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.network.PacketProviderList;
 import fr.julien.packagedautoterminals.network.PatNetwork;
-import fr.julien.packagedautoterminals.part.PartPatTerminal;
+import fr.julien.packagedautoterminals.common.TerminalContext;
 import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -71,7 +71,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
     public static final int SEARCH_WIDTH = 112;
     public static final int SEARCH_HEIGHT = 12;
 
-    private final PartPatTerminal terminal;
+    private final TerminalContext terminal;
     private int ticks;
     private NBTTagCompound lastSent;
 
@@ -89,12 +89,12 @@ public class ContainerPatTerminal extends AEBaseContainer {
     @GuiSync(11)
     public int feedbackCount;
 
-    public ContainerPatTerminal(InventoryPlayer inventory, PartPatTerminal terminal) {
+    public ContainerPatTerminal(InventoryPlayer inventory, TerminalContext terminal) {
         // PIÈGE : le constructeur (InventoryPlayer, TileEntity, IPart) exige une TileEntity.
         // Avec `null`, `canInteractWith` échoue et la fenêtre se referme aussitôt, sans
         // erreur. AE2 utilise lui-même la version (InventoryPlayer, Object) pour ses parts,
         // qui retrouve seule la tuile hôte.
-        super(inventory, terminal);
+        super(inventory, terminal.host());
         this.terminal = terminal;
 
         // PIÈGE : `AEBaseContainer.addSlotToContainer` refuse un `Slot` vanilla et lève
@@ -128,8 +128,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
 
     private NBTTagList buildPayload() {
         NBTTagList list = new NBTTagList();
-        IGridNode node = terminal.getGridNode();
-        IGrid grid = node == null ? null : node.getGrid();
+        IGrid grid = terminal.grid();
         for (ProviderSnapshot snapshot : ProviderScanner.scan(grid)) {
             list.appendTag(snapshot.writeToNBT());
         }
@@ -152,7 +151,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
         if (!PatConfig.machinesTab) {
             return list;
         }
-        for (MachineSnapshot snapshot : MachineSnapshot.scan(grid())) {
+        for (MachineSnapshot snapshot : MachineSnapshot.scan(terminal.grid())) {
             list.appendTag(snapshot.writeToNBT());
         }
         return list;
@@ -160,8 +159,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
 
     /** Grille du terminal, ou {@code null} s'il n'est relié à rien. */
     private IGrid grid() {
-        IGridNode node = terminal.getGridNode();
-        return node == null ? null : node.getGrid();
+        return terminal.grid();
     }
 
     public void removeRecipe(int dimension, BlockPos pos, int index) {
@@ -194,8 +192,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
      * l'explique dans la barre d'action.
      */
     public void newRecipe(int dimension, BlockPos pos) {
-        IGridNode node = terminal.getGridNode();
-        IGrid grid = node == null ? null : node.getGrid();
+        IGrid grid = terminal.grid();
         IPackageProvidingMachine machine = ProviderScanner.find(grid, dimension, pos);
         if (machine == null || !hasAccess(SecurityPermissions.BUILD, false)) {
             return;
@@ -303,10 +300,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
         EntityPlayer player = getPlayerInv().player;
         PatGuiHandler.setPendingEdit(player, dimension, pos, index);
         PatGuiHandler.setPendingRecipe(player, recipe);
-        player.openGui(PackagedAutoTerminals.instance,
-                PatGuiHandler.EDITOR + terminal.getSide().ordinal(), player.world,
-                terminal.getTile().getPos().getX(), terminal.getTile().getPos().getY(),
-                terminal.getTile().getPos().getZ());
+        terminal.openEditor(player);
     }
 
     /** Force l'envoi d'un nouvel instantané, pour que le joueur voie le changement aussitôt. */

@@ -18,7 +18,7 @@ import fr.julien.packagedautoterminals.common.ProviderRole;
 import fr.julien.packagedautoterminals.common.ProviderScanner;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.common.RecipeWriter;
-import fr.julien.packagedautoterminals.part.PartPatTerminal;
+import fr.julien.packagedautoterminals.common.TerminalContext;
 import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -81,7 +81,7 @@ public class ContainerPatEditor extends AEBaseContainer {
     /** Quantité maximale d'un emplacement de recette. */
     public static final int MAX_SLOT_COUNT = 4096;
 
-    private final PartPatTerminal terminal;
+    private final TerminalContext terminal;
     public final EditorInventory editor;
 
     /** Machine visée, et rang de la recette. Un rang négatif signifie « nouvelle recette ». */
@@ -96,9 +96,9 @@ public class ContainerPatEditor extends AEBaseContainer {
      */
     private int index;
 
-    public ContainerPatEditor(InventoryPlayer inventory, PartPatTerminal terminal,
+    public ContainerPatEditor(InventoryPlayer inventory, TerminalContext terminal,
                               EditorInventory editor, int dimension, BlockPos pos, int index) {
-        super(inventory, terminal);
+        super(inventory, terminal.host());
         this.terminal = terminal;
         this.editor = editor;
         this.dimension = dimension;
@@ -341,8 +341,7 @@ public class ContainerPatEditor extends AEBaseContainer {
         if (editor.recipeInfo == null) {
             return false;
         }
-        IGridNode node = terminal.getGridNode();
-        IGrid grid = node == null ? null : node.getGrid();
+        IGrid grid = terminal.grid();
         if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
             return false;
         }
@@ -409,8 +408,7 @@ public class ContainerPatEditor extends AEBaseContainer {
      * {@link GroupNames}.
      */
     public void renameGroup(String name) {
-        IGridNode node = terminal.getGridNode();
-        IGrid grid = node == null ? null : node.getGrid();
+        IGrid grid = terminal.grid();
         if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
             return;
         }
@@ -578,8 +576,7 @@ public class ContainerPatEditor extends AEBaseContainer {
 
     /** Grille du terminal, ou {@code null}. */
     private IGrid grid() {
-        IGridNode node = terminal.getGridNode();
-        return node == null ? null : node.getGrid();
+        return terminal.grid();
     }
 
     /** Groupe visé, recalculé à la demande. */
@@ -594,11 +591,7 @@ public class ContainerPatEditor extends AEBaseContainer {
 
     /** Referme l'éditeur et rouvre le terminal, à la même part. */
     public void backToTerminal() {
-        EntityPlayer player = getPlayerInv().player;
-        BlockPos host = terminal.getTile().getPos();
-        player.openGui(PackagedAutoTerminals.instance,
-                PatGuiHandler.TERMINAL + terminal.getSide().ordinal(), player.world,
-                host.getX(), host.getY(), host.getZ());
+        terminal.openTerminal(getPlayerInv().player);
     }
 
     /**

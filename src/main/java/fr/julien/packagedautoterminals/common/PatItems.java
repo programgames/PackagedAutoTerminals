@@ -3,6 +3,7 @@ package fr.julien.packagedautoterminals.common;
 import appeng.api.AEApi;
 import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.item.ItemPatTerminal;
+import fr.julien.packagedautoterminals.item.ItemWirelessPatTerminal;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.creativetab.CreativeTabs;
@@ -28,6 +29,7 @@ public final class PatItems {
     };
 
     public static final ItemPatTerminal TERMINAL = new ItemPatTerminal();
+    public static final ItemWirelessPatTerminal WIRELESS_TERMINAL = new ItemWirelessPatTerminal();
 
     private PatItems() {}
 
@@ -37,6 +39,11 @@ public final class PatItems {
         TERMINAL.setUnlocalizedName(Reference.MOD_ID + ".pat_terminal");
         TERMINAL.setCreativeTab(TAB);
         event.getRegistry().register(TERMINAL);
+
+        WIRELESS_TERMINAL.setRegistryName(Reference.MOD_ID, "wireless_pat_terminal");
+        WIRELESS_TERMINAL.setUnlocalizedName(Reference.MOD_ID + ".wireless_pat_terminal");
+        WIRELESS_TERMINAL.setCreativeTab(TAB);
+        event.getRegistry().register(WIRELESS_TERMINAL);
     }
 
     @SubscribeEvent
@@ -44,6 +51,18 @@ public final class PatItems {
     public static void registerModels(ModelRegistryEvent event) {
         ModelLoader.setCustomModelResourceLocation(TERMINAL, 0,
                 new ModelResourceLocation(TERMINAL.getRegistryName(), "inventory"));
+        ModelLoader.setCustomModelResourceLocation(WIRELESS_TERMINAL, 0,
+                new ModelResourceLocation(WIRELESS_TERMINAL.getRegistryName(), "inventory"));
+    }
+
+    /**
+     * Déclare le terminal sans fil au registre d'AE2.
+     *
+     * <p>Cet enregistrement sert à la liaison, à l'énergie et à la portée. Il ne sert **pas**
+     * à ouvrir la fenêtre : voir l'explication dans {@link ItemWirelessPatTerminal}.
+     */
+    public static void registerWirelessHandler() {
+        AEApi.instance().registries().wireless().registerWirelessHandler(WIRELESS_TERMINAL);
     }
 
     /**

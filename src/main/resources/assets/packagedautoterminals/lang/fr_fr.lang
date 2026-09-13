@@ -64,3 +64,7 @@ gui.packagedautoterminals.new_recipe=Nouvelle recette
 gui.packagedautoterminals.unsaved=Recette non enregistrée. Clique à nouveau pour la quitter.
 gui.packagedautoterminals.cleared=Grille vidée
 gui.packagedautoterminals.nothing_to_delete=Cette recette n'existe pas encore
+item.packagedautoterminals.wireless_pat_terminal.name=Terminal PackagedAuto sans fil
+gui.packagedautoterminals.not_linked=Ce terminal n'est lié à aucun réseau
+gui.packagedautoterminals.no_power=Ce terminal n'a plus d'énergie
+gui.packagedautoterminals.out_of_range=Hors de portée
