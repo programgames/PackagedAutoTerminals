@@ -11,6 +11,7 @@ import appeng.container.AEBaseContainer;
 import appeng.container.guisync.GuiSync;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.common.EditorInventory;
+import fr.julien.packagedautoterminals.common.Feedback;
 import fr.julien.packagedautoterminals.common.GroupNames;
 import fr.julien.packagedautoterminals.common.ProviderPairing;
 import fr.julien.packagedautoterminals.common.ProviderRole;
@@ -54,18 +55,29 @@ public class ContainerPatEditor extends AEBaseContainer {
 
     // Géométrie de la fenêtre. Ces valeurs doivent rester identiques à celles de
     // tools/make_gui_texture.py. La disposition reprend celle du Package Recipe Encoder.
-    public static final int WIDTH = 252;
-    public static final int HEIGHT = 282;
+    public static final int WIDTH = 258;
+    public static final int HEIGHT = 312;
+    /** Champ de nom du groupe, sur la ligne de titre. */
+    public static final int NAME_LEFT = 8;
+    public static final int NAME_TOP = 4;
+    public static final int NAME_WIDTH = 162;
+    public static final int NAME_HEIGHT = 14;
+    /** Rangée d'onglets : une case par recette du groupe. */
+    public static final int TAB_LEFT = 8;
+    public static final int TAB_TOP = 32;
+    public static final int TAB_COUNT = 10;
     /** Coin haut-gauche de la grille des entrées, 9 sur 9. */
     public static final int GRID_LEFT = 8;
-    public static final int GRID_TOP = 20;
+    public static final int GRID_TOP = 52;
     /** Coin haut-gauche des sorties, 3 sur 3. */
     public static final int OUTPUT_LEFT = 190;
-    public static final int OUTPUT_TOP = 80;
+    public static final int OUTPUT_TOP = 92;
     /** Coin haut-gauche de l'aperçu des colis, 3 sur 3. */
     public static final int PREVIEW_LEFT = 190;
-    public static final int PREVIEW_TOP = 140;
-    public static final int PLAYER_INVENTORY_TOP = 200;
+    public static final int PREVIEW_TOP = 152;
+    public static final int PLAYER_INVENTORY_TOP = 230;
+    /** Décalage horizontal de l'inventaire. AE2 pose ses cases à 8 + colonne * 18 + décalage. */
+    public static final int PLAYER_INVENTORY_OFFSET_X = 12;
     /** Quantité maximale d'un emplacement de recette. */
     public static final int MAX_SLOT_COUNT = 4096;
 
@@ -94,7 +106,7 @@ public class ContainerPatEditor extends AEBaseContainer {
         this.index = index;
 
         bindEditorSlots();
-        bindPlayerInventory(inventory, 0, PLAYER_INVENTORY_TOP);
+        bindPlayerInventory(inventory, PLAYER_INVENTORY_OFFSET_X, PLAYER_INVENTORY_TOP);
     }
 
     /**
@@ -108,8 +120,24 @@ public class ContainerPatEditor extends AEBaseContainer {
      * {@code EditorInventory.isItemValidForSlot}, côté serveur, et par le grisage dans la
      * fenêtre.
      */
+    /**
+     * Icônes des onglets : la sortie de chaque recette du groupe.
+     *
+     * <p>Ce sont de **vrais** emplacements. La synchronisation des objets vers le client est
+     * donc prise en charge par le conteneur vanilla, sans paquet de notre part.
+     */
+    public final net.minecraft.inventory.InventoryBasic tabs =
+            new net.minecraft.inventory.InventoryBasic("tabs", false, TAB_COUNT);
+
     private void bindEditorSlots() {
         IItemHandler handler = new InvWrapper(editor);
+
+        IItemHandler tabHandler = new InvWrapper(tabs);
+        for (int tab = 0; tab < TAB_COUNT; tab++) {
+            addSlotToContainer(new SlotTab(tabHandler, tab,
+                    TAB_LEFT + tab * 18, TAB_TOP));
+        }
+
         for (int row = 0; row < 9; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlotToContainer(new SlotFake(handler, row * 9 + column,
@@ -129,6 +157,24 @@ public class ContainerPatEditor extends AEBaseContainer {
                         EditorInventory.INPUT_SLOTS + EditorInventory.OUTPUT_SLOTS + row * 3 + column,
                         PREVIEW_LEFT + column * 18, PREVIEW_TOP + row * 18));
             }
+        }
+    }
+
+    /** Onglet : il montre la sortie d'une recette, et ne se manipule pas comme un objet. */
+    private static final class SlotTab extends AppEngSlot {
+        SlotTab(IItemHandler inventory, int index, int x, int y) {
+            super(inventory, index, x, y);
+            setNotDraggable();
+        }
+
+        @Override
+        public boolean isItemValid(ItemStack stack) {
+            return false;
+        }
+
+        @Override
+        public boolean canTakeStack(EntityPlayer player) {
+            return false;
         }
     }
 
@@ -166,6 +212,10 @@ public class ContainerPatEditor extends AEBaseContainer {
     public ItemStack slotClick(int slotId, int dragType, ClickType clickType, EntityPlayer player) {
         if (slotId >= 0 && slotId < inventorySlots.size()) {
             Slot slot = inventorySlots.get(slotId);
+            if (slot instanceof SlotTab) {
+                selectTab(slot.getSlotIndex());
+                return ItemStack.EMPTY;
+            }
             if (slot instanceof SlotResult) {
                 return ItemStack.EMPTY;
             }
@@ -181,6 +231,7 @@ public class ContainerPatEditor extends AEBaseContainer {
                     ItemStack held = player.inventory.getItemStack();
                     slot.putStack(held.isEmpty() ? ItemStack.EMPTY : held.copy());
                 }
+                dirty = true;
                 return ItemStack.EMPTY;
             }
         }
@@ -201,10 +252,11 @@ public class ContainerPatEditor extends AEBaseContainer {
     public void detectAndSendChanges() {
         recipeTypeId = editor.recipeType == null ? -1 : RecipeTypeRegistry.getId(editor.recipeType);
 
-        // Le nom est relu à chaque cycle : une autre fenêtre a pu le changer.
         World world = getPlayerInv().player.world;
         if (!world.isRemote) {
+            // Le nom est relu à chaque cycle : une autre fenêtre a pu le changer.
             groupName = GroupNames.get(world).get(pos);
+            refreshTabs();
         }
         super.detectAndSendChanges();
     }
@@ -246,6 +298,7 @@ public class ContainerPatEditor extends AEBaseContainer {
             }
         }
         editor.updateRecipeInfo();
+        dirty = true;
         detectAndSendChanges();
     }
 
@@ -267,6 +320,7 @@ public class ContainerPatEditor extends AEBaseContainer {
         ItemStack changed = stack.copy();
         changed.setCount(count);
         editor.setInventorySlotContents(slot, changed);
+        dirty = true;
         detectAndSendChanges();
     }
 
@@ -333,17 +387,18 @@ public class ContainerPatEditor extends AEBaseContainer {
 
         // L'éditeur suit la recette qu'il vient d'écrire : le prochain enregistrement la
         // modifiera, au lieu d'en créer une copie.
-        ProviderPairing.Group after =
-                ProviderPairing.groupOf(ProviderPairing.group(ProviderScanner.scan(grid)),
-                        dimension, pos);
+        ProviderPairing.Group after = currentGroup();
         if (after != null) {
             for (int i = 0; i < after.recipes.size(); i++) {
                 if (after.recipes.get(i).equals(editor.recipeInfo)) {
                     index = i;
+                    currentTab = i;
                     break;
                 }
             }
         }
+        dirty = false;
+        pendingTab = Integer.MIN_VALUE;
         return true;
     }
 
@@ -388,10 +443,153 @@ public class ContainerPatEditor extends AEBaseContainer {
     @GuiSync(1)
     public String groupName = "";
 
-    /** Message court dans la barre d'action du joueur. */
+    /** Rang de la recette affichée dans la rangée d'onglets. Négatif : l'onglet de création. */
+    @GuiSync(2)
+    public int currentTab = -1;
+    /** Nombre de recettes du groupe. Sert au client pour placer l'onglet de création. */
+    @GuiSync(3)
+    public int recipeCount;
+    /** Première recette montrée dans la rangée. Les flèches la déplacent. */
+    @GuiSync(4)
+    public int tabOffset;
+    /** Message à montrer, clé et paramètres assemblés. */
+    @GuiSync(10)
+    public String feedback = "";
+    /** Compteur de messages. Il change même quand le texte se répète. */
+    @GuiSync(11)
+    public int feedbackCount;
+
+    /** L'éditeur porte-t-il une modification non enregistrée ? */
+    private boolean dirty;
+    /** Onglet demandé alors qu'un travail non enregistré était en cours. */
+    private int pendingTab = Integer.MIN_VALUE;
+
+    /** Message affiché dans la fenêtre, et non dans la barre d'action. */
     private void tell(String key, Object... arguments) {
-        getPlayerInv().player.sendStatusMessage(
-                new TextComponentTranslation(key, arguments), true);
+        feedback = Feedback.pack(key, arguments);
+        feedbackCount++;
+    }
+
+    /**
+     * Bascule sur une autre recette du groupe.
+     *
+     * <p>Un travail non enregistré n'est jamais perdu sans avertissement : le premier clic
+     * prévient, le second bascule.
+     */
+    public void selectTab(int slot) {
+        int target = tabOffset + slot;
+        if (target >= recipeCount) {
+            target = -1;
+        }
+
+        if (dirty && pendingTab != target) {
+            pendingTab = target;
+            tell("gui.packagedautoterminals.unsaved");
+            return;
+        }
+        pendingTab = Integer.MIN_VALUE;
+        load(target);
+    }
+
+    /**
+     * Remplit la rangée d'onglets avec la sortie de chaque recette du groupe.
+     *
+     * <p>La dernière case reste vide : c'est l'onglet de création. Les emplacements étant
+     * réels, le client reçoit ces objets sans paquet supplémentaire.
+     */
+    private void refreshTabs() {
+        ProviderPairing.Group group = currentGroup();
+        List<IRecipeInfo> recipes = group == null ? new ArrayList<>() : group.recipes;
+        recipeCount = recipes.size();
+
+        if (tabOffset > Math.max(0, recipeCount + 1 - TAB_COUNT)) {
+            tabOffset = Math.max(0, recipeCount + 1 - TAB_COUNT);
+        }
+
+        for (int slot = 0; slot < TAB_COUNT; slot++) {
+            int recipe = tabOffset + slot;
+            ItemStack icon = ItemStack.EMPTY;
+            if (recipe < recipes.size()) {
+                List<ItemStack> outputs = recipes.get(recipe).getOutputs();
+                if (!outputs.isEmpty()) {
+                    icon = outputs.get(0).copy();
+                }
+            }
+            if (!ItemStack.areItemStacksEqual(tabs.getStackInSlot(slot), icon)) {
+                tabs.setInventorySlotContents(slot, icon);
+            }
+        }
+    }
+
+    /** Déplace la rangée d'onglets, quand le groupe porte plus de recettes qu'elle n'a de cases. */
+    public void scrollTabs(boolean forward) {
+        int maximum = Math.max(0, recipeCount + 1 - TAB_COUNT);
+        tabOffset = Math.max(0, Math.min(maximum, tabOffset + (forward ? 1 : -1)));
+    }
+
+    /** Charge la recette de rang donné, ou vide l'éditeur pour une création. */
+    private void load(int target) {
+        currentTab = target;
+        index = target;
+        editor.clear();
+
+        if (target < 0) {
+            editor.recipeType = defaultRecipeType();
+        } else {
+            ProviderPairing.Group group = currentGroup();
+            if (group != null && target < group.recipes.size()) {
+                editor.load(group.recipes.get(target));
+            }
+        }
+        editor.updateRecipeInfo();
+        dirty = false;
+    }
+
+    /** Supprime la recette en cours, dans toutes les machines du groupe. */
+    public void deleteCurrent() {
+        if (index < 0) {
+            tell("gui.packagedautoterminals.nothing_to_delete");
+            return;
+        }
+        IGrid grid = grid();
+        ProviderPairing.Group group = currentGroup();
+        if (grid == null || group == null || index >= group.recipes.size()
+                || !hasAccess(SecurityPermissions.BUILD, false)) {
+            return;
+        }
+
+        RecipeWriter.Result result = RecipeWriter.apply(grid, getActionSource(),
+                group.machines, group.recipes.get(index), null);
+        tell(result.changed == 1
+                        ? "gui.packagedautoterminals.applied_to_one"
+                        : "gui.packagedautoterminals.applied_to",
+                result.changed);
+        load(-1);
+    }
+
+    /** Vide la grille, sans rien écrire dans les machines. */
+    public void clearGrid() {
+        editor.clear();
+        editor.recipeType = editor.recipeType == null ? defaultRecipeType() : editor.recipeType;
+        editor.updateRecipeInfo();
+        dirty = true;
+        tell("gui.packagedautoterminals.cleared");
+    }
+
+    /** Grille du terminal, ou {@code null}. */
+    private IGrid grid() {
+        IGridNode node = terminal.getGridNode();
+        return node == null ? null : node.getGrid();
+    }
+
+    /** Groupe visé, recalculé à la demande. */
+    private ProviderPairing.Group currentGroup() {
+        IGrid grid = grid();
+        if (grid == null) {
+            return null;
+        }
+        return ProviderPairing.groupOf(ProviderPairing.group(ProviderScanner.scan(grid)),
+                dimension, pos);
     }
 
     /** Referme l'éditeur et rouvre le terminal, à la même part. */
@@ -416,6 +614,7 @@ public class ContainerPatEditor extends AEBaseContainer {
             editor.recipeType = RecipeTypeRegistry.getNextRecipeType(editor.recipeType, forward);
         }
         editor.updateRecipeInfo();
+        dirty = true;
     }
 
     /**

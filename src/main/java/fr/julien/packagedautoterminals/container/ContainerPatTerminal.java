@@ -7,7 +7,9 @@ import appeng.api.config.SecurityPermissions;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.container.AEBaseContainer;
+import appeng.container.guisync.GuiSync;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
+import fr.julien.packagedautoterminals.common.Feedback;
 import fr.julien.packagedautoterminals.common.MachineSnapshot;
 import fr.julien.packagedautoterminals.common.NetworkItems;
 import fr.julien.packagedautoterminals.common.PatConfig;
@@ -44,7 +46,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
     // Géométrie de la fenêtre. Ces valeurs doivent rester identiques à celles de
     // tools/make_gui_texture.py, qui dessine la planche.
     /** Largeur de la fenêtre. */
-    public static final int WIDTH = 222;
+    public static final int WIDTH = 256;
     /** Hauteur de la fenêtre. */
     public static final int HEIGHT = 228;
     /** Nombre de rangées visibles dans la liste. */
@@ -56,17 +58,17 @@ public class ContainerPatTerminal extends AEBaseContainer {
     /** Haut de la zone de liste. */
     public static final int LIST_TOP = 22;
     /** Largeur de la zone de liste. */
-    public static final int LIST_WIDTH = 190;
+    public static final int LIST_WIDTH = 224;
     /** Bord gauche de l'ascenseur. */
-    public static final int SCROLL_LEFT = 202;
+    public static final int SCROLL_LEFT = 236;
     /** Décalage horizontal de l'inventaire, pour le centrer dans la fenêtre élargie. */
-    public static final int PLAYER_INVENTORY_OFFSET_X = 22;
+    public static final int PLAYER_INVENTORY_OFFSET_X = 39;
     /** Haut de l'inventaire du joueur. */
     public static final int PLAYER_INVENTORY_TOP = 146;
     /** Champ de recherche, sur la ligne de titre. */
-    public static final int SEARCH_LEFT = 110;
+    public static final int SEARCH_LEFT = 120;
     public static final int SEARCH_TOP = 4;
-    public static final int SEARCH_WIDTH = 87;
+    public static final int SEARCH_WIDTH = 112;
     public static final int SEARCH_HEIGHT = 12;
 
     private final PartPatTerminal terminal;
@@ -79,6 +81,13 @@ public class ContainerPatTerminal extends AEBaseContainer {
     public List<MachineSnapshot> machines = new ArrayList<>();
     /** Taille du dernier paquet reçu ou envoyé, en octets. Sert à la mesure du lot 2. */
     public int lastPayloadBytes;
+
+    /** Message à montrer au joueur, clé et paramètres assemblés. */
+    @GuiSync(10)
+    public String feedback = "";
+    /** Compteur de messages. Il change même quand le texte se répète. */
+    @GuiSync(11)
+    public int feedbackCount;
 
     public ContainerPatTerminal(InventoryPlayer inventory, PartPatTerminal terminal) {
         // PIÈGE : le constructeur (InventoryPlayer, TileEntity, IPart) exige une TileEntity.
@@ -263,12 +272,10 @@ public class ContainerPatTerminal extends AEBaseContainer {
         return true;
     }
 
-    /** Message court dans la barre d'action du joueur. */
+    /** Message affiché dans la fenêtre, et non dans la barre d'action. */
     private void tell(String key, Object... arguments) {
-        EntityPlayer player = getPlayerInv().player;
-        if (player instanceof EntityPlayerMP) {
-            player.sendStatusMessage(new TextComponentTranslation(key, arguments), true);
-        }
+        feedback = Feedback.pack(key, arguments);
+        feedbackCount++;
     }
 
     /**

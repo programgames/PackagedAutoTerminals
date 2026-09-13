@@ -33,6 +33,12 @@ public class PacketRecipeAction implements IMessage {
     public static final byte ACTION_REMOVE_HOLDER = 5;
     /** Referme l'éditeur et rouvre le terminal. */
     public static final byte ACTION_BACK = 6;
+    /** Supprime la recette en cours d'édition. */
+    public static final byte ACTION_DELETE = 7;
+    /** Vide la grille de l'éditeur, sans rien écrire. */
+    public static final byte ACTION_CLEAR = 8;
+    /** Déplace la rangée d'onglets. {@link #index} vaut 1 en avant, 0 en arrière. */
+    public static final byte ACTION_SCROLL_TABS = 9;
 
     public int dimension;
     public BlockPos pos = BlockPos.ORIGIN;
@@ -92,6 +98,12 @@ public class PacketRecipeAction implements IMessage {
                         editor.backToTerminal();
                     } else if (message.action == ACTION_CYCLE_TYPE) {
                         editor.cycleRecipeType(message.index == 1);
+                    } else if (message.action == ACTION_DELETE) {
+                        editor.deleteCurrent();
+                    } else if (message.action == ACTION_CLEAR) {
+                        editor.clearGrid();
+                    } else if (message.action == ACTION_SCROLL_TABS) {
+                        editor.scrollTabs(message.index == 1);
                     }
                 }
             });

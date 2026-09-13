@@ -3,15 +3,16 @@ package fr.julien.packagedautoterminals.client.gui;
 import java.io.IOException;
 
 import appeng.client.gui.AEBaseGui;
+import appeng.container.slot.SlotFake;
 import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.common.EditorInventory;
+import fr.julien.packagedautoterminals.common.Feedback;
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.network.PacketEditorSlot;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
 import fr.julien.packagedautoterminals.network.PacketRenameGroup;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
-import appeng.container.slot.SlotFake;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
@@ -23,15 +24,16 @@ import org.lwjgl.input.Keyboard;
 import thelm.packagedauto.api.IRecipeType;
 
 /**
- * Éditeur d'une recette.
+ * Éditeur de recette : création et modification réunies.
  *
- * <p>La mise en page reprend celle du Package Recipe Encoder : grille 9 sur 9 à gauche,
- * flèche, sorties en haut à droite, aperçu des colis en dessous, inventaire en bas. La
- * rangée des dix emplacements de motifs disparaît : le terminal édite une recette à la
- * fois.
+ * <p>La disposition reprend celle du Package Recipe Encoder : rangée de recettes en haut,
+ * grille 9 sur 9 à gauche, flèche, sorties et aperçu des colis à droite, inventaire en bas.
  *
- * <p>La planche mesure 256 sur 512, car la fenêtre dépasse les 256 pixels de haut que
- * suppose {@code drawTexturedModalRect}.
+ * <p>Une seule différence de fond : la rangée du haut ne montre pas les emplacements d'un
+ * porte-recettes, mais **les recettes du groupe**. La dernière case, vide, en crée une.
+ * Créer et modifier deviennent le même geste.
+ *
+ * <p>La planche fait 512 sur 512 : la fenêtre dépasse 256 pixels dans les deux sens.
  */
 public class GuiPatEditor extends AEBaseGui {
 
@@ -39,22 +41,36 @@ public class GuiPatEditor extends AEBaseGui {
     private static final int BUTTON_NEXT_TYPE = 1;
     private static final int BUTTON_SAVE = 2;
     private static final int BUTTON_BACK = 3;
+    private static final int BUTTON_DELETE = 4;
+    private static final int BUTTON_CLEAR = 5;
+    private static final int BUTTON_TABS_PREVIOUS = 6;
+    private static final int BUTTON_TABS_NEXT = 7;
 
-    private static final int SHEET_WIDTH = 256;
-    private static final int SHEET_HEIGHT = 512;
+    private static final int SHEET = 512;
 
     private static final int COLOR_TEXT = 0x404040;
     private static final int COLOR_DIM = 0x808080;
     private static final int COLOR_WARNING = 0x803030;
+    private static final int COLOR_OK = 0x2E7D32;
     /** Voile posé sur les emplacements que le type de recette n'active pas. */
     private static final int COLOR_DISABLED = 0xA0303030;
+    /** Cadre de l'onglet ouvert. */
+    private static final int COLOR_SELECTED = 0xFF2E7D32;
+
+    private static final long MESSAGE_DURATION = 3_000L;
 
     /** Centre de la colonne de droite, pour centrer le nom du type et son icône. */
     private static final int RIGHT_CENTER = ContainerPatEditor.OUTPUT_LEFT + 27;
 
     private final ContainerPatEditor editorContainer;
     private GuiButton saveButton;
+    private GuiButton deleteButton;
     private GuiTextField nameField;
+
+    private int lastFeedbackCount;
+    private String message = "";
+    private long messageExpiry;
+    private boolean messageRefused;
 
     public GuiPatEditor(InventoryPlayer inventory, PartPatTerminal terminal,
                         EditorInventory editor, int dimension, BlockPos pos, int index) {
@@ -69,22 +85,35 @@ public class GuiPatEditor extends AEBaseGui {
         super.initGui();
 
         String previous = nameField == null ? editorContainer.groupName : nameField.getText();
-        nameField = new GuiTextField(0, fontRenderer, guiLeft + 10, guiTop + 6, 172, 10);
+        nameField = new GuiTextField(0, fontRenderer,
+                guiLeft + ContainerPatEditor.NAME_LEFT + 4,
+                guiTop + ContainerPatEditor.NAME_TOP + 4,
+                ContainerPatEditor.NAME_WIDTH - 8, 10);
         nameField.setEnableBackgroundDrawing(false);
         nameField.setMaxStringLength(32);
         nameField.setTextColor(COLOR_TEXT);
         nameField.setText(previous == null ? "" : previous);
 
         buttonList.clear();
-        saveButton = new GuiButton(BUTTON_SAVE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
-                guiTop + 20, 54, 18, I18n.format("gui.packagedautoterminals.save"));
-        buttonList.add(saveButton);
+        buttonList.add(new GuiButton(BUTTON_BACK, guiLeft + 176, guiTop + 4, 74, 14,
+                I18n.format("gui.packagedautoterminals.back")));
+
+        buttonList.add(new GuiButton(BUTTON_TABS_PREVIOUS, guiLeft + 190, guiTop + 32, 14, 16, "<"));
+        buttonList.add(new GuiButton(BUTTON_TABS_NEXT, guiLeft + 208, guiTop + 32, 14, 16, ">"));
+
         buttonList.add(new GuiButton(BUTTON_PREVIOUS_TYPE,
-                guiLeft + ContainerPatEditor.OUTPUT_LEFT - 2, guiTop + 54, 10, 18, "<"));
+                guiLeft + ContainerPatEditor.OUTPUT_LEFT, guiTop + 68, 10, 18, "<"));
         buttonList.add(new GuiButton(BUTTON_NEXT_TYPE,
-                guiLeft + ContainerPatEditor.OUTPUT_LEFT + 44, guiTop + 54, 10, 18, ">"));
-        buttonList.add(new GuiButton(BUTTON_BACK, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
-                guiTop + 2, 54, 16, I18n.format("gui.packagedautoterminals.back")));
+                guiLeft + ContainerPatEditor.OUTPUT_LEFT + 44, guiTop + 68, 10, 18, ">"));
+
+        saveButton = new GuiButton(BUTTON_SAVE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
+                guiTop + 208, 54, 16, I18n.format("gui.packagedautoterminals.save"));
+        deleteButton = new GuiButton(BUTTON_DELETE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
+                guiTop + 226, 54, 16, I18n.format("gui.packagedautoterminals.delete"));
+        buttonList.add(saveButton);
+        buttonList.add(deleteButton);
+        buttonList.add(new GuiButton(BUTTON_CLEAR, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
+                guiTop + 244, 54, 16, I18n.format("gui.packagedautoterminals.clear")));
     }
 
     @Override
@@ -96,10 +125,22 @@ public class GuiPatEditor extends AEBaseGui {
             case BUTTON_NEXT_TYPE:
                 send(PacketRecipeAction.ACTION_CYCLE_TYPE, 1);
                 break;
+            case BUTTON_TABS_PREVIOUS:
+                send(PacketRecipeAction.ACTION_SCROLL_TABS, 0);
+                break;
+            case BUTTON_TABS_NEXT:
+                send(PacketRecipeAction.ACTION_SCROLL_TABS, 1);
+                break;
             case BUTTON_SAVE:
                 // Le nom part avec la recette : le joueur n'a pas à valider deux fois.
                 sendName();
                 send(PacketRecipeAction.ACTION_SAVE, 0);
+                break;
+            case BUTTON_DELETE:
+                send(PacketRecipeAction.ACTION_DELETE, 0);
+                break;
+            case BUTTON_CLEAR:
+                send(PacketRecipeAction.ACTION_CLEAR, 0);
                 break;
             case BUTTON_BACK:
                 sendName();
@@ -113,6 +154,12 @@ public class GuiPatEditor extends AEBaseGui {
     private void send(byte action, int value) {
         PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(
                 editorContainer.dimension, editorContainer.pos, value, action));
+    }
+
+    private void sendName() {
+        if (nameField != null && !nameField.getText().equals(editorContainer.groupName)) {
+            PatNetwork.CHANNEL.sendToServer(new PacketRenameGroup(nameField.getText()));
+        }
     }
 
     /**
@@ -131,12 +178,6 @@ public class GuiPatEditor extends AEBaseGui {
             return;
         }
         super.mouseWheelEvent(x, y, wheel);
-    }
-
-    private void sendName() {
-        if (nameField != null && !nameField.getText().equals(editorContainer.groupName)) {
-            PatNetwork.CHANNEL.sendToServer(new PacketRenameGroup(nameField.getText()));
-        }
     }
 
     @Override
@@ -187,28 +228,20 @@ public class GuiPatEditor extends AEBaseGui {
     @Override
     public void drawBG(int offsetX, int offsetY, int mouseX, int mouseY) {
         bindTexture(Reference.MOD_ID, "guis/pat_editor.png");
-        drawModalRectWithCustomSizedTexture(offsetX, offsetY, 0, 0, xSize, ySize,
-                SHEET_WIDTH, SHEET_HEIGHT);
+        drawModalRectWithCustomSizedTexture(offsetX, offsetY, 0, 0, xSize, ySize, SHEET, SHEET);
     }
 
     @Override
     public void drawFG(int offsetX, int offsetY, int mouseX, int mouseY) {
         EditorInventory editor = editorContainer.editor;
 
-        // Le champ de nom occupe la ligne de titre. Vide, il annonce ce qu'il attend.
         if (nameField != null && nameField.getText().isEmpty() && !nameField.isFocused()) {
             fontRenderer.drawString(I18n.format("gui.packagedautoterminals.name_hint"),
-                    10, 6, COLOR_DIM);
+                    ContainerPatEditor.NAME_LEFT + 4, ContainerPatEditor.NAME_TOP + 4, COLOR_DIM);
         }
 
-        // Un avertissement en haut à droite, là où rien d'autre ne s'affiche. Il ne peut
-        // donc chevaucher aucun emplacement.
-        if (editor.recipeInfo == null) {
-            String warning = I18n.format("gui.packagedautoterminals.invalid");
-            fontRenderer.drawString(warning, xSize - 8 - fontRenderer.getStringWidth(warning),
-                    6, COLOR_WARNING);
-        }
-
+        drawMessage(editor);
+        drawSelectedTab();
         drawRecipeType(editor.recipeType);
 
         fontRenderer.drawString(I18n.format("gui.packagedautoterminals.inventory"),
@@ -219,6 +252,49 @@ public class GuiPatEditor extends AEBaseGui {
         if (saveButton != null) {
             saveButton.enabled = editor.recipeInfo != null;
         }
+        if (deleteButton != null) {
+            deleteButton.enabled = editorContainer.currentTab >= 0;
+        }
+    }
+
+    /** Message du serveur, ou état de la recette, sur la ligne sous le titre. */
+    private void drawMessage(EditorInventory editor) {
+        if (editorContainer.feedbackCount != lastFeedbackCount) {
+            lastFeedbackCount = editorContainer.feedbackCount;
+            message = I18n.format(Feedback.key(editorContainer.feedback),
+                    Feedback.arguments(editorContainer.feedback));
+            messageExpiry = System.currentTimeMillis() + MESSAGE_DURATION;
+            // Un refus se reconnaît à sa clé : rien à traduire pour le savoir.
+            messageRefused = editorContainer.feedback.contains("no_")
+                    || editorContainer.feedback.contains("unsaved")
+                    || editorContainer.feedback.contains("failed")
+                    || editorContainer.feedback.contains("nothing");
+        }
+
+        if (!message.isEmpty() && System.currentTimeMillis() <= messageExpiry) {
+            fontRenderer.drawString(message, 8, 20, messageRefused ? COLOR_WARNING : COLOR_OK);
+            return;
+        }
+        if (editor.recipeInfo == null) {
+            fontRenderer.drawString(I18n.format("gui.packagedautoterminals.invalid"),
+                    8, 20, COLOR_WARNING);
+        }
+    }
+
+    /** Encadre l'onglet ouvert. L'onglet de création suit la dernière recette. */
+    private void drawSelectedTab() {
+        int slot = editorContainer.currentTab < 0
+                ? editorContainer.recipeCount - editorContainer.tabOffset
+                : editorContainer.currentTab - editorContainer.tabOffset;
+        if (slot < 0 || slot >= ContainerPatEditor.TAB_COUNT) {
+            return;
+        }
+        int x = ContainerPatEditor.TAB_LEFT + slot * 18;
+        int y = ContainerPatEditor.TAB_TOP;
+        drawRect(x - 1, y - 1, x + 17, y, COLOR_SELECTED);
+        drawRect(x - 1, y + 16, x + 17, y + 17, COLOR_SELECTED);
+        drawRect(x - 1, y, x, y + 16, COLOR_SELECTED);
+        drawRect(x + 16, y, x + 17, y + 16, COLOR_SELECTED);
     }
 
     /** Nom du type, centré, et son icône, comme le fait l'Encoder. */
@@ -227,14 +303,14 @@ public class GuiPatEditor extends AEBaseGui {
                 ? I18n.format("gui.packagedautoterminals.no_type")
                 : type.getLocalizedNameShort();
         fontRenderer.drawString(name, RIGHT_CENTER - fontRenderer.getStringWidth(name) / 2,
-                42, COLOR_DIM);
+                58, COLOR_DIM);
 
         if (type == null) {
             return;
         }
         Object representation = type.getRepresentation();
         if (representation instanceof ItemStack) {
-            drawItem(RIGHT_CENTER - 8, 55, (ItemStack) representation);
+            drawItem(RIGHT_CENTER - 8, 69, (ItemStack) representation);
         }
     }
 

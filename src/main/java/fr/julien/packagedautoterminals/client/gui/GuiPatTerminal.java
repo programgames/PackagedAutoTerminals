@@ -14,6 +14,7 @@ import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.client.BlockHighlighter;
 import fr.julien.packagedautoterminals.common.CrafterTypes;
+import fr.julien.packagedautoterminals.common.Feedback;
 import fr.julien.packagedautoterminals.common.MachineSnapshot;
 import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.common.ProviderPairing;
@@ -63,10 +64,13 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int COLOR_DIM = 0x808080;
     private static final int COLOR_WARNING = 0x803030;
 
-    /** Icône « localiser » : position dans la planche, et taille. */
+    /** Icône « œil » : position dans la planche, et taille. */
     private static final int LOCATE_U = 0;
     private static final int LOCATE_V = 232;
     private static final int LOCATE_SIZE = 12;
+    /** Durée d'affichage d'un message, en millisecondes. */
+    private static final long MESSAGE_DURATION = 3_000L;
+    private static final int COLOR_OK = 0x2E7D32;
     /** Bord gauche du bouton, dans la rangée d'un groupe. */
     private static final int LOCATE_LEFT = LIST_LEFT + LIST_WIDTH - LOCATE_SIZE - 2;
 
@@ -77,6 +81,10 @@ public class GuiPatTerminal extends AEBaseGui {
     private GuiButton viewButton;
     /** Faux : onglet des patterns. Vrai : onglet des machines. */
     private boolean machinesView;
+    private int lastFeedbackCount;
+    private String message = "";
+    private long messageExpiry;
+    private boolean messageRefused;
 
     public GuiPatTerminal(InventoryPlayer inventory, PartPatTerminal terminal) {
         super(new ContainerPatTerminal(inventory, terminal));
@@ -138,7 +146,17 @@ public class GuiPatTerminal extends AEBaseGui {
         // la moitié de la place, et n'apprenait rien à personne.
         int summaryY = ContainerPatTerminal.PLAYER_INVENTORY_TOP - 11;
         String summary = networkSummary();
-        fontRenderer.drawString(summary, LIST_LEFT, summaryY, COLOR_TEXT);
+
+        // Le message prend la place du résumé pendant trois secondes. La ligne de titre est
+        // déjà prise par l'onglet et la recherche, et la barre d'action du jeu se dessine
+        // sous la fenêtre, donc hors de vue.
+        String message = currentMessage();
+        if (message != null) {
+            fontRenderer.drawString(trim(message, LIST_WIDTH), LIST_LEFT, summaryY,
+                    messageRefused ? COLOR_WARNING : COLOR_OK);
+        } else {
+            fontRenderer.drawString(summary, LIST_LEFT, summaryY, COLOR_TEXT);
+        }
 
         int localX = mouseX - offsetX;
         int localY = mouseY - offsetY;
@@ -238,6 +256,28 @@ public class GuiPatTerminal extends AEBaseGui {
         fontRenderer.drawString(text,
                 LIST_LEFT + LIST_WIDTH - 4 - fontRenderer.getStringWidth(text),
                 y + TEXT_OFFSET, color);
+    }
+
+    /**
+     * Message du serveur, affiché sous la ligne de titre.
+     *
+     * <p>Il remplace la barre d'action du jeu, qui se dessine **sous** la fenêtre et passait
+     * donc inaperçue.
+     */
+    private String currentMessage() {
+        if (terminalContainer.feedbackCount != lastFeedbackCount) {
+            lastFeedbackCount = terminalContainer.feedbackCount;
+            message = I18n.format(Feedback.key(terminalContainer.feedback),
+                    Feedback.arguments(terminalContainer.feedback));
+            messageExpiry = System.currentTimeMillis() + MESSAGE_DURATION;
+            // Un refus se reconnaît à sa clé : rien à traduire pour le savoir.
+            messageRefused = terminalContainer.feedback.contains("no_")
+                    || terminalContainer.feedback.contains("failed");
+        }
+        if (message.isEmpty() || System.currentTimeMillis() > messageExpiry) {
+            return null;
+        }
+        return message;
     }
 
     /**
