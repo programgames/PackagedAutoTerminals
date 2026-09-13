@@ -168,10 +168,12 @@ public class ContainerPatTerminal extends AEBaseContainer {
             return;
         }
 
-        int changed = RecipeWriter.apply(grid, group.machines, group.recipes.get(index), null);
-        if (changed > 1) {
-            tell("gui.packagedautoterminals.applied_to", changed);
-        }
+        RecipeWriter.Result result = RecipeWriter.apply(grid, getActionSource(),
+                group.machines, group.recipes.get(index), null);
+        tell(result.changed == 1
+                        ? "gui.packagedautoterminals.applied_to_one"
+                        : "gui.packagedautoterminals.applied_to",
+                result.changed);
         refreshNow();
     }
 

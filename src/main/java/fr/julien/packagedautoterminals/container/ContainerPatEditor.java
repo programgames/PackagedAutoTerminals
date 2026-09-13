@@ -298,20 +298,30 @@ public class ContainerPatEditor extends AEBaseContainer {
             }
         }
 
-        int changed = RecipeWriter.apply(grid, targets, oldRecipe, editor.recipeInfo);
-        if (changed == 0) {
+        RecipeWriter.Result result =
+                RecipeWriter.apply(grid, getActionSource(), targets, oldRecipe, editor.recipeInfo);
+        if (result.changed == 0) {
+            tell("gui.packagedautoterminals.write_failed");
             return false;
         }
 
-        EntityPlayer player = getPlayerInv().player;
-        if (changed == 1 && missing != null) {
-            player.sendStatusMessage(new TextComponentTranslation(
-                    "gui.packagedautoterminals.no_partner"), true);
-        } else if (changed > 1) {
-            player.sendStatusMessage(new TextComponentTranslation(
-                    "gui.packagedautoterminals.applied_to", changed), true);
+        // Le joueur reçoit toujours un retour. Le silence laissait croire à un échec.
+        tell(result.changed == 1
+                        ? "gui.packagedautoterminals.applied_to_one"
+                        : "gui.packagedautoterminals.applied_to",
+                result.changed);
+        if (result.withoutHolder > 0) {
+            tell("gui.packagedautoterminals.no_blank_holder");
+        } else if (result.changed == 1 && missing != null) {
+            tell("gui.packagedautoterminals.no_partner");
         }
         return true;
+    }
+
+    /** Message court dans la barre d'action du joueur. */
+    private void tell(String key, Object... arguments) {
+        getPlayerInv().player.sendStatusMessage(
+                new TextComponentTranslation(key, arguments), true);
     }
 
     /** Referme l'éditeur et rouvre le terminal, à la même part. */
