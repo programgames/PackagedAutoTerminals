@@ -130,7 +130,11 @@ FML les charge donc comme des mods. Mettre les **memes** jars dans `run/mods` pr
 Found a duplicate mod appliedenergistics2 at [.\modse2-uel-v0.56.5.jar, ...\libs\...]
 ```
 
-**Regle** : tout jar present dans `libs/` ne doit **jamais** etre copie dans `run/mods`.
+**Regle** : tout jar present dans `libs/maven` ne doit **jamais** etre copie dans `run/mods`.
+
+Ce piege est tombe deux fois : avec AE2UEL, puis avec JEI, le jour ou il est devenu une
+dependance de compilation. La tache `checkDevMods` le detecte desormais, et `runClient` en
+depend : le jeu ne peut plus demarrer avec un doublon.
 
 ### 4.2 Dependances non deobfusquees : deux pieges en serie
 

@@ -131,6 +131,7 @@ afterEvaluate {
     // Sans cette dépendance, `runClient` peut donc lancer du CODE PÉRIMÉ, sans rien signaler.
     tasks.matching { it.name == 'runClient' || it.name == 'runServer' }.all {
         dependsOn 'reobfJar'
+        dependsOn 'checkDevMods'
     }
 }
 
@@ -206,6 +207,42 @@ task checkLang {
 }
 
 check.dependsOn checkLang
+
+// Garde-fou : un jar présent dans `libs/maven` ne doit JAMAIS se retrouver dans `run/mods`.
+// ForgeGradle met les dépendances sur le chemin d'exécution, FML les charge comme des mods,
+// et le doublon arrête le jeu sur `DuplicateModsFoundException`. Ce piège est tombé deux
+// fois : avec AE2UEL, puis avec JEI. Il s'arrête ici.
+task checkDevMods {
+    description = 'Echoue si un jar de libs/maven est aussi dans run/mods.'
+    group = 'verification'
+
+    doLast {
+        def runMods = file('run/mods')
+        if (!runMods.exists()) {
+            return
+        }
+
+        def normalise = { String name -> name.toLowerCase().replaceAll('[^a-z0-9]', '') }
+        def problems = []
+
+        fileTree(dir: 'libs/maven', include: '**/*.jar').files.each { jar ->
+            def artifact = normalise(jar.parentFile.parentFile.name)
+            runMods.listFiles({ file -> file.name.endsWith('.jar') } as FileFilter).each { mod ->
+                if (normalise(mod.name).contains(artifact)) {
+                    problems << "  run/mods/${mod.name} fait doublon avec la dépendance ${jar.parentFile.parentFile.name}"
+                }
+            }
+        }
+
+        if (!problems.isEmpty()) {
+            throw new GradleException(
+                    'Des mods sont présents deux fois. FML refusera de démarrer.'
+                    + System.lineSeparator() + problems.join(System.lineSeparator())
+                    + System.lineSeparator()
+                    + '  Supprime ces fichiers de run/mods : la dépendance suffit.')
+        }
+    }
+}
 
 task printCp {
     doLast { sourceSets.main.compileClasspath.each { println "CP: " + it } }
