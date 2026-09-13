@@ -10,7 +10,6 @@ import java.util.Set;
 
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.widgets.GuiScrollbar;
-import appeng.client.gui.widgets.MEGuiTextField;
 import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.client.BlockHighlighter;
@@ -26,6 +25,7 @@ import fr.julien.packagedautoterminals.network.PacketRecipeAction;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.common.TerminalContext;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
@@ -73,13 +73,15 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int COLOR_OK = 0x2E7D32;
     /** Taille de la planche, en pixels. */
     private static final int SHEET = 512;
+    /** Texte des champs de saisie, clair sur leur fond sombre. */
+    private static final int COLOR_FIELD_TEXT = 0xE0E0E0;
     /** Bord gauche du bouton, dans la rangée d'un groupe. */
     private static final int LOCATE_LEFT = LIST_LEFT + LIST_WIDTH - LOCATE_SIZE - 2;
 
     private static final int BUTTON_VIEW = 0;
 
     private final ContainerPatTerminal terminalContainer;
-    private MEGuiTextField search;
+    private GuiTextField search;
     private GuiButton viewButton;
     /** Faux : onglet des patterns. Vrai : onglet des machines. */
     private boolean machinesView;
@@ -101,15 +103,17 @@ public class GuiPatTerminal extends AEBaseGui {
         super.initGui();
 
         // Le fond du champ est dessiné dans la planche : le widget ne peint que le texte.
-        // PIÈGE : le champ de texte vanilla dessine son texte avec une ombre portée. Sur un
-        // panneau clair, l'ombre se lit comme une seconde lettre décalée, et tout paraît
-        // flou. Le champ d'AE2 est fait pour ces fonds-là.
+        // PIÈGE : tout texte du jeu est dessiné avec une ombre portée. Sur un panneau clair,
+        // elle se lit comme une seconde lettre décalée d'un pixel, et la saisie paraît
+        // floue. Le fond du champ est donc sombre, et le texte clair, comme chez AE2.
         String previous = search == null ? "" : search.getText();
-        search = new MEGuiTextField(fontRenderer,
-                guiLeft + ContainerPatTerminal.SEARCH_LEFT + 1,
-                guiTop + ContainerPatTerminal.SEARCH_TOP + 1,
-                ContainerPatTerminal.SEARCH_WIDTH - 2, ContainerPatTerminal.SEARCH_HEIGHT - 2);
+        search = new GuiTextField(0, fontRenderer,
+                guiLeft + ContainerPatTerminal.SEARCH_LEFT + 3,
+                guiTop + ContainerPatTerminal.SEARCH_TOP + 3,
+                ContainerPatTerminal.SEARCH_WIDTH - 6, 8);
+        search.setEnableBackgroundDrawing(false);
         search.setMaxStringLength(64);
+        search.setTextColor(COLOR_FIELD_TEXT);
         search.setText(previous);
         // Le champ prend le focus tout de suite : le joueur ouvre le terminal pour chercher.
         search.setFocused(true);

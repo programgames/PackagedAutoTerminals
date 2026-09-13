@@ -52,6 +52,8 @@ public class GuiPatEditor extends AEBaseGui {
     private static final int COLOR_DIM = 0x808080;
     private static final int COLOR_WARNING = 0x803030;
     private static final int COLOR_OK = 0x2E7D32;
+    /** Texte des champs de saisie, clair sur leur fond sombre. */
+    private static final int COLOR_FIELD_TEXT = 0xE0E0E0;
     /** Voile posé sur les emplacements que le type de recette n'active pas. */
     private static final int COLOR_DISABLED = 0xA0303030;
     /** Cadre de l'onglet ouvert. */
@@ -88,13 +90,14 @@ public class GuiPatEditor extends AEBaseGui {
         super.initGui();
 
         String previous = nameField == null ? editorContainer.groupName : nameField.getText();
+        // Fond sombre, texte clair : même raison que le champ de recherche du terminal.
         nameField = new GuiTextField(0, fontRenderer,
-                guiLeft + ContainerPatEditor.NAME_LEFT + 4,
-                guiTop + ContainerPatEditor.NAME_TOP + 4,
-                ContainerPatEditor.NAME_WIDTH - 8, 10);
+                guiLeft + ContainerPatEditor.NAME_LEFT + 5,
+                guiTop + ContainerPatEditor.NAME_TOP + 5,
+                ContainerPatEditor.NAME_WIDTH - 10, 8);
         nameField.setEnableBackgroundDrawing(false);
         nameField.setMaxStringLength(32);
-        nameField.setTextColor(COLOR_TEXT);
+        nameField.setTextColor(COLOR_FIELD_TEXT);
         nameField.setText(previous == null ? "" : previous);
 
         buttonList.clear();
@@ -338,7 +341,7 @@ public class GuiPatEditor extends AEBaseGui {
 
         if (nameField != null && nameField.getText().isEmpty() && !nameField.isFocused()) {
             fontRenderer.drawString(I18n.format("gui.packagedautoterminals.name_hint"),
-                    ContainerPatEditor.NAME_LEFT + 4, ContainerPatEditor.NAME_TOP + 4, COLOR_DIM);
+                    ContainerPatEditor.NAME_LEFT + 5, ContainerPatEditor.NAME_TOP + 5, 0x707070);
         }
 
         drawMessage(editor);

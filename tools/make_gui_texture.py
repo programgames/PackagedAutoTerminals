@@ -29,6 +29,9 @@ SHADOW = (85, 85, 85, 255)
 ARROW = (120, 120, 120, 255)
 ICON = (170, 170, 170, 255)
 NONE = (0, 0, 0, 0)
+# Fond des champs de saisie. Sombre à dessein : le texte du jeu est toujours dessiné avec
+# une ombre portée, qui sur un fond clair se lit comme une seconde lettre décalée.
+FIELD = (26, 26, 26, 255)
 
 SLOT_PITCH = 18
 HOTBAR_GAP = 58
@@ -170,7 +173,7 @@ def build_terminal():
     frame(px, WIDTH, HEIGHT)
     # L'icône vit à droite de la fenêtre, dans la zone libre de la planche.
     draw_eye(px, EYE_U, EYE_V)
-    recess(px, SEARCH_LEFT, SEARCH_TOP, SEARCH_WIDTH, SEARCH_HEIGHT, LIST)
+    recess(px, SEARCH_LEFT, SEARCH_TOP, SEARCH_WIDTH, SEARCH_HEIGHT, FIELD)
     recess(px, LIST_LEFT, LIST_TOP, LIST_WIDTH, LIST_HEIGHT, LIST)
     recess(px, SCROLL_LEFT, LIST_TOP, SCROLL_WIDTH, LIST_HEIGHT, SLOT)
     player_inventory(px, TERMINAL_INVENTORY_LEFT, TERMINAL_INVENTORY_TOP)
@@ -181,7 +184,7 @@ def build_editor():
     px = sheet(EDITOR_SHEET, EDITOR_SHEET)
     frame(px, EDITOR_WIDTH, EDITOR_HEIGHT)
 
-    recess(px, NAME_LEFT + 2, NAME_TOP + 2, NAME_WIDTH - 4, NAME_HEIGHT - 4, LIST)
+    recess(px, NAME_LEFT + 2, NAME_TOP + 2, NAME_WIDTH - 4, NAME_HEIGHT - 4, FIELD)
 
     for row in range(TAB_ROWS):
         for column in range(TAB_COLUMNS):
