@@ -1,192 +1,187 @@
-# Décisions validées
+# Approved decisions
 
-Toutes ces lignes ont été validées avec le joueur. Date : 2026-09-12.
+Every line here was approved with the player. Date: 2026-09-12.
 
-## Décisions de base
+## Base decisions
 
-| # | Décision | Motif |
+| # | Decision | Reason |
 |---|---|---|
-| D01 | Nom `PackagedAuto Terminals`, modid `packagedautoterminals`, package `fr.julien.packagedautoterminals` | le mod fournit aussi un terminal câblé, pas seulement sans fil |
-| D02 | Le terminal liste les machines par le critère `instanceof IPackageProvidingMachine` | c'est le seul type de bloc qui porte des recettes modifiables ; critère exact, stable et extensible |
-| D03 | **Option B** : onglet « Patterns » en écriture, plus onglet « Machines » en lecture seule avec diagnostic des recettes orphelines | le parcours de grille est déjà fait ; le diagnostic n'existe dans aucun mod. **Voir la révision R1** |
-| D04 | Le `Packager Extension` s'affiche en ligne rattachée à son Packager | il partage les patterns du Packager voisin |
-| D05 | Le serveur est l'autorité ; le client envoie des intentions | sécurité, anti-triche, cohérence |
-| D06 | Pas de mixin tant qu'une API publique suffit | un mixin casse à chaque mise à jour d'un autre mod |
-| D07 | Chaque intégration est optionnelle, détectée par modid | le mod doit tourner sans les addons |
-| D08 | Synchronisation par delta, envoi découpé en chunks | **Révisé, voir R2** |
-| D09 | v1 = items. v2 = fluides et gaz (`PackagedFluidCrafting`) | cet addon étend le core par mixins ; il demande un module dédié |
-| D10 | Le terminal tire un Recipe Holder vierge du réseau ME. Sinon il refuse et l'explique | évite d'obliger le joueur à en porter un |
-| D11 | Bouton « encoder depuis JEI » dans le terminal | fonction la plus utile au quotidien |
-| D12 | Respect strict des permissions de sécurité AE2 | cohérence avec les terminaux natifs |
-| D13 | Ordre de livraison : terminal câblé, puis item sans fil, puis intégration AE2WUT | chaque étape est testable seule |
-| D14 | Support Baubles et carte de portée infinie si le coût est faible | confort, non bloquant |
-| D15 | Compilation contre AE2UEL **officiel**, jamais contre le fork local du joueur | le fork n'ajoute que des correctifs |
-| D16 | Structure `core` + `forge-1.12` | **Révisé, voir R3** |
-| D17 | Langues `en_us` et `fr_fr` | |
-| D18 | Environnement de dev minimal : AE2UEL + PackagedAuto + 3 addons + JEI | démarrage en 40 s au lieu de 6 min |
-| D19 | Étape 0 obligatoire : décompiler et documenter avant de coder | `docs/PACKAGEDAUTO-MODEL.md` |
+| D01 | Name `PackagedAuto Terminals`, modid `packagedautoterminals`, package `fr.julien.packagedautoterminals` | the mod also provides a wired terminal, not only a wireless one |
+| D02 | The terminal lists machines by the `instanceof IPackageProvidingMachine` criterion | that is the only block type carrying editable recipes; an exact, stable and extensible criterion |
+| D03 | **Option B**: writable "Patterns" tab, plus a read-only "Machines" tab with a diagnostic of orphan recipes | the grid walk is already done; the diagnostic exists in no mod. **See revision R1** |
+| D04 | The `Packager Extension` is shown as a line attached to its Packager | it shares the patterns of the neighbouring Packager |
+| D05 | The server is the authority; the client sends intents | security, anti-cheat, consistency |
+| D06 | No mixin as long as a public API is enough | a mixin breaks on every update of another mod |
+| D07 | Every integration is optional, detected by modid | the mod must run without the addons |
+| D08 | Delta synchronisation, sent in chunks | **Revised, see R2** |
+| D09 | v1 = items. v2 = fluids and gases (`PackagedFluidCrafting`) | that addon extends the core through mixins; it needs a dedicated module |
+| D10 | The terminal pulls a blank Recipe Holder from the ME network. Otherwise it refuses and explains | avoids forcing the player to carry one |
+| D11 | "Encode from JEI" button in the terminal | the most useful day-to-day function |
+| D12 | Strict respect of the AE2 security permissions | consistency with the native terminals |
+| D13 | Delivery order: wired terminal, then wireless item, then AE2WUT integration | each step is testable on its own |
+| D14 | Baubles support and infinite range card if the cost is low | comfort, not blocking |
+| D15 | Compile against **official** AE2UEL, never against the player's local fork | the fork only adds fixes |
+| D16 | `core` + `forge-1.12` structure | **Revised, see R3** |
+| D17 | Languages `en_us` and `fr_fr` | |
+| D18 | Minimal dev environment: AE2UEL + PackagedAuto + 3 addons + JEI | 40 s startup instead of 6 min |
+| D19 | Mandatory step 0: decompile and document before coding | `docs/PACKAGEDAUTO-MODEL.md` |
 
-## Révisions, après vérification du bytecode
+## Revisions, after bytecode verification
 
-| # | Révision | Preuve |
+| # | Revision | Evidence |
 |---|---|---|
-| **R1** | Le diagnostic de l'onglet « Machines » **ne peut pas être générique**. Il lui faut une table `type de recette → classe de crafter`, écrite dans chaque module d'intégration. Un type inconnu affiche « non reconnu » et se tait, au lieu de mentir | 1. `IPackageCraftingMachine.acceptPackage(…, boolean)` **n'est pas** un mode simulation : la méthode par défaut délègue à la version à 3 arguments, qui exécute réellement. 2. `IRecipeType.getRepresentation()` renvoie la **station d'origine** du craft (`Blocks.CRAFTING_TABLE`, `ModBlocks.blockBasicTable`), pas le Package Crafter |
-| **R2** | Remplacer le découpage en chunks par des **mises à jour incrémentales simples**, sur le modèle de `ContainerInterfaceTerminal` d'AE2. Mesurer au lot 2. N'ajouter le découpage que si la mesure le prouve | notre charge utile est bien plus faible que celle de `cell-terminal`, qui gère des milliers d'items par cellule |
-| **R3** | **Un seul module au départ**, pas de `core`. Le module `core` naîtra au portage 1.16, quand on saura ce qui est réellement commun | ici, presque tout dépend de Minecraft : `ItemStack`, `TileEntity`, grille AE2. Un module vide coûte de la friction à chaque build |
-| **R4** | Test de chargement sous Cleanroom dès le lot 1, avec le jar vide | un échec découvert au lot 7 coûterait des jours. Le joueur précise que le risque est faible : tous les mods du pack tournent aussi sous Forge, et MeatballCraft accepte les deux |
+| **R1** | The "Machines" tab diagnostic **cannot be generic**. It needs a `recipe type → crafter class` table, written in each integration module. An unknown type shows "unrecognised" and stays silent, instead of lying | 1. `IPackageCraftingMachine.acceptPackage(…, boolean)` is **not** a simulation mode: the default method delegates to the 3-argument version, which actually runs the craft. 2. `IRecipeType.getRepresentation()` returns the **source station** of the craft (`Blocks.CRAFTING_TABLE`, `ModBlocks.blockBasicTable`), not the Package Crafter |
+| **R2** | Replace chunk splitting with **simple incremental updates**, following the AE2 `ContainerInterfaceTerminal`. Measure at batch 2. Only add splitting if the measurement proves it necessary | our payload is far smaller than the one of `cell-terminal`, which handles thousands of items per cell |
+| **R3** | **A single module to start with**, no `core`. The `core` module will appear at the 1.16 port, once we know what is truly shared | here, almost everything depends on Minecraft: `ItemStack`, `TileEntity`, the AE2 grid. An empty module costs friction on every build |
+| **R4** | Load test under Cleanroom from batch 1, with the empty jar | a failure discovered at batch 7 would cost days. The player notes that the risk is low: every mod of the pack also runs on Forge, and MeatballCraft accepts both |
 
-## Découvertes qui deviennent des contraintes
+## Findings that become constraints
 
-| # | Contrainte | Preuve |
+| # | Constraint | Evidence |
 |---|---|---|
-| **D20** | On compile contre le **jar complet déobfusqué** d'AE2UEL, pas contre un artefact d'API seul | les terminaux tiers étendent des classes internes : `PartCellTerminal extends appeng.parts.reporting.AbstractPartDisplay`, `ItemWirelessCellTerminal extends appeng.items.tools.powered.powersink.AEBasePoweredItem` |
-| **D21** | L'intégration AE2WUT se fait **sans mixin**, par appel public, et l'identifiant de mode doit être **configurable** | `AE2UELWirelessUniversalTerminal.registryContainer(byte, GetGui)`, `registryGui(byte, GetGui)`, `ItemWUTBakedModel.regIcon(byte, ItemStack)`. `cell-terminal` rend son identifiant configurable pour éviter les collisions entre mods tiers |
-| **D22** | L'éditeur de recette doit être un vrai `Container`, avec des slots fantômes **indexés comme ceux de l'Encoder** | sans cela, `IRecipeType.getRecipeTransferMap(IRecipeLayout, String)` et les poignées JEI de PackagedAuto deviennent inutilisables |
-| **D23** | PackagedAuto est sous licence **MIT** | dépendance de compilation et réutilisation de l'API sans obstacle, avec attribution |
-| **D24** | Aucun mod ne couvre déjà ce besoin sur 1.12.2 | recherche du lot 0. `Extended Terminal` cible 1.20 et 1.21, et ne touche pas à PackagedAuto |
+| **D20** | We compile against the **full deobfuscated jar** of AE2UEL, not against an API-only artifact | third-party terminals extend internal classes: `PartCellTerminal extends appeng.parts.reporting.AbstractPartDisplay`, `ItemWirelessCellTerminal extends appeng.items.tools.powered.powersink.AEBasePoweredItem` |
+| **D21** | The AE2WUT integration is done **without a mixin**, through a public call, and the mode id must be **configurable** | `AE2UELWirelessUniversalTerminal.registryContainer(byte, GetGui)`, `registryGui(byte, GetGui)`, `ItemWUTBakedModel.regIcon(byte, ItemStack)`. `cell-terminal` makes its id configurable to avoid collisions between third-party mods |
+| **D22** | The recipe editor must be a real `Container`, with ghost slots **indexed like the Encoder ones** | without that, `IRecipeType.getRecipeTransferMap(IRecipeLayout, String)` and the PackagedAuto JEI handles become unusable |
+| **D23** | PackagedAuto is under the **MIT** licence | compile dependency and API reuse with no obstacle, with attribution |
+| **D24** | No mod already covers this need on 1.12.2 | batch 0 research. `Extended Terminal` targets 1.20 and 1.21, and does not touch PackagedAuto |
 
-## Options écartées
+## Rejected options
 
-| Option | Motif du rejet |
+| Option | Reason for rejection |
 |---|---|
-| Lister aussi les crafters dans l'onglet des patterns | ils ne portent aucune recette ; des dizaines de lignes vides sur un grand réseau |
-| Intégrer le panneau d'items ME dans la fenêtre du terminal, en v1 | double le travail de GUI sans servir le besoin principal |
-| Coder en dur les niveaux Basic → Ultimate et Extreme dans le cœur du mod | `RecipeTypeRegistry` les fournit déjà. Seule la table de diagnostic R1 est câblée, et elle vit dans les modules d'intégration |
-| Tester un crafter par appel à blanc de `acceptPackage` | la méthode exécute réellement le craft ; aucun mode simulation n'existe |
+| Also list the crafters in the patterns tab | they carry no recipe; dozens of empty lines on a large network |
+| Embed the ME item panel in the terminal screen, in v1 | doubles the GUI work without serving the main need |
+| Hard code the Basic to Ultimate and Extreme tiers in the mod core | `RecipeTypeRegistry` already provides them. Only the R1 diagnostic table is wired, and it lives in the integration modules |
+| Probe a crafter with a dry `acceptPackage` call | the method actually runs the craft; no simulation mode exists |
 
-## Décisions prises pendant la nuit du 12 au 13 septembre 2026
+## Decisions taken during the night of 12 to 13 September 2026
 
-| # | Décision | Motif |
+| # | Decision | Reason |
 |---|---|---|
-| D25 | Licence **MIT**, plus un fichier `NOTICE` | même licence que PackagedAuto. Aucun fichier d'AE2 ni de PackagedAuto n'est copié : nous compilons seulement contre eux |
-| D26 | La recette de fabrication est enregistrée **par le code**, pas en JSON | les objets d'AE2 se distinguent par leur métadonnée ; un JSON l'écrirait en dur et casserait à la moindre renumérotation |
-| D27 | Gestionnaire de transfert JEI **universel**, plutôt qu'un par catégorie | il capte les addons qui enregistrent leurs types après le chargement de JEI |
-| D28 | Déplacer un porte-recettes se fait **par le réseau** : retrait, puis reprise | rien ne peut se perdre. Si le réseau refuse l'objet, la machine le garde |
-| D29 | Les quantités vont jusqu'à **4096**, pas 64 | PackagedAuto écrit de grandes quantités par `MiscUtil.saveItemWithLargeCount`, et les recettes de traitement en ont besoin |
-| D30 | La comparaison d'instantané porte sur le **message entier** | comparer les seuls fournisseurs masquait tout changement d'état des machines |
-| D31 | Une tâche Gradle `checkLang` casse le build si les langues divergent | Minecraft retombe en anglais sans rien signaler : la divergence serait invisible |
+| D25 | **MIT** licence, plus a `NOTICE` file | same licence as PackagedAuto. No AE2 or PackagedAuto file is copied: we only compile against them |
+| D26 | The crafting recipe is registered **in code**, not in JSON | AE2 items are told apart by their metadata; a JSON file would hard code it and break on the first renumbering |
+| D27 | **Universal** JEI transfer handler, rather than one per category | it catches the addons that register their types after JEI is loaded |
+| D28 | Moving a recipe holder goes **through the network**: remove, then take back | nothing can be lost. If the network refuses the item, the machine keeps it |
+| D29 | Amounts go up to **4096**, not 64 | PackagedAuto writes large amounts through `MiscUtil.saveItemWithLargeCount`, and processing recipes need them |
+| D30 | Snapshot comparison covers the **whole message** | comparing the providers alone hid every machine state change |
+| D31 | A `checkLang` Gradle task breaks the build when the languages diverge | Minecraft falls back to English without a word: the divergence would be invisible |
 
-## Questions encore ouvertes
+## Questions still open
 
 | # | Question |
 |---|---|
-| Q1 | URL du dépôt GitHub du fork AE2UEL du joueur, pour vérifier que l'API n'a pas bougé |
-| Q3 | Dépôt public ou privé ? Publication future sur CurseForge ? |
+| Q1 | URL of the GitHub repository of the player's AE2UEL fork, to check that the API has not moved |
+| Q3 | Public or private repository? Future release on CurseForge? |
 
-## D32 — Le transfert JEI choisit le type le plus étroit
+## D32 — The JEI transfer picks the narrowest type
 
-**Preuve.** `javap -c` sur `thelm/packagedauto/recipe/RecipeTypeProcessing.class` montre que
-`getJEICategories()` passe par `MiscUtil.conditionalSupplier(() -> Loader.isModLoaded("jei"), …)`
-et rend **toutes** les catégories de JEI quand JEI est présent. `RecipeTypeProcessingOrdered`
-et `RecipeTypeProcessingPositioned` héritent de cette méthode sans la redéfinir.
+**Evidence.** `javap -c` on `thelm/packagedauto/recipe/RecipeTypeProcessing.class` shows that
+`getJEICategories()` goes through `MiscUtil.conditionalSupplier(() -> Loader.isModLoaded("jei"), …)`
+and returns **every** JEI category when JEI is present. `RecipeTypeProcessingOrdered` and
+`RecipeTypeProcessingPositioned` inherit that method without overriding it.
 
-**Conséquence observée.** Le bouton « + » de JEI sur une recette de l'Ultimate Table plaçait
-bien les objets, mais basculait le type sur « Positioned ». Notre `findType` rendait le
-premier type déclarant la catégorie, donc un fourre-tout, selon l'ordre du registre.
+**Observed consequence.** The JEI "+" button on an Ultimate Table recipe did place the items,
+but switched the type to "Positioned". Our `findType` returned the first type declaring the
+category, hence a catch all, depending on the registry order.
 
-**Décision.** `findType` retient le type dont la liste de catégories est la **plus courte**.
-Un type qui nomme deux catégories connaît son domaine ; un type qui les nomme toutes se
-contente d'accepter. La règle ne cite aucun mod, donc un addon inconnu en bénéficie aussi.
+**Decision.** `findType` keeps the type whose category list is the **shortest**. A type that
+names two categories knows its domain; a type that names them all merely accepts. The rule
+names no mod, so an unknown addon benefits from it too.
 
-## D33 — AE2WUT n'a aucune interface d'extension : trois greffes, et rien de plus
+## D33 — AE2WUT has no extension interface: three injections, and nothing more
 
-**Preuve.** Décompilation de `ae2wut-1.0.5.jar`, tirée du modpack Cleanroom du joueur.
+**Evidence.** Decompilation of `ae2wut-1.0.5.jar`, taken from the player's Cleanroom modpack.
 
-| Méthode | Forme observée |
+| Method | Observed shape |
 |---|---|
-| `ItemWirelessUniversalTerminal.getAllMode()` | une `ArrayList` remplie de 0 à 3, puis 4 si `ae2fc`, 5 si `mekeng`, 6 à 9 si `ae2exttable` |
-| `ItemWirelessUniversalTerminal.getWirelessName(int)` | un `tableswitch` de 1 à 9, avec les clés de traduction écrites en dur |
-| `ItemWirelessUniversalTerminal.canHandle(ItemStack)` | compare l'objet à sa propre instance |
-| `AllWUTRecipe.getIngredient()` | une `HashMap` remplie à la main, par les mêmes tests de présence |
+| `ItemWirelessUniversalTerminal.getAllMode()` | an `ArrayList` filled from 0 to 3, then 4 if `ae2fc`, 5 if `mekeng`, 6 to 9 if `ae2exttable` |
+| `ItemWirelessUniversalTerminal.getWirelessName(int)` | a `tableswitch` from 1 to 9, with the translation keys hard coded |
+| `ItemWirelessUniversalTerminal.canHandle(ItemStack)` | compares the item to its own instance |
+| `AllWUTRecipe.getIngredient()` | a `HashMap` filled by hand, through the same presence tests |
 
-Le champ `registry` existe, mais il ne sert qu'à ouvrir la fenêtre d'AE2. Il n'alimente
-jamais la liste des modes. Aucun registre, aucun point d'extension, aucune annotation.
+The `registry` field exists, but it only serves to open the AE2 screen. It never feeds the
+mode list. No registry, no extension point, no annotation.
 
-**Ce qui est déjà générique, et qu'il ne faut donc pas toucher.**
+**What is already generic, and must therefore not be touched.**
 
-1. `WirelessUniversalTerminalHandler.onMouseEvent` calcule sa borne par
-   `max(modes) + 1`, puis avance jusqu'à trouver un mode présent. Un mode 41 y entre sans
-   rien changer.
-2. `DynamicUniversalRecipe.registerRecipes()` crée une recette par entrée de
+1. `WirelessUniversalTerminalHandler.onMouseEvent` computes its bound as `max(modes) + 1`,
+   then walks forward until it finds a present mode. A mode 41 fits in with no change.
+2. `DynamicUniversalRecipe.registerRecipes()` creates one recipe per entry of
    `AllWUTRecipe.itemList`.
-3. `AllWUTRecipe.reciperRegister()` bâtit la recette « tout en un » à partir de la même
-   table.
+3. `AllWUTRecipe.reciperRegister()` builds the "all in one" recipe from the same table.
 
-**Décision.** Trois greffes, et seulement trois.
+**Decision.** Three injections, and only three.
 
-| Greffe | Effet |
+| Injection | Effect |
 |---|---|
-| `getAllMode`, au retour | notre mode rejoint `allMode`, donc la recette « tout en un » et la molette |
-| `getWirelessName`, à l'entrée | le nom de notre terminal s'affiche sur l'objet et dans son infobulle |
-| `AllWUTRecipe.getIngredient`, au retour | notre terminal sans fil devient un ingrédient, donc une recette d'assemblage naît toute seule |
+| `getAllMode`, at return | our mode joins `allMode`, hence the "all in one" recipe and the wheel |
+| `getWirelessName`, at head | the name of our terminal shows on the item and in its tooltip |
+| `AllWUTRecipe.getIngredient`, at return | our wireless terminal becomes an ingredient, so an assembly recipe appears on its own |
 
-**Ce qui ne passe pas par un mixin, et pourquoi.**
+**What does not go through a mixin, and why.**
 
-L'ouverture de la fenêtre vit dans `Item.onItemRightClick`, une méthode **de Minecraft**.
-Son nom diffère entre le poste de développement et le jeu publié. Y greffer quelque chose
-exigerait une table de remappage, donc le processeur d'annotations de Mixin, donc toute une
-chaîne de compilation de plus. Un écouteur de `PlayerInteractEvent.RightClickItem` fait le
-même travail, et il passe avant la méthode de l'objet.
+Opening the screen lives in `Item.onItemRightClick`, a **Minecraft** method. Its name differs
+between the development workspace and the shipped game. Injecting there would need a
+remapping table, hence the Mixin annotation processor, hence a whole extra build chain. A
+`PlayerInteractEvent.RightClickItem` listener does the same work, and it runs before the item
+method.
 
-**Pourquoi les classes visées sont désignées par leur nom, et non par `X.class`.**
+**Why the target classes are named by their name, not by `X.class`.**
 
-`ItemWirelessUniversalTerminal` porte dans ses signatures des types de MekEng, d'AE2FC et
-d'ae2exttable. La citer par sa classe obligerait à mettre ces mods sur le chemin de
-compilation, contre la règle 7. Par son nom, aucune dépendance n'est nécessaire : ni AE2WUT,
-ni ses quatre satellites.
+`ItemWirelessUniversalTerminal` carries MekEng, AE2FC and ae2exttable types in its signatures.
+Naming it by class would force those mods onto the compile path, against rule 7. By name, no
+dependency is needed: neither AE2WUT, nor its four satellites.
 
-**Conséquence sur le build.** Le processeur d'annotations de Mixin, que javac découvre tout
-seul dans le jar de MixinBooter, exige que chaque classe visée soit résoluble. Il s'arrête
-sinon sur « Mixin target ... could not be found ». Le build passe donc `-proc:none`. Les
-deux greffes s'en passent, car aucune méthode visée n'a de type de Minecraft dans sa
-signature : `()[I`, `(I)Ljava/lang/String;` et `()Ljava/util/Map;`.
+**Consequence on the build.** The Mixin annotation processor, which javac discovers on its own
+in the MixinBooter jar, requires every target class to be resolvable. Otherwise it stops with
+"Mixin target ... could not be found". The build therefore passes `-proc:none`. Both
+injections do without it, because no target method carries a Minecraft type in its signature:
+`()[I`, `(I)Ljava/lang/String;` and `()Ljava/util/Map;`.
 
-**Échec bruyant, à la demande du joueur.** Les deux greffes portent `require = 1`. Si AE2WUT
-change de forme, le jeu s'arrête avec un message clair, plutôt que de perdre le mode en
-silence.
+**Loud failure, at the player's request.** Both injections carry `require = 1`. If AE2WUT
+changes shape, the game stops with a clear message, rather than losing the mode silently.
 
-**PIÈGE évité.** L'écouteur n'annule **jamais** le clic côté client.
-`PlayerControllerMP.processRightClick` sort dès que l'événement est annulé, et n'envoie plus
-le paquet au serveur. La fenêtre ne s'ouvrirait jamais.
+**PITFALL avoided.** The listener **never** cancels the click on the client.
+`PlayerControllerMP.processRightClick` returns as soon as the event is cancelled, and no
+longer sends the packet to the server. The screen would never open.
 
-**PIÈGE évité, second.** Les greffes tournent pendant les événements de registre, qui
-précèdent le `preInit` de notre mod. Or Forge ne remplit `PatConfig` qu'au `preInit`. Lire
-`wutModeId` sans précaution donnerait la valeur par défaut à l'enregistrement, puis la
-valeur réglée ensuite : deux identifiants pour un seul terminal. `WutSupport.mode()` force
-donc la lecture du fichier, puis retient le résultat pour toute la session.
+**PITFALL avoided, second one.** The injections run during the registry events, which come
+before the `preInit` of our mod. Forge only fills `PatConfig` at `preInit`. Reading
+`wutModeId` without care would give the default value at registration, then the configured
+value afterwards: two ids for a single terminal. `WutSupport.mode()` therefore forces the file
+to be read, then keeps the result for the whole session.
 
-## D34 — Cell Terminal, modèle vérifié pour la touche et pour AE2WUT
+## D34 — Cell Terminal, a verified model for the key and for AE2WUT
 
-**Source.** `cell-terminal-1.6.7.jar`, décompilé depuis le modpack Cleanroom du joueur. Le
-jar est désormais dans `run/mods`, comme **modèle** et non comme dépendance.
+**Source.** `cell-terminal-1.6.7.jar`, decompiled from the player's Cleanroom modpack. The jar
+now sits in `run/mods`, as a **model** and not as a dependency.
 
-### Comment il déclare une touche
+### How it declares a key
 
-Trois classes, et aucun mixin.
+Three classes, and no mixin.
 
-| Classe | Rôle |
+| Class | Role |
 |---|---|
-| `client.KeyBindings` | une énumération de `KeyBinding`, plus `registerAll()` qui appelle `ClientRegistry.registerKeyBinding` |
-| `client.KeyInputHandler` | écoute `InputEvent.KeyInputEvent`, teste `isPressed()`, puis envoie un paquet |
-| `network.PacketOpenWirelessTerminal` | le serveur cherche l'objet et ouvre la fenêtre |
+| `client.KeyBindings` | an enum of `KeyBinding`, plus `registerAll()` which calls `ClientRegistry.registerKeyBinding` |
+| `client.KeyInputHandler` | listens to `InputEvent.KeyInputEvent`, tests `isPressed()`, then sends a packet |
+| `network.PacketOpenWirelessTerminal` | the server looks for the item and opens the screen |
 
-La touche d'ouverture est déclarée en `KeyConflictContext.UNIVERSAL`, avec `KeyModifier.SHIFT`
-et le code 25, donc Maj + P.
+The opening key is declared as `KeyConflictContext.UNIVERSAL`, with `KeyModifier.SHIFT` and
+code 25, hence Shift + P.
 
-L'ordre de recherche côté serveur mérite d'être copié :
+The server-side search order is worth copying:
 
-1. l'inventaire principal, pour son propre terminal sans fil ;
-2. la main gauche, emplacement 40 ;
-3. le terminal universel d'AE2WUT, inventaire puis main gauche ;
-4. les Baubles, si le mod est présent.
+1. the main inventory, for its own wireless terminal;
+2. the offhand, slot 40;
+3. the AE2WUT universal terminal, inventory then offhand;
+4. Baubles, when the mod is present.
 
-Chaque candidat est vérifié dans le même ordre : clé de liaison, station de sécurité
-localisable, puis énergie. Chaque appel vers AE2WUT ou Baubles passe par
-`@Optional.Method(modid=...)`.
+Each candidate is checked in the same order: link key, locatable security station, then
+energy. Every call into AE2WUT or Baubles goes through `@Optional.Method(modid=...)`.
 
-### Ce qu'il révèle sur AE2WUT
+### What it reveals about AE2WUT
 
-Cell Terminal n'utilise **aucun mixin** pour AE2WUT. Il appelle une API :
+Cell Terminal uses **no mixin** for AE2WUT. It calls an API:
 
 ```java
 AE2UELWirelessUniversalTerminal.instance.registryContainer(mode, factory);
@@ -195,10 +190,10 @@ AllWUTRecipe.itemList.put(mode, ingredient);
 ItemWUTBakedModel.regIcon(mode, iconStack);
 ```
 
-**Ces méthodes n'existent pas dans `ae2wut-1.0.5.jar`**, vérifié au `javap`. AE2WUT en est à
-la version 1.2.10 sur CurseForge. L'API est donc arrivée après la 1.0.5.
+**These methods do not exist in `ae2wut-1.0.5.jar`**, verified with `javap`. AE2WUT is at
+version 1.2.10 on CurseForge. The API therefore arrived after 1.0.5.
 
-**Preuve en jeu.** Avec `ae2wut-1.0.5` et `cell-terminal-1.6.7`, le client de dev s'arrête :
+**Evidence in game.** With `ae2wut-1.0.5` and `cell-terminal-1.6.7`, the dev client stops:
 
 ```
 LoaderExceptionModCrash: Caught exception from Cell Terminal (cellterminal)
@@ -206,130 +201,124 @@ Caused by: NoClassDefFoundError: com/circulation/ae2wut/AE2UELWirelessUniversalT
     at com.cellterminal.integration.AE2WUTIntegration.registerContainerInternal
 ```
 
-L'instance réelle du joueur porte déjà `B:enableAE2WUT=false` : il a rencontré ce plantage
-avant nous.
+The player's real instance already carries `B:enableAE2WUT=false`: they hit this crash before
+we did.
 
-### Conséquence sur la décision D33
+### Consequence on decision D33
 
-D33 reste exacte **pour AE2WUT 1.0.5**, la version du joueur. Elle devient fausse pour les
-versions récentes. Si le joueur monte AE2WUT à 1.2.x, nos deux mixins doivent céder la place
-à quatre appels d'API, et `-proc:none` peut disparaître du build.
+D33 stays correct **for AE2WUT 1.0.5**, the player's version. It becomes wrong for recent
+versions. If the player moves AE2WUT to 1.2.x, our two mixins must give way to four API calls,
+and `-proc:none` can disappear from the build.
 
-Notre mode vaut 41 ; celui de Cell Terminal vaut 11. Aucun conflit.
+Our mode is 41; the Cell Terminal one is 11. No conflict.
 
-## D35 — La touche d'ouverture, calquée sur ae2exttable et Cell Terminal
+## D35 — The opening key, modelled on ae2exttable and Cell Terminal
 
-**Sources.** `ae2exttable-v1.0.8.jar` et `cell-terminal-1.6.7.jar`, décompilés depuis le
-modpack du joueur.
+**Sources.** `ae2exttable-v1.0.8.jar` and `cell-terminal-1.6.7.jar`, decompiled from the
+player's modpack.
 
-**Ce que font les deux mods.** Une énumération de `KeyBinding`, un écouteur de
-`InputEvent.KeyInputEvent`, un paquet vers le serveur. Aucun mixin, aucune API d'AE2.
+**What both mods do.** An enum of `KeyBinding`, an `InputEvent.KeyInputEvent` listener, a
+packet to the server. No mixin, no AE2 API.
 
-| Mod | Contexte | Touche par défaut |
+| Mod | Context | Default key |
 |---|---|---|
-| ae2exttable | `UNIVERSAL` | **aucune**, code 0 |
-| Cell Terminal | `UNIVERSAL` | Maj + P, code 25 |
+| ae2exttable | `UNIVERSAL` | **none**, code 0 |
+| Cell Terminal | `UNIVERSAL` | Shift + P, code 25 |
 
-**Décision.** Touche **non liée** par défaut, comme ae2exttable. Une touche liée d'office
-entrerait en conflit avec les quatre d'AE2, avec le Maj + P de Cell Terminal, ou avec un
-autre mod du pack.
+**Decision.** Key **unbound** by default, like ae2exttable. A key bound by default would clash
+with the four AE2 keys, with the Shift + P of Cell Terminal, or with another mod of the pack.
 
-**Contexte `IN_GAME`, et non `UNIVERSAL`.** `InputEvent.KeyInputEvent` ne se déclenche que
-sans fenêtre ouverte. Annoncer un contexte plus large ferait signaler des conflits qui ne
-peuvent pas se produire.
+**Context `IN_GAME`, not `UNIVERSAL`.** `InputEvent.KeyInputEvent` only fires when no screen is
+open. Declaring a wider context would report conflicts that cannot happen.
 
-**Ordre de recherche côté serveur**, repris de Cell Terminal : inventaire principal, puis
-main gauche, pour notre terminal ; puis les mêmes endroits pour le terminal universel.
+**Server-side search order**, taken from Cell Terminal: main inventory, then offhand, for our
+terminal; then the same places for the universal terminal.
 
-**Nuance qui compte.** `check` rend **vrai** dès que l'objet est le bon candidat, même quand
-un contrôle échoue. Sans cela, la recherche continuerait après un terminal non lié, et le
-joueur n'apprendrait jamais pourquoi rien ne s'ouvre.
+**A nuance that matters.** `check` returns **true** as soon as the item is the right candidate,
+even when a check fails. Without that, the search would continue past an unlinked terminal, and
+the player would never learn why nothing opens.
 
-**Baubles n'est pas géré.** Cell Terminal le fait, mais ni notre terminal ni celui d'AE2WUT
-n'implémentent `IBauble` : aucun des deux ne peut occuper un emplacement de Baubles sans un
-troisième mod. Ajouter ce chemin demanderait Baubles sur le chemin de compilation, contre la
-règle 7.
+**Baubles is not supported.** Cell Terminal does it, but neither our terminal nor the AE2WUT one
+implements `IBauble`: neither can occupy a Baubles slot without a third mod. Adding that path
+would require Baubles on the compile path, against rule 7.
 
-**La molette et la touche ne posent pas la même question.** `isOurMode` demande « ce
-terminal universel est-il réglé sur notre mode ? », et sert au clic droit. `hasOurMode`
-demande « a-t-il absorbé notre terminal ? », et sert à la touche : le joueur ne doit pas
-avoir à tourner la molette d'abord.
+**The wheel and the key do not ask the same question.** `isOurMode` asks "is this universal
+terminal set to our mode?", and serves the right click. `hasOurMode` asks "has it absorbed our
+terminal?", and serves the key: the player must not have to turn the wheel first.
 
-**PIÈGE.** Écrire `mode` dans le NBT ne suffit pas à basculer un terminal universel. AE2WUT
-range la grille de craft du mode quitté par `nbtChangeB`, puis restaure celle du mode
-demandé par `nbtChange`. Les deux sont appelées par réflexion, faute de dépendance de
-compilation, avec repli sur l'écriture simple.
+**PITFALL.** Writing `mode` into the NBT is not enough to switch a universal terminal. AE2WUT
+stores the crafting grid of the mode being left through `nbtChangeB`, then restores the one of
+the requested mode through `nbtChange`. Both are called through reflection, for lack of a
+compile dependency, with a fallback to the plain write.
 
-## D36 — L'image du terminal universel, par enveloppe de modèle cuit
+## D36 — The universal terminal icon, through a baked model wrapper
 
-**Symptôme.** Réglé sur notre mode, le Wireless Universal Terminal affichait le damier
-violet et noir du modèle manquant, avec le nom
-`ae2exttable:item/wireless_ultimate_crafting_terminal` en surimpression.
+**Symptom.** Set to our mode, the Wireless Universal Terminal showed the purple and black
+checkerboard of a missing model, with the name
+`ae2exttable:item/wireless_ultimate_crafting_terminal` written over it.
 
-**Cause, vérifiée dans le jar.** `assets/ae2wut/models/item/wireless_universal_terminal.json`
-est un `item/generated` muni de dix surcharges :
+**Cause, verified in the jar.** `assets/ae2wut/models/item/wireless_universal_terminal.json`
+is an `item/generated` with ten overrides:
 
-| Seuil | Modèle |
+| Threshold | Model |
 |---|---|
 | 1 | `appliedenergistics2:item/wireless_crafting_terminal` |
 | 2 | `appliedenergistics2:item/wireless_fluid_terminal` |
 | 3 | `appliedenergistics2:item/wireless_pattern_terminal` |
 | 4 | `ae2fc:item/wireless_fluid_pattern_terminal` |
 | 5 | `mekeng:item/wireless_gas_terminal` |
-| 6 à 9 | les quatre d'`ae2exttable` |
+| 6 to 9 | the four of `ae2exttable` |
 | 114514 | `ae2wut:item/wireless_nova_terminal` |
 
-Une surcharge de Minecraft s'applique dès que la valeur est **supérieure ou égale** au
-seuil, et `ItemOverrideList` parcourt sa liste **à l'envers** : la dernière qui correspond
-l'emporte. Tout mode au-delà de 9 tombe donc sur la surcharge du mode 9.
+A Minecraft override applies as soon as the value is **greater than or equal to** the
+threshold, and `ItemOverrideList` walks its list **backwards**: the last one that matches
+wins. Every mode above 9 therefore lands on the mode 9 override.
 
-**Ce n'est pas notre faute, et ce n'est pas propre à notre mode.** Cell Terminal, avec son
-mode 11, subit le même sort sur AE2WUT 1.0.5. Les versions récentes ont remplacé ces
-surcharges par un modèle cuit et une méthode `ItemWUTBakedModel.regIcon`, absente de la
-1.0.5 : voir la décision D34.
+**This is not our fault, and it is not specific to our mode.** Cell Terminal, with its mode 11,
+suffers the same fate on AE2WUT 1.0.5. Recent versions have replaced those overrides with a
+baked model and an `ItemWUTBakedModel.regIcon` method, absent from 1.0.5: see decision D34.
 
-**Décision.** Envelopper le modèle cuit d'AE2WUT au `ModelBakeEvent`. L'enveloppe délègue
-tout, sauf sa liste de surcharges : sur notre mode, elle rend le modèle de notre terminal
-sans fil ; sur tout autre mode, elle retourne à la liste d'origine, intacte.
+**Decision.** Wrap the baked AE2WUT model at `ModelBakeEvent`. The wrapper delegates
+everything, except its override list: on our mode it returns the model of our wireless
+terminal; on any other mode it falls back to the original list, untouched.
 
-**Options écartées.**
+**Rejected options.**
 
-| Option | Pourquoi non |
+| Option | Why not |
 |---|---|
-| Choisir un mode inférieur à 9 | tous sont pris, et le mode 0 est celui d'AE2 |
-| Livrer notre propre `assets/ae2wut/models/...` | nous écraserions le modèle d'AE2WUT, et il faudrait réécrire ses dix surcharges |
-| Un troisième mixin | l'événement de Forge suffit, et ne dépend de rien |
+| Pick a mode below 9 | they are all taken, and mode 0 is the AE2 one |
+| Ship our own `assets/ae2wut/models/...` | we would overwrite the AE2WUT model, and its ten overrides would have to be rewritten |
+| A third mixin | the Forge event is enough, and depends on nothing |
 
-**PIÈGE.** `handleItemState` doit recevoir le modèle **d'origine**, et non l'enveloppe. Lui
-passer l'enveloppe ferait boucler la recherche de surcharge sur elle-même.
+**PITFALL.** `handleItemState` must receive the **original** model, not the wrapper. Handing it
+the wrapper would make the override lookup loop on itself.
 
-**Nuance.** Le rendu interroge `showsOurMode`, qui ne regarde que le mode courant. Un objet
-de création, réglé sur notre mode sans nous avoir absorbés, porte ainsi notre image plutôt
-qu'un modèle manquant. Le clic droit, lui, garde `isOurMode`, plus strict.
+**Nuance.** Rendering queries `showsOurMode`, which only looks at the current mode. A creative
+item, set to our mode without having absorbed us, therefore carries our icon rather than a
+missing model. The right click keeps `isOurMode`, which is stricter.
 
 ---
 
-## D37 — Le nom du canal réseau tient en 20 caractères
+## D37 — The network channel name fits in 20 characters
 
-**Symptôme.** Le joueur ouvre le terminal sur un serveur dédié. Le client est expulsé sur
+**Symptom.** The player opens the terminal on a dedicated server. The client is kicked with
 `io.netty.handler.codec.DecoderException: The received string length is longer than maximum
-allowed (21 > 20)`. En solo, rien ne se passe.
+allowed (21 > 20)`. In single player, nothing happens.
 
-**Cause vérifiée.** En 1.12.2, `CPacketCustomPayload.readPacketData` lit le nom du canal
-avec `buf.readString(20)`. Le nom du canal client vers serveur ne peut donc pas dépasser
-20 caractères. `Reference.MOD_ID` vaut `packagedautoterminals`, soit **21** caractères. Le
-premier paquet montant du mod coupait la connexion.
+**Verified cause.** On 1.12.2, `CPacketCustomPayload.readPacketData` reads the channel name
+with `buf.readString(20)`. The client-to-server channel name therefore cannot exceed 20
+characters. `Reference.MOD_ID` is `packagedautoterminals`, which is **21** characters long. The
+first upstream packet of the mod cut the connection.
 
-Le solo échappe au défaut : Forge relie les deux côtés par un `EmbeddedChannel`, qui ne
-sérialise aucune chaîne. Le défaut n'apparaît que sur un serveur dédié, ou en LAN.
+Single player escapes the defect: Forge links both sides through an `EmbeddedChannel`, which
+serialises no string. The defect only shows on a dedicated server, or in LAN.
 
-**Décision.** Ajouter `Reference.CHANNEL = "pat_terminals"`, soit 13 caractères, et ne plus
-employer `MOD_ID` comme nom de canal. `MOD_ID` garde son rôle partout ailleurs : registres,
-ressources, `mcmod.info`.
+**Decision.** Add `Reference.CHANNEL = "pat_terminals"`, 13 characters long, and stop using
+`MOD_ID` as the channel name. `MOD_ID` keeps its role everywhere else: registries, resources,
+`mcmod.info`.
 
-**PIÈGE.** Le nom du canal fait partie du protocole. Un client et un serveur qui portent des
-versions différentes du mod ne se parlent plus. Toute mise à jour doit aller sur les deux
-côtés à la fois.
+**PITFALL.** The channel name is part of the protocol. A client and a server carrying different
+versions of the mod no longer talk to each other. Every update must go to both sides at once.
 
-**Règle.** Tout nouveau canal réseau doit tenir en 20 caractères. Le sens inverse, serveur
-vers client, tolère 20 caractères aussi dans `SPacketCustomPayload`.
+**Rule.** Every new network channel must fit in 20 characters. The other direction, server to
+client, also allows 20 characters in `SPacketCustomPayload`.

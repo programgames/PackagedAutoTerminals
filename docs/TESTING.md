@@ -1,519 +1,507 @@
-# Protocole de test interactif
+# Interactive test protocol
 
-> **Règle du jeu.** Un test à la fois, dans l'ordre. Tu réponds **OK**, ou tu décris ce que
-> tu vois. Au premier échec, on corrige avant d'avancer : un défaut en masque souvent un
-> autre.
+> **Ground rule.** One test at a time, in order. You answer **OK**, or you describe what you
+> see. On the first failure, we fix before moving on: one defect often hides another.
 >
-> **En cas d'échec** : une capture suffit. Le journal, je le lis moi-même dans
-> `run/logs/latest.log`.
+> **On failure**: a screenshot is enough. I read the log myself, in `run/logs/latest.log`.
 >
-> **État du code** : tout ce qui porte 🆕 n'a **jamais** tourné en jeu.
+> **Code state**: everything marked 🆕 has **never** run in game.
 
 ---
 
-## Avancement
+## Progress
 
-| Groupe | État |
+| Group | State |
 |---|---|
-| A — Le socle | validé |
-| B — Lecture et recherche | validé |
-| C — L'œil et le nom | validé |
-| D — L'éditeur fusionné | validé |
-| E — La paire, et ses accidents | validé |
-| F — L'onglet Machines | validé |
-| G — Le sans-fil | validé |
-| H — Réglages et instance réelle | H1 validé, H2 en attente |
-| I — Pliage et machine d'exécution | 🆕 jamais testé |
-| J — Apparence de la part et des items | 🆕 jamais testé |
-| K — Terminal universel sans fil (AE2WUT) | 🆕 jamais testé |
-| L — Touche d'ouverture | 🆕 jamais testé |
-| M — Confort de lecture et d'édition | 🆕 jamais testé |
+| A — The foundation | passed |
+| B — Reading and search | passed |
+| C — The eye and the name | passed |
+| D — The merged editor | passed |
+| E — The pair, and its accidents | passed |
+| F — The Machines tab | passed |
+| G — The wireless terminal | passed |
+| H — Settings and real instance | H1 passed, H2 pending |
+| I — Folding and crafting machine | 🆕 never tested |
+| J — Look of the part and of the items | 🆕 never tested |
+| K — Wireless universal terminal (AE2WUT) | 🆕 never tested |
+| L — Opening key | 🆕 never tested |
+| M — Reading and editing comfort | 🆕 never tested |
 
-Correctifs nés de ces essais : cadre du nom porté à 16 pixels, boutons calés sous
-l'aperçu, message de retour unique et coupé au cadre, regroupement par le nom donné
-par le joueur, largeurs de texte calculées au lieu d'être écrites en dur, et choix du
-type de recette le plus étroit au transfert JEI (D32), et branchement des contrôles de
-portée, de liaison et d'énergie du sans-fil, qui n'étaient appelés par personne.
+Fixes born from these runs: name frame raised to 16 pixels, buttons placed under the preview,
+single feedback message trimmed to the frame, grouping by the name given by the player, text
+widths computed instead of hard coded, narrowest recipe type chosen on the JEI transfer (D32),
+and wiring of the wireless range, link and energy checks, which nobody called.
 
 ---
 
-## Préparation
+## Preparation
 
-### P1 — Lancer
+### P1 — Launch
 
 ```bash
 cd /c/Users/Julien/Desktop/PackagedAutoTerminals && ./gradlew runClient
 ```
 
-### P2 — Le banc d'essai
+### P2 — The test bench
 
-Dans un monde créatif superplat, monte ceci :
+In a creative superflat world, build this:
 
-| Élément | Rôle dans les tests |
+| Element | Role in the tests |
 |---|---|
-| Contrôleur ME, Creative Energy Cell, câbles | le réseau |
-| **Packager** et **Unpackager**, reliés | la paire de référence |
-| **Package Recipe Encoder** | encoder à la main, pour comparer |
-| 4 **Package Recipe Holders** | deux pour la paire, deux en réserve |
-| **Package Crafter** et **Ultimate Crafter** | l'onglet Machines et le diagnostic |
-| **Positioned Package Distributor** | vérifier la section « Aiguilleurs » |
-| Un terminal ME classique | vérifier qu'AE2 voit bien nos recettes |
-| Fer, or, redstone, diamants | de quoi encoder |
+| ME Controller, Creative Energy Cell, cables | the network |
+| **Packager** and **Unpackager**, connected | the reference pair |
+| **Package Recipe Encoder** | encode by hand, for comparison |
+| 4 **Package Recipe Holders** | two for the pair, two spare |
+| **Package Crafter** and **Ultimate Crafter** | the Machines tab and the diagnostic |
+| **Positioned Package Distributor** | check the "Routers" section |
+| A plain ME terminal | check that AE2 does see our recipes |
+| Iron, gold, redstone, diamonds | something to encode |
 
-Garde un **second Unpackager** de côté : il servira au test du rôle manquant.
-
----
-
-## A — Le socle
-
-### A1 — Chargement
-Ouvre le menu **Mods**.
-→ `PackagedAuto Terminals` figure dans la liste.
-
-### A2 — Fabrication
-Cherche `Terminal PackagedAuto` dans JEI, puis fabrique-le.
-→ La recette demande un terminal ME et un Package Recipe Holder.
-
-### A3 — Pose
-Pose le terminal sur un câble, puis clic droit.
-→ La fenêtre s'ouvre. Largeur **256**, aucun texte coupé.
+Keep a **second Unpackager** aside: it will serve the missing role test.
 
 ---
 
-## B — Lecture et recherche
+## A — The foundation
 
-### B1 — La paire
-Encode la même recette dans les deux porte-recettes avec l'Encoder, place-les dans le
-Packager et l'Unpackager, puis ouvre le terminal.
-→ **Une seule ligne** d'en-tête, « Paire Packager/Unpackager », suivie d'**une seule**
-ligne de recette.
+### A1 — Loading
+Open the **Mods** menu.
+→ `PackagedAuto Terminals` appears in the list.
 
-### B2 — Le résumé
-Regarde la ligne au-dessus de l'inventaire.
-→ « 2 machines · 1 recette ». Le survol donne la taille du paquet.
+### A2 — Crafting
+Look for `PackagedAuto Terminal` in JEI, then craft it.
+→ The recipe needs an ME terminal and a Package Recipe Holder.
 
-### B3 — Recherche libre
-Tape le nom de l'objet produit, puis `zzz`.
-→ Le filtre suit, et le message de liste vide tient dans le cadre.
-
-### B4 — Préfixe de mod 🆕
-Tape `@minecraft`.
-→ Seules les recettes dont un objet vient de Minecraft restent.
-
-### B5 — Préfixe de type 🆕
-Tape `#processing`, puis `#ultimate`.
-→ Le filtre suit le type de la recette.
-
-### B6 — Sortie de la recherche
-Échap, puis rouvre et appuie sur **E** avec le champ actif.
-→ La fenêtre se ferme dans les deux cas.
+### A3 — Placement
+Place the terminal on a cable, then right click.
+→ The screen opens. Width **256**, no trimmed text.
 
 ---
 
-## C — L'œil et le nom
+## B — Reading and search
 
-### C1 — Repérage 🆕
-Clique l'**œil**, à droite de la ligne de groupe.
-→ La fenêtre se ferme, et les deux blocs clignotent en cyan cinq secondes, même derrière un
-mur.
+### B1 — The pair
+Encode the same recipe into both recipe holders with the Encoder, put them into the Packager
+and the Unpackager, then open the terminal.
+→ **One single** header line, "Packager/Unpackager pair", followed by **one single** recipe
+line.
 
-### C2 — Nommer 🆕
-Clic droit sur la recette, tape `Fer` dans le champ du haut, **Entrée**.
-→ Message vert « Groupe renommé ».
+### B2 — The summary
+Look at the line above the inventory.
+→ "2 machines · 1 recipe". Hovering gives the packet size.
 
-### C3 — Le nom vit
-**Retour**, puis regarde la liste.
-→ La ligne affiche « Fer » à la place de « Paire Packager/Unpackager ».
+### B3 — Free search
+Type the name of the produced item, then `zzz`.
+→ The filter follows, and the empty list message fits in the frame.
 
----
+### B4 — Mod prefix 🆕
+Type `@minecraft`.
+→ Only the recipes with an item coming from Minecraft stay.
 
-## D — L'éditeur fusionné 🆕
+### B5 — Type prefix 🆕
+Type `#processing`, then `#ultimate`.
+→ The filter follows the recipe type.
 
-### D1 — Ouverture
-Clic droit sur la recette.
-→ La fenêtre reprend la disposition de l'Encoder. L'onglet de la recette porte un **cadre
-vert**.
-
-### D2 — Les onglets
-Regarde la rangée du haut.
-→ Une case par recette, montrant l'objet produit, puis **une case vide**.
-
-### D3 — Modifier
-Change un ingrédient, puis **Enregistrer**.
-→ Message vert « Appliqué à 2 machines ». La fenêtre **reste ouverte**.
-
-### D4 — Pas de doublon
-Appuie une seconde fois sur **Enregistrer**.
-→ Toujours une seule recette dans la rangée d'onglets.
-
-### D5 — Créer
-Clique la **case vide**, remplis la grille, **Enregistrer**.
-→ Un nouvel onglet apparaît, et le terminal comptera deux recettes.
-
-### D6 — Quitter sans enregistrer
-Modifie une case, puis clique un autre onglet.
-→ Message rouge « Recette non enregistrée ». Un second clic bascule.
-
-### D7 — Quantité à la molette
-Molette sur une case remplie, puis Maj et Ctrl.
-→ Pas de 1, de 10, puis de 64. Jamais sous 1.
-
-### D8 — Quantité au clavier 🆕
-**Clic du milieu** sur une case remplie, tape `128`, **Entrée**.
-→ La case affiche 128. Échap ailleurs annule sans rien changer.
-
-### D9 — Type de recette
-Les flèches `<` et `>` sous le nom du type.
-→ Le nom, l'icône et les cases actives changent ensemble.
-
-### D10 — Vider et supprimer
-**Vider**, puis **Supprimer**.
-→ La grille se vide sans rien écrire ; la suppression retire la recette des deux machines.
-
-### D11 — Transfert JEI
-Ouvre une recette dans JEI, clique son bouton **+**.
-→ La grille se remplit, et le type bascule sur celui qui convient.
+### B6 — Leaving the search
+Escape, then reopen and press **E** with the field active.
+→ The screen closes in both cases.
 
 ---
 
-## E — La paire, et ses accidents 🆕
+## C — The eye and the name
 
-### E1 — Recette d'un seul côté
-Avec l'Encoder, retire la recette du **Packager** seulement.
-→ Dans le terminal, la ligne passe en **rouge**, et l'infobulle dit d'encoder aussi dans un
-Packager.
+### C1 — Locating 🆕
+Click the **eye**, right of the group line.
+→ The screen closes, and both blocks blink cyan for five seconds, even behind a wall.
 
-### E2 — Réparer
-Clic droit sur la ligne rouge, puis **Enregistrer** sans rien changer.
-→ « Appliqué à 2 machines », et la ligne redevient noire.
+### C2 — Naming 🆕
+Right click the recipe, type `Iron` into the top field, **Enter**.
+→ Green message "Group renamed".
 
-### E3 — Machine sans porte-recettes
-Retire le porte-recettes du Packager, puis clique sa ligne dans le terminal.
-→ Message « Insère d'abord un porte-recettes ». **Rien ne sort du réseau ME.**
-
-### E4 — Paire neuve
-Vide les deux porte-recettes.
-→ Une seule ligne, « aucune recette », et **aucune** phrase rouge.
-
-### E5 — Rôle manquant
-Pose le second Unpackager, relié, sans porte-recettes.
-→ Il apparaît sur sa propre ligne : le terminal ne devine pas quand deux machines peuvent
-prétendre au même rôle.
-
-### E6 — Retrait groupé
-**Maj + clic gauche** sur la ligne de la paire.
-→ Les deux porte-recettes reviennent dans le terminal ME, avec leurs recettes.
+### C3 — The name lives
+**Back**, then look at the list.
+→ The line shows "Iron" instead of "Packager/Unpackager pair".
 
 ---
 
-## F — L'onglet Machines 🆕
+## D — The merged editor 🆕
 
-### F1 — Bascule
-Clique le bouton **Patterns** en haut à gauche.
-→ Il passe à **Machines**.
+### D1 — Opening
+Right click the recipe.
+→ The screen follows the Encoder layout. The recipe tab carries a **green frame**.
 
-### F2 — Les deux sections
-→ **Crafters** d'abord, puis **Aiguilleurs** avec le Distributor.
+### D2 — The tabs
+Look at the top row.
+→ One slot per recipe, showing the produced item, then **one empty slot**.
 
-### F3 — État
-→ Chaque machine affiche « prête » ou « occupée ».
+### D3 — Editing
+Change an ingredient, then **Save**.
+→ Green message "Applied to 2 machines". The screen **stays open**.
 
-### F4 — Recette orpheline
-Encode une recette **Ultimate** sans poser d'Ultimate Crafter.
-→ Un avertissement rouge en tête de liste. Pose le crafter : il disparaît.
+### D4 — No duplicate
+Press **Save** a second time.
+→ Still a single recipe in the tab row.
 
-### F5 — Pas de faux positif
-Vérifie qu'une recette **Processing** ne déclenche aucun avertissement.
-→ Ce type n'exige aucune machine reconnue.
+### D5 — Creating
+Click the **empty slot**, fill the grid, **Save**.
+→ A new tab appears, and the terminal will count two recipes.
 
----
+### D6 — Leaving without saving
+Change a slot, then click another tab.
+→ Red message "Unsaved recipe". A second click switches.
 
-## G — Le sans-fil 🆕
+### D7 — Amount with the wheel
+Wheel over a filled slot, then Shift and Ctrl.
+→ Steps of 1, 10, then 64. Never below 1.
 
-> La partie la plus risquée : elle n'a jamais tourné, et la refonte du conteneur touche
-> aussi le terminal câblé. Si A à F cassent, dis-le avant d'attaquer G.
+### D8 — Amount on the keyboard 🆕
+**Middle click** on a filled slot, type `128`, **Enter**.
+→ The slot shows 128. Escape elsewhere cancels without changing anything.
 
-### G1 — Fabrication
-→ Le **Terminal PackagedAuto sans fil** se fabrique avec le nôtre et le terminal sans fil
-d'AE2.
+### D9 — Recipe type
+The `<` and `>` arrows under the type name.
+→ The name, the icon and the enabled slots change together.
 
-### G2 — Sans liaison
-Clic droit sans l'avoir lié.
-→ « Ce terminal n'est lié à aucun réseau ».
+### D10 — Clear and delete
+**Clear**, then **Delete**.
+→ The grid empties without writing anything; the deletion removes the recipe from both
+machines.
 
-### G3 — Lié
-Lie-le à un Wireless Access Point, puis clic droit.
-→ Le terminal s'ouvre, identique au câblé.
-
-### G4 — Hors de portée
-Éloigne-toi.
-→ La fenêtre se referme seule. Même chose depuis l'éditeur.
-
----
-
-## I — Pliage et machine d'exécution 🆕
-
-### I1 — Plié par défaut
-Ouvre le terminal.
-→ Chaque groupe tient sur **une** ligne. Aucune recette n'est visible. Un chevron pointe
-vers la droite, à gauche de l'icône.
-
-### I2 — Déplier
-Clique le chevron.
-→ Le chevron pointe vers le bas, et les recettes du groupe apparaissent.
-
-### I3 — La création reste intacte
-Clique la ligne du groupe **ailleurs que sur le chevron**.
-→ L'éditeur s'ouvre sur une recette neuve, comme au test D5.
-
-### I4 — Groupe sans recette
-Regarde une paire vide.
-→ Aucun chevron. La place reste vide, et l'icône ne bouge pas.
-
-### I5 — La recherche déplie
-Tape le nom d'un objet produit.
-→ Le groupe qui porte la recette s'ouvre seul. Les autres restent pliés.
-
-### I6 — Le champ vidé replie
-Efface la recherche.
-→ Tout se replie, sauf les groupes que tu avais ouverts au chevron.
-
-### I7 — Mémoire de session
-Ferme le terminal, puis rouvre-le.
-→ Tout est plié de nouveau.
-
-### I8 — Machine dans la liste
-Regarde une ligne de recette de type Elite.
-→ À droite, l'icône de l'**Elite Package Crafter** remplace le mot « Elite ». L'infobulle
-dit « Fabriquée par : Elite Package Crafter ».
-
-### I9 — Machine absente
-Retire l'Elite Package Crafter du réseau.
-→ L'icône passe en sombre, et l'infobulle vire au rouge : « absent du réseau ».
-
-### I10 — Type sans machine
-Regarde une recette **Processing**.
-→ Aucune icône à droite. Le mot « Processing » reste, comme avant.
-
-### I11 — Machine dans l'éditeur
-Ouvre une recette Elite dans l'éditeur.
-→ Sous l'icône du type, l'icône de l'Elite Package Crafter apparaît. Le survol donne son
-nom.
-
-### I12 — Le type change, la machine suit
-Dans l'éditeur, change le type avec `<` et `>`.
-→ L'icône de la machine change à chaque type.
+### D11 — JEI transfer
+Open a recipe in JEI, click its **+** button.
+→ The grid fills, and the type switches to the right one.
 
 ---
 
-## J — Apparence de la part et des items 🆕
+## E — The pair, and its accidents 🆕
 
-### J1 — La part posée
-Pose le terminal sur un câble ME.
-→ L'écran est **violet fluix**, avec un colis blanc éclatant au milieu. Il ressemble au
-Pattern Terminal d'AE2, posé à côté.
+### E1 — Recipe on one side only
+With the Encoder, remove the recipe from the **Packager** only.
+→ In the terminal, the line turns **red**, and the tooltip says to encode it into a Packager
+too.
 
-### J2 — La couleur suit le réseau
-Peins le câble en rouge avec un Color Applicator.
-→ L'écran passe au rouge. Les anciennes textures gardaient leur turquoise.
+### E2 — Repairing
+Right click the red line, then **Save** without changing anything.
+→ "Applied to 2 machines", and the line turns black again.
 
-### J3 — L'item dans l'inventaire
-Regarde le terminal dans ta barre d'action.
-→ Il porte le boîtier d'AE2, et son écran violet. Il n'est **pas** blanc : ce serait le
-signe que le gestionnaire de couleur manque.
+### E3 — Machine without a recipe holder
+Remove the recipe holder from the Packager, then click its line in the terminal.
+→ Message "Insert a Package Recipe Holder first". **Nothing is pulled from the ME network.**
 
-### J4 — Le terminal sans fil
-Regarde l'item sans fil.
-→ Antenne rose en haut à gauche, écran violet, colis blanc. Même famille que le Wireless
-Pattern Terminal d'AE2.
+### E4 — Brand new pair
+Empty both recipe holders.
+→ One single line, "no recipe yet", and **no** red sentence.
 
-### J5 — Hors tension
-Coupe le courant du réseau.
-→ L'écran s'éteint, comme celui des terminaux d'AE2.
+### E5 — Missing role
+Place the second Unpackager, connected, with no recipe holder.
+→ It appears on its own line: the terminal does not guess when two machines could claim the
+same role.
 
----
-
-## K — Terminal universel sans fil (AE2WUT) 🆕
-
-> `run/mods` porte désormais `ae2wut-1.0.5.jar`. Sans lui, ce groupe entier se saute, et le
-> reste du mod doit fonctionner comme avant.
-
-### K1 — Sans AE2WUT
-Retire `ae2wut-1.0.5.jar` de `run/mods`, puis lance le client.
-→ Le jeu démarre. Le journal ne parle pas d'AE2WUT. Aucun mixin ne s'applique.
-
-### K2 — Avec AE2WUT
-Remets le jar, puis relance.
-→ Le journal porte `AE2WUT detecte, mode 41`. Le jeu démarre.
-
-### K3 — La recette d'assemblage
-Dans JEI, cherche le **Wireless Universal Terminal**.
-→ Une recette sans forme associe le terminal universel et notre **Terminal PackagedAuto
-sans fil**.
-
-### K4 — Assembler
-Fabrique cette recette.
-→ Le terminal universel sort de la table. Son infobulle, touche Maj enfoncée, liste
-« Terminal PackagedAuto sans fil ».
-
-### K5 — La molette
-Maj + molette sur le terminal universel.
-→ Le nom affiché passe par tous les modes absorbés, dont le nôtre.
-
-### K6 — Ouvrir
-Règle la molette sur notre mode, lie le terminal à un point d'accès, puis clic droit.
-→ Notre fenêtre s'ouvre, avec les recettes du réseau.
-
-### K7 — Non lié
-Sur un terminal universel jamais lié, clic droit dans notre mode.
-→ Message « Ce terminal n'est lié à aucun réseau ». Aucune fenêtre.
-
-### K8 — Hors de portée
-Éloigne-toi du point d'accès, fenêtre ouverte.
-→ Elle se referme seule, comme avec notre propre terminal sans fil.
-
-### K9 — Sans énergie
-Vide le terminal universel.
-→ Message « Pas d'énergie ». Le terminal universel se décharge bien, et non le nôtre.
-
-### K10 — Les autres modes
-Repasse sur le mode ME, puis sur le mode Pattern d'AE2.
-→ Les fenêtres d'AE2 s'ouvrent normalement. Notre écouteur ne les intercepte pas.
-
-### K12 — L'image du terminal universel
-Règle le terminal universel sur notre mode, puis regarde-le dans la barre d'action et en
-main.
-→ Il porte **notre** image : antenne rose, écran violet, colis blanc. Aucun damier violet et
-noir, aucun nom de modèle en surimpression.
-
-### K13 — Les autres modes gardent leur image
-Passe à la molette sur le mode ME, puis sur le mode Pattern.
-→ Chaque mode retrouve l'image du terminal d'AE2 correspondant.
-
-### K11 — Le mode réglable
-Dans `run/config/packagedautoterminals.cfg`, passe `wutModeId` à une autre valeur, puis
-relance.
-→ Un terminal universel déjà assemblé perd notre mode ; il faut le réassembler. Aucun
-plantage.
+### E6 — Group removal
+**Shift + left click** on the pair line.
+→ Both recipe holders come back into the ME terminal, with their recipes.
 
 ---
 
-## L — Touche d'ouverture 🆕
+## F — The Machines tab 🆕
 
-### L1 — La touche existe, et n'est liée à rien
-Ouvre **Options**, puis **Commandes**.
-→ Une catégorie « PackagedAuto Terminals » porte « Ouvrir le terminal sans fil ». Aucune
-touche ne lui est assignée.
+### F1 — Switching
+Click the **Patterns** button at the top left.
+→ It turns into **Machines**.
 
-### L2 — Aucun conflit
-Regarde les quatre commandes d'AE2 et celle de Cell Terminal.
-→ Aucune ne s'affiche en rouge.
+### F2 — The two sections
+→ **Crafters** first, then **Routers** with the Distributor.
 
-### L3 — Lier
-Assigne une touche libre, par exemple `K`.
+### F3 — State
+→ Each machine shows "idle" or "busy".
 
-### L4 — Sans terminal
-Vide ton inventaire, puis appuie sur la touche.
-→ « Aucun terminal PackagedAuto sans fil dans ton inventaire. »
+### F4 — Orphan recipe
+Encode an **Ultimate** recipe without placing an Ultimate Crafter.
+→ A red warning at the top of the list. Place the crafter: it disappears.
 
-### L5 — Depuis l'inventaire
-Range le terminal sans fil lié dans une case de l'inventaire, hors de la main, puis appuie.
-→ La fenêtre s'ouvre.
-
-### L6 — Depuis la main gauche
-Place le terminal en main gauche, puis appuie.
-→ La fenêtre s'ouvre.
-
-### L7 — Non lié
-Avec un terminal jamais lié, appuie.
-→ « Ce terminal n'est lié à aucun réseau ». La recherche s'arrête là, et ne passe pas au
-suivant.
-
-### L8 — Le terminal universel
-Range un terminal universel qui a absorbé notre mode, **réglé sur un autre mode**, puis
-appuie.
-→ Notre fenêtre s'ouvre. Le terminal universel bascule sur notre mode.
-
-### L9 — La grille de craft survit
-Avant L8, règle le terminal universel sur le mode Crafting d'AE2 et remplis sa grille.
-Appuie sur notre touche, puis reviens au mode Crafting à la molette.
-→ La grille est intacte. C'est l'appel à `nbtChangeB` qui la met en réserve.
-
-### L10 — Priorité
-Porte les deux objets à la fois : notre terminal sans fil, et un terminal universel.
-→ Notre terminal passe en premier.
+### F5 — No false positive
+Check that a **Processing** recipe triggers no warning.
+→ That type needs no recognised machine.
 
 ---
 
-## M — Confort de lecture et d'édition 🆕
+## G — The wireless terminal 🆕
 
-### M1 — Zébrage
-Ouvre le terminal, avec au moins quatre lignes.
-→ Une rangée sur deux porte un fond très légèrement plus sombre. Le motif ne saute pas
-quand tu fais défiler la liste.
+> The riskiest part: it has never run, and the container rework also touches the wired
+> terminal. If A to F break, say so before starting G.
 
-### M2 — Surbrillance
-Promène la souris sur la liste.
-→ La rangée sous le curseur se teinte de bleu clair. Le texte et les icônes restent
-lisibles.
+### G1 — Crafting
+→ The **Wireless PackagedAuto Terminal** is crafted from ours and the AE2 wireless terminal.
 
-### M3 — La croix de la recherche
-Tape un texte dans le champ.
-→ Une croix apparaît à droite du champ. Elle disparaît quand le champ est vide.
+### G2 — Without a link
+Right click without having linked it.
+→ "This terminal is not linked to a network".
 
-### M4 — Vider d'un clic
-Clique la croix.
-→ Le champ se vide, il garde le focus, et la liste complète revient.
+### G3 — Linked
+Link it to a Wireless Access Point, then right click.
+→ The terminal opens, identical to the wired one.
 
-### M5 — Le compteur
-Tape le nom d'un objet produit.
-→ À droite de la ligne de résumé, « 2 résultats » s'affiche. Le compteur disparaît quand le
-champ est vide.
-
-### M6 — Le point de l'onglet
-Dans l'éditeur, change un ingrédient.
-→ Un point rouge apparaît dans l'angle de l'onglet ouvert. **Enregistrer** le fait
-disparaître.
-
-### M7 — Entrée enregistre
-Modifie une case, puis appuie sur **Entrée**.
-→ Message vert « Appliqué à 2 machines ». Même effet que le bouton.
-
-### M8 — Entrée sans recette valide
-Vide la grille, puis appuie sur **Entrée**.
-→ Rien ne part. Le bouton Enregistrer est éteint, et la touche respecte cet état.
-
-### M9 — Échap revient au terminal
-Dans l'éditeur, appuie sur **Échap**.
-→ La liste du terminal revient. Un second Échap ferme le terminal.
-
-### M10 — Échap depuis le champ du nom
-Clique dans le champ du nom, puis appuie sur **Échap**.
-→ La liste revient aussi. Le joueur n'est jamais piégé dans le champ.
+### G4 — Out of range
+Walk away.
+→ The screen closes by itself. Same from the editor.
 
 ---
 
-## H — Réglages et instance réelle
+## I — Folding and crafting machine 🆕
+
+### I1 — Collapsed by default
+Open the terminal.
+→ Each group takes **one** line. No recipe is visible. A chevron points right, left of the
+icon.
+
+### I2 — Expanding
+Click the chevron.
+→ The chevron points down, and the recipes of the group appear.
+
+### I3 — Creation stays intact
+Click the group line **anywhere but on the chevron**.
+→ The editor opens on a new recipe, as in test D5.
+
+### I4 — Group with no recipe
+Look at an empty pair.
+→ No chevron. The space stays empty, and the icon does not move.
+
+### I5 — Search expands
+Type the name of a produced item.
+→ The group holding the recipe opens by itself. The others stay collapsed.
+
+### I6 — Clearing the field collapses
+Clear the search.
+→ Everything collapses again, except the groups you had opened with the chevron.
+
+### I7 — Session memory
+Close the terminal, then reopen it.
+→ Everything is collapsed again.
+
+### I8 — Machine in the list
+Look at a recipe line of the Elite type.
+→ On the right, the **Elite Package Crafter** icon replaces the word "Elite". The tooltip says
+"Crafted by: Elite Package Crafter".
+
+### I9 — Machine absent
+Remove the Elite Package Crafter from the network.
+→ The icon turns dark, and the tooltip turns red: "not on the network".
+
+### I10 — Type with no machine
+Look at a **Processing** recipe.
+→ No icon on the right. The word "Processing" stays, as before.
+
+### I11 — Machine in the editor
+Open an Elite recipe in the editor.
+→ Below the type icon, the Elite Package Crafter icon appears. Hovering gives its name.
+
+### I12 — The type changes, the machine follows
+In the editor, change the type with `<` and `>`.
+→ The machine icon changes with each type.
+
+---
+
+## J — Look of the part and of the items 🆕
+
+### J1 — The placed part
+Place the terminal on an ME cable.
+→ The screen is **fluix purple**, with a bright white package in the middle. It looks like the
+AE2 Pattern Terminal, placed next to it.
+
+### J2 — The colour follows the network
+Paint the cable red with a Color Applicator.
+→ The screen turns red. The old textures kept their turquoise.
+
+### J3 — The item in the inventory
+Look at the terminal in your hotbar.
+→ It carries the AE2 case, and its purple screen. It is **not** white: that would mean the
+colour handler is missing.
+
+### J4 — The wireless terminal
+Look at the wireless item.
+→ Pink antenna at the top left, purple screen, white package. Same family as the AE2 Wireless
+Pattern Terminal.
+
+### J5 — Unpowered
+Cut the power of the network.
+→ The screen goes dark, like the AE2 terminals.
+
+---
+
+## K — Wireless universal terminal (AE2WUT) 🆕
+
+> `run/mods` now carries `ae2wut-1.0.5.jar`. Without it, this whole group is skipped, and the
+> rest of the mod must work as before.
+
+### K1 — Without AE2WUT
+Remove `ae2wut-1.0.5.jar` from `run/mods`, then start the client.
+→ The game starts. The log says nothing about AE2WUT. No mixin applies.
+
+### K2 — With AE2WUT
+Put the jar back, then restart.
+→ The log carries `AE2WUT detected, mode 41`. The game starts.
+
+### K3 — The assembly recipe
+In JEI, look for the **Wireless Universal Terminal**.
+→ A shapeless recipe combines the universal terminal and our **Wireless PackagedAuto
+Terminal**.
+
+### K4 — Assembling
+Craft that recipe.
+→ The universal terminal comes out of the table. Its tooltip, with Shift held, lists
+"Wireless PackagedAuto Terminal".
+
+### K5 — The wheel
+Shift + wheel on the universal terminal.
+→ The displayed name walks through every absorbed mode, ours included.
+
+### K6 — Opening
+Set the wheel to our mode, link the terminal to an access point, then right click.
+→ Our screen opens, with the recipes of the network.
+
+### K7 — Not linked
+On a universal terminal that was never linked, right click in our mode.
+→ Message "This terminal is not linked to a network". No screen.
+
+### K8 — Out of range
+Walk away from the access point, with the screen open.
+→ It closes by itself, as with our own wireless terminal.
+
+### K9 — Out of energy
+Empty the universal terminal.
+→ Message "No power". The universal terminal is the one that discharges, not ours.
+
+### K10 — The other modes
+Switch back to the ME mode, then to the AE2 Pattern mode.
+→ The AE2 screens open normally. Our listener does not intercept them.
+
+### K12 — The universal terminal icon
+Set the universal terminal to our mode, then look at it in the hotbar and in hand.
+→ It carries **our** icon: pink antenna, purple screen, white package. No purple and black
+checkerboard, no model name written over it.
+
+### K13 — The other modes keep their icon
+Switch with the wheel to the ME mode, then to the Pattern mode.
+→ Each mode gets the icon of the matching AE2 terminal back.
+
+### K11 — The adjustable mode
+In `run/config/packagedautoterminals.cfg`, set `wutModeId` to another value, then restart.
+→ An already assembled universal terminal loses our mode; it must be reassembled. No crash.
+
+---
+
+## L — Opening key 🆕
+
+### L1 — The key exists, and is bound to nothing
+Open **Options**, then **Controls**.
+→ A "PackagedAuto Terminals" category carries "Open the wireless terminal". No key is assigned
+to it.
+
+### L2 — No conflict
+Look at the four AE2 controls and the Cell Terminal one.
+→ None of them shows in red.
+
+### L3 — Binding
+Assign a free key, for example `K`.
+
+### L4 — Without a terminal
+Empty your inventory, then press the key.
+→ "No wireless PackagedAuto terminal in your inventory."
+
+### L5 — From the inventory
+Put the linked wireless terminal into an inventory slot, out of hand, then press.
+→ The screen opens.
+
+### L6 — From the offhand
+Put the terminal in the offhand, then press.
+→ The screen opens.
+
+### L7 — Not linked
+With a terminal that was never linked, press.
+→ "This terminal is not linked to a network". The search stops there, and does not move to the
+next one.
+
+### L8 — The universal terminal
+Carry a universal terminal that absorbed our mode, **set to another mode**, then press.
+→ Our screen opens. The universal terminal switches to our mode.
+
+### L9 — The crafting grid survives
+Before L8, set the universal terminal to the AE2 Crafting mode and fill its grid. Press our
+key, then go back to the Crafting mode with the wheel.
+→ The grid is intact. The `nbtChangeB` call is what stores it.
+
+### L10 — Priority
+Carry both items at once: our wireless terminal, and a universal terminal.
+→ Our terminal comes first.
+
+---
+
+## M — Reading and editing comfort 🆕
+
+### M1 — Striping
+Open the terminal, with at least four lines.
+→ Every other row carries a slightly darker background. The pattern does not jump when you
+scroll the list.
+
+### M2 — Highlight
+Move the mouse over the list.
+→ The row under the cursor turns light blue. The text and the icons stay readable.
+
+### M3 — The search cross
+Type some text into the field.
+→ A cross appears at the right of the field. It disappears when the field is empty.
+
+### M4 — Clear in one click
+Click the cross.
+→ The field empties, it keeps focus, and the full list comes back.
+
+### M5 — The counter
+Type the name of a produced item.
+→ At the right of the summary line, "2 results" appears. The counter disappears when the field
+is empty.
+
+### M6 — The tab dot
+In the editor, change an ingredient.
+→ A red dot appears in the corner of the open tab. **Save** makes it disappear.
+
+### M7 — Enter saves
+Change a slot, then press **Enter**.
+→ Green message "Applied to 2 machines". Same effect as the button.
+
+### M8 — Enter with no valid recipe
+Clear the grid, then press **Enter**.
+→ Nothing is sent. The Save button is disabled, and the key honours that state.
+
+### M9 — Escape goes back to the terminal
+In the editor, press **Escape**.
+→ The terminal list comes back. A second Escape closes the terminal.
+
+### M10 — Escape from the name field
+Click into the name field, then press **Escape**.
+→ The list comes back too. The player is never trapped in the field.
+
+---
+
+## H — Settings and real instance
 
 ### H1 — Configuration
-Dans `run/config/packagedautoterminals.cfg`, passe `machinesTab` à `false`.
-→ Le bouton d'onglet disparaît, et le titre revient.
+In `run/config/packagedautoterminals.cfg`, set `machinesTab` to `false`.
+→ The tab button disappears, and the title comes back.
 
-### H2 — Instance réelle
-Copie `build/libs/packagedautoterminals-1.12.2-0.1.0.jar` dans
+### H2 — Real instance
+Copy `build/libs/packagedautoterminals-1.12.2-0.1.0.jar` into
 `H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`.
-→ L'instance démarre, et le terminal fonctionne avec ton fork d'AE2UEL.
+→ The instance starts, and the terminal works with your AE2UEL fork.
 
 ---
 
-## Là où je m'attends à des ennuis
+## Where I expect trouble
 
-Par probabilité décroissante :
+In decreasing order of probability:
 
-1. **Les onglets de l'éditeur** (D2) : ils passent par de vrais emplacements, et la
-   synchronisation de leurs icônes n'a jamais été observée.
-2. **La boîte de quantité** (D8) : sa position vient de l'emplacement cliqué, sans garde
-   contre le bord de l'écran.
-3. **Le sans-fil** (G) : la refonte du conteneur n'a aucun essai derrière elle.
-4. **Le transfert JEI** (D11) : il dépend d'une méthode de PackagedAuto jamais exercée.
-5. **Le repérage** (C1) : le rendu dans le monde touche à l'état d'OpenGL.
+1. **The editor tabs** (D2): they go through real slots, and the synchronisation of their
+   icons has never been observed.
+2. **The amount box** (D8): its position comes from the clicked slot, with no guard against the
+   screen edge.
+3. **The wireless terminal** (G): the container rework has no test behind it.
+4. **The JEI transfer** (D11): it relies on a PackagedAuto method that was never exercised.
+5. **Locating** (C1): rendering in the world touches the OpenGL state.

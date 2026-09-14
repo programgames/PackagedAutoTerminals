@@ -1,63 +1,63 @@
-# PackagedAuto Terminals — mod Minecraft Forge 1.12.2
+# PackagedAuto Terminals — Minecraft Forge 1.12.2 mod
 
-## Ce qu'est ce projet
+## What this project is
 
-Un mod qui ajoute des **terminaux AE2** pour consulter et modifier les recettes de
-**PackagedAuto** à distance, depuis le réseau ME. Aujourd'hui, le joueur doit encoder ses
-recettes dans un **Package Recipe Encoder**, puis marcher jusqu'à chaque machine pour y
-insérer le **Package Recipe Holder**. Ce mod supprime ce déplacement.
+A mod that adds **AE2 terminals** to browse and edit **PackagedAuto** recipes remotely, from
+the ME network. Today the player has to encode their recipes into a **Package Recipe
+Encoder**, then walk to every machine to insert the **Package Recipe Holder**. This mod
+removes that walk.
 
-Modèle de référence : l'**Interface Terminal** d'AE2, qui liste les ME Interfaces du réseau
-et édite leurs patterns à distance.
+Reference model: the AE2 **Interface Terminal**, which lists the ME Interfaces of the network
+and edits their patterns remotely.
 
 ---
 
-## 1. Environnement technique
+## 1. Technical environment
 
-| Élément | Valeur | Note |
+| Element | Value | Note |
 |---|---|---|
 | Minecraft | **1.12.2** | |
-| Loader d'exécution | Cleanroom 0.5.17-alpha | l'instance de test du joueur |
-| Forge (compilation) | **14.23.5.2847** | même contrainte que le projet `actuallyplayed` : les artefacts `userdev` 2848→2860 ne sont pas publiés |
-| Mappings MCP | **snapshot_20171003** | |
-| ForgeGradle | **2.3.10** épinglé | |
-| Gradle | **4.10.3** (wrapper) | ForgeGradle 2.3 ne va pas au-delà |
-| JDK de build | **JDK 8 obligatoire** | `C:\Program Files\Eclipse Adoptium\jdk-8.0.472.8-hotspot`, déjà dans `JAVA_HOME` |
+| Runtime loader | Cleanroom 0.5.17-alpha | the player's test instance |
+| Forge (compilation) | **14.23.5.2847** | same constraint as the `actuallyplayed` project: the `userdev` artifacts 2848→2860 are not published |
+| MCP mappings | **snapshot_20171003** | |
+| ForgeGradle | **2.3.10** pinned | |
+| Gradle | **4.10.3** (wrapper) | ForgeGradle 2.3 does not go beyond |
+| Build JDK | **JDK 8 required** | `C:\Program Files\Eclipse Adoptium\jdk-8.0.472.8-hotspot`, already in `JAVA_HOME` |
 | `sourceCompatibility` | 1.8 | |
 
-> ⚠️ **Ne jamais compiler avec le JDK 17 installé sur ce poste.** ForgeGradle 2.3 et
-> Gradle 4.x échouent sur tout JDK plus récent que 8. En cas d'erreur
-> `Unsupported class file major version`, vérifie `JAVA_HOME` en premier.
+> ⚠️ **Never build with the JDK 17 installed on this machine.** ForgeGradle 2.3 and Gradle 4.x
+> fail on any JDK newer than 8. On an `Unsupported class file major version` error, check
+> `JAVA_HOME` first.
 
-### Identité du mod
+### Mod identity
 
-- **modid** : `packagedautoterminals`
-- **Nom** : `PackagedAuto Terminals`
-- **Package racine** : `fr.julien.packagedautoterminals`
-- **Version** : SemVer. Jar nommé `packagedautoterminals-1.12.2-<version>.jar`
-- **Langues** : `en_us`, `fr_fr`
+- **modid**: `packagedautoterminals`
+- **Name**: `PackagedAuto Terminals`
+- **Root package**: `fr.julien.packagedautoterminals`
+- **Version**: SemVer. Jar named `packagedautoterminals-1.12.2-<version>.jar`
+- **Languages**: `en_us`, `fr_fr`
 
-### Dépendances
+### Dependencies
 
-| Mod | Version de référence | Type |
+| Mod | Reference version | Type |
 |---|---|---|
-| AE2 Unofficial Extended Life (AE2UEL) | `v0.56.5` officiel pour la compilation | **requise** |
-| PackagedAuto | `1.12.2-1.0.24.73` | **requise** |
-| PackagedExCrafting | `1.12.2-1.0.3.33` | optionnelle |
-| PackagedAvaritia | `1.12.2-1.0.3.25` | optionnelle |
-| PackagedFluidCrafting | `1.12.2-1.0.0.3` | optionnelle, **v2** |
-| PackagingProvider | `1.12.2-1.0.0.2` | optionnelle |
-| AE2WUT | `1.0.5` | optionnelle |
-| JEI / HEI | HadEnoughItems 4.31.2 | optionnelle |
+| AE2 Unofficial Extended Life (AE2UEL) | official `v0.56.5` for compilation | **required** |
+| PackagedAuto | `1.12.2-1.0.24.73` | **required** |
+| PackagedExCrafting | `1.12.2-1.0.3.33` | optional |
+| PackagedAvaritia | `1.12.2-1.0.3.25` | optional |
+| PackagedFluidCrafting | `1.12.2-1.0.0.3` | optional, **v2** |
+| PackagingProvider | `1.12.2-1.0.0.2` | optional |
+| AE2WUT | `1.0.5` | optional |
+| JEI / HEI | HadEnoughItems 4.31.2 | optional |
 
-> Le joueur exécute un **fork local** d'AE2UEL (`ae2-uel-v0.56.7-10-gac98c09.dirty.jar`).
-> Ce fork n'ajoute que des correctifs. **On compile contre AE2UEL officiel**, jamais contre
-> le fork. Le jar produit doit fonctionner avec les deux.
+> The player runs a **local fork** of AE2UEL (`ae2-uel-v0.56.7-10-gac98c09.dirty.jar`). That
+> fork only adds fixes. **We compile against official AE2UEL**, never against the fork. The
+> produced jar must work with both.
 
-### Environnement d'exécution de dev
+### Dev runtime environment
 
-`libs/` porte les dépendances de compilation. `run/mods` porte **uniquement** les mods
-absents de `libs/`, sans quoi FML refuse de démarrer (voir section 4.1) :
+`libs/` carries the compile dependencies. `run/mods` carries **only** the mods that are absent
+from `libs/`, otherwise FML refuses to start (see section 4.1):
 
 ```
 Avaritia, Baubles, CodeChickenLib, Cucumber, ExtendedCrafting-Nomifactory-Edition,
@@ -65,150 +65,157 @@ HadEnoughItems, PackagedAvaritia, PackagedExCrafting, PackagingProvider, mixinbo
 ae2wut, cell-terminal
 ```
 
-> ⚠️ **`cell-terminal` plante avec `ae2wut-1.0.5`.** Cell Terminal 1.6.7 appelle
-> `AE2UELWirelessUniversalTerminal.registryContainer`, une API absente de la version 1.0.5.
-> Le jeu s'arrête sur `NoClassDefFoundError: com/circulation/ae2wut/AE2UELWirelessUniversalTerminal$GetGui`.
-> Correctif : `B:enableAE2WUT=false` dans `run/config/cellterminal_server.cfg`. L'instance
-> réelle du joueur porte déjà ce réglage.
+> ⚠️ **`cell-terminal` crashes with `ae2wut-1.0.5`.** Cell Terminal 1.6.7 calls
+> `AE2UELWirelessUniversalTerminal.registryContainer`, an API absent from version 1.0.5. The
+> game stops with `NoClassDefFoundError: com/circulation/ae2wut/AE2UELWirelessUniversalTerminal$GetGui`.
+> Fix: `B:enableAE2WUT=false` in `run/config/cellterminal_server.cfg`. The player's real
+> instance already carries that setting.
 
-> `cell-terminal` sert de **modèle**, et non de dépendance. Il montre comment un addon AE2UEL
-> déclare une touche : voir la décision **D34**.
+> `cell-terminal` serves as a **model**, not as a dependency. It shows how an AE2UEL addon
+> declares a key: see decision **D34**.
 
-> `ae2wut-1.0.5.jar` sert à l'intégration du Wireless Universal Terminal. Il n'est **pas**
-> une dépendance de compilation : nos mixins visent ses classes par leur nom. Voir la
-> décision **D33**.
+> `ae2wut-1.0.5.jar` serves the Wireless Universal Terminal integration. It is **not** a
+> compile dependency: our mixins target its classes by name. See decision **D33**.
 
-> `libs/mixinbooter-10.7.jar` porte la bibliothèque Mixin, en `compileOnly`. Il vit hors de
-> `libs/maven`, exprès : ForgeGradle ne met pas les `compileOnly` sur le chemin d'exécution,
-> donc aucun doublon avec `run/mods`, et `checkDevMods` ne parcourt que `libs/maven`.
+> `libs/mixinbooter-10.7.jar` carries the Mixin library, as `compileOnly`. It lives outside
+> `libs/maven`, on purpose: ForgeGradle does not put `compileOnly` entries on the runtime
+> path, so there is no duplicate with `run/mods`, and `checkDevMods` only walks `libs/maven`.
 
-> `PackagingProvider` exige `mixinbooter`. Sans lui, FML s'arrête sur
+> `PackagingProvider` requires `mixinbooter`. Without it, FML stops with a
 > `MissingModsException`.
 
-### Instance de test
+### Test instance
 
 `H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`
 
 ---
 
-## 2. Règles de travail
+## 2. Working rules
 
-1. **Vérifier avant d'écrire.** Toute affirmation sur le comportement d'un autre mod doit
-   venir d'une lecture du code, pas d'un souvenir. Consigner la preuve dans
+1. **Verify before writing.** Every statement about the behaviour of another mod must come
+   from reading the code, not from memory. Record the evidence in
    `docs/PACKAGEDAUTO-MODEL.md`.
-2. **Le serveur est l'autorité.** Le client n'écrit jamais un NBT de recette. Il envoie une
-   intention. Le serveur valide les droits AE2, l'énergie et la distance.
-3. **Pas de mixin tant qu'une API suffit.** Un mixin casse à chaque mise à jour d'un autre
-   mod. Les mixins sont réservés à `PackagedFluidCrafting` et à AE2WUT, et seulement si
-   aucune autre voie n'existe.
-4. **Chaque intégration est optionnelle.** Détection par modid au chargement. Sans l'addon,
-   la fonction disparaît et rien ne plante.
-5. **Incréments testables.** Chaque étape se termine par un lancement du client de dev.
-6. **`core` testable hors Minecraft.** Tri, filtre, diff et validation vont dans `core`,
-   avec des tests JUnit purs.
-7. **Environnement de dev minimal.** AE2UEL + PackagedAuto + les trois addons + JEI.
-   Jamais le pack complet.
-8. **Dépendances épinglées.** Aucune version flottante dans `build.gradle`.
+2. **The server is the authority.** The client never writes a recipe NBT. It sends an intent.
+   The server validates the AE2 permissions, the energy and the range.
+3. **No mixin as long as an API is enough.** A mixin breaks on every update of another mod.
+   Mixins are reserved for `PackagedFluidCrafting` and AE2WUT, and only when no other path
+   exists.
+4. **Every integration is optional.** Detected by modid at load time. Without the addon, the
+   feature disappears and nothing crashes.
+5. **Testable increments.** Every step ends with a dev client launch.
+6. **`core` testable outside Minecraft.** Sorting, filtering, diffing and validation go into
+   `core`, with pure JUnit tests.
+7. **Minimal dev environment.** AE2UEL + PackagedAuto + the three addons + JEI. Never the full
+   pack.
+8. **Pinned dependencies.** No floating version in `build.gradle`.
 
 ---
 
-## 3. Structure du dépôt
+## 3. Repository structure
 
 ```
 PackagedAutoTerminals/
-├── CLAUDE.md                     ce fichier
+├── CLAUDE.md                     this file
 ├── README.md
 ├── CHANGELOG.md                  SemVer
-├── settings.gradle               un seul module au depart (voir revision R3)
+├── settings.gradle               a single module to start with (see revision R3)
 ├── src/main/java/fr/julien/packagedautoterminals/
 ├── src/main/resources/
-├── libs/                         jar AE2UEL local, si CurseMaven echoue
+├── libs/                         local AE2UEL jar, when CurseMaven fails
 ├── docs/
-│   ├── PLAN.md                   les 8 lots et leurs criteres de validation
-│   ├── ARCHITECTURE.md           couches, flux de donnees, points d'entree
-│   ├── PACKAGEDAUTO-MODEL.md     modele de donnees verifie, avec preuves
-│   ├── DECISIONS.md              decisions validees, revisions et contraintes
-│   └── TESTING.md                tests manuels en jeu, etape par etape
+│   ├── PLAN.md                   the 8 batches and their acceptance criteria
+│   ├── ARCHITECTURE.md           layers, data flow, entry points
+│   ├── PACKAGEDAUTO-MODEL.md     verified data model, with evidence
+│   ├── DECISIONS.md              approved decisions, revisions and constraints
+│   └── TESTING.md                manual in-game tests, step by step
 └── .github/workflows/build.yml
 ```
 
-Le module `core` et le dossier `forge-1.12` naîtront au portage 1.16, quand on saura ce qui
-est réellement commun. Voir la révision **R3** dans `docs/DECISIONS.md`.
+The `core` module and the `forge-1.12` folder will appear at the 1.16 port, once we know what
+is truly shared. See revision **R3** in `docs/DECISIONS.md`.
 
 ---
 
-## 4. Pieges rencontres, et leur cause
+## 4. Pitfalls hit, and their cause
 
-### 4.1 `DuplicateModsFoundException` au lancement du client de dev
+### 4.1 `DuplicateModsFoundException` when starting the dev client
 
-ForgeGradle place les dependances `deobfProvided` sur le chemin d'execution de `runClient`.
-FML les charge donc comme des mods. Mettre les **memes** jars dans `run/mods` produit :
+ForgeGradle puts the `deobfProvided` dependencies on the `runClient` runtime path. FML
+therefore loads them as mods. Putting the **same** jars into `run/mods` produces:
 
 ```
-Found a duplicate mod appliedenergistics2 at [.\modse2-uel-v0.56.5.jar, ...\libs\...]
+Found a duplicate mod appliedenergistics2 at [.\modse2-uel-v0.56.5.jar, ...\libs\...]
 ```
 
-**Regle** : tout jar present dans `libs/maven` ne doit **jamais** etre copie dans `run/mods`.
+**Rule**: any jar present in `libs/maven` must **never** be copied into `run/mods`.
 
-Ce piege est tombe deux fois : avec AE2UEL, puis avec JEI, le jour ou il est devenu une
-dependance de compilation. La tache `checkDevMods` le detecte desormais, et `runClient` en
-depend : le jeu ne peut plus demarrer avec un doublon.
+This trap was hit twice: with AE2UEL, then with JEI, the day it became a compile dependency.
+The `checkDevMods` task now detects it, and `runClient` depends on it: the game can no longer
+start with a duplicate.
 
-### 4.2 Dependances non deobfusquees : deux pieges en serie
+### 4.2 Non-deobfuscated dependencies: two traps in a row
 
-Symptome : `GuiPatTerminal is not abstract and does not override abstract method
-drawGuiContainerBackgroundLayer`. Le code herite pourtant d'une classe AE2 qui l'implemente.
+Symptom: `GuiPatTerminal is not abstract and does not override abstract method
+drawGuiContainerBackgroundLayer`. Yet the code extends an AE2 class that implements it.
 
-Cause : le chemin de compilation portait les noms **SRG** (`func_146976_a`), pas les noms
-MCP. Deux causes distinctes se sont succede.
+Cause: the compile path carried the **SRG** names (`func_146976_a`), not the MCP ones. Two
+distinct causes followed each other.
 
-1. **`flatDir` ne declenche pas la deobfuscation.** Le journal affiche
-   `deobfProvidedDeobfDepTask0 SKIPPED`. Correctif : un vrai depot Maven local, dans
-   `libs/maven`, avec un `.pom` par artefact, et la notation `@jar` sur la dependance.
-   Sans `@jar`, Gradle place le `.pom` lui-meme sur le chemin de compilation.
-2. **ForgeGradle laisse le jar brut sur le chemin, avant le jar deobfusque.** `javac` prend
-   la premiere correspondance, donc le brut. Correctif : le `afterEvaluate` de
-   `build.gradle` filtre `sourceSets.main.compileClasspath`.
+1. **`flatDir` does not trigger deobfuscation.** The log shows
+   `deobfProvidedDeobfDepTask0 SKIPPED`. Fix: a real local Maven repository, in `libs/maven`,
+   with one `.pom` per artifact, and the `@jar` notation on the dependency. Without `@jar`,
+   Gradle puts the `.pom` itself on the compile path.
+2. **ForgeGradle leaves the raw jar on the path, before the deobfuscated one.** `javac` takes
+   the first match, hence the raw one. Fix: the `afterEvaluate` block of `build.gradle`
+   filters `sourceSets.main.compileClasspath`.
 
-La tache `gradlew printCp` affiche le chemin de compilation. Elle a servi a trouver les deux
-causes ; garde-la.
+The `gradlew printCp` task prints the compile path. It served to find both causes; keep it.
 
-### 4.2 bis Tout emplacement d'un conteneur AE2 doit heriter d'AppEngSlot
+### 4.2 bis Every slot of an AE2 container must extend AppEngSlot
 
-`AEBaseContainer.addSlotToContainer` leve
-`Invalid Slot [...] for AE Container instead of AppEngSlot`, et la fenetre ne s'ouvre
-jamais. Ce piege est tombe **deux fois** : avec un `Slot` vanilla pour l'inventaire du
-joueur, puis avec `SlotFalseCopy` de PackagedAuto dans l'editeur.
+`AEBaseContainer.addSlotToContainer` throws
+`Invalid Slot [...] for AE Container instead of AppEngSlot`, and the screen never opens. This
+trap was hit **twice**: with a vanilla `Slot` for the player inventory, then with the
+PackagedAuto `SlotFalseCopy` in the editor.
 
-**Regle** : dans un conteneur qui herite d'`AEBaseContainer`, n'utiliser que les
-emplacements d'AE2.
+**Rule**: in a container that extends `AEBaseContainer`, use only the AE2 slots.
 
-| Besoin | Classe AE2 |
+| Need | AE2 class |
 |---|---|
-| inventaire du joueur | `bindPlayerInventory(inventory, x, y)` |
-| emplacement fantome | `SlotFake`, qui implemente aussi `IJEITargetSlot` |
-| aperçu en lecture seule | `AppEngSlot` avec `isItemValid` et `canTakeStack` a faux |
+| player inventory | `bindPlayerInventory(inventory, x, y)` |
+| ghost slot | `SlotFake`, which also implements `IJEITargetSlot` |
+| read-only preview | `AppEngSlot` with `isItemValid` and `canTakeStack` returning false |
 
-### 4.3 Noms MCP de `snapshot_20171003`
+### 4.3 MCP names of `snapshot_20171003`
 
-Les mappings de 2017 ne connaissent pas les noms recents :
+The 2017 mappings do not know the recent names:
 
-| Nom recent | Nom attendu ici |
+| Recent name | Name expected here |
 |---|---|
 | `CreativeTabs.createIcon()` | `getTabIconItem()` |
 | `Item.setTranslationKey()` | `setUnlocalizedName()` |
 
 ### 4.4 `cannot access IMTModGuiContainer2`
 
-`appeng.client.gui.AEBaseGui` implemente l'API de Mouse Tweaks. Sans cette interface sur le
-chemin de compilation, toute classe qui en herite echoue. Le projet embarque donc le stub
+`appeng.client.gui.AEBaseGui` implements the Mouse Tweaks API. Without that interface on the
+compile path, every class extending it fails. The project therefore bundles the stub
 `src/api/java/yalter/mousetweaks/api/IMTModGuiContainer2.java`.
 
-### 4.5 Antislash dans une chaine Groovy
+### 4.5 Backslash in a Groovy string
 
-`"C:\Program Files\..."` dans `build.gradle` echoue sur `unexpected char: ''`.
-Utiliser des barres obliques.
+`"C:\Program Files\..."` in `build.gradle` fails with `unexpected char: ''`. Use forward
+slashes.
 
-### 4.6 Le shell casse sur les commandes tres longues
+### 4.6 The shell breaks on very long commands
 
-Ecrire les fichiers Java par l'outil d'ecriture directe, pas par un `cat` multiligne.
+Write the Java files with the direct write tool, not with a multi-line `cat`.
+
+### 4.7 The network channel name is limited to 20 characters
+
+On 1.12.2, `CPacketCustomPayload` reads the channel name with `buf.readString(20)`. A longer
+name disconnects the player on a dedicated server, with
+`DecoderException: The received string length is longer than maximum allowed`. Single player
+escapes it: Forge links both sides through an `EmbeddedChannel`, which serialises no string.
+
+`Reference.MOD_ID` is 21 characters long. The channel therefore uses `Reference.CHANNEL`,
+which is `pat_terminals`. See decision **D37**.

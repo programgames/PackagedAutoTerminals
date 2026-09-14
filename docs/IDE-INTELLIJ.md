@@ -1,69 +1,68 @@
-# Ouvrir le projet dans IntelliJ IDEA
+# Opening the project in IntelliJ IDEA
 
-> ⚠️ **Avant tout : IntelliJ doit utiliser le JDK 8.** ForgeGradle 2.3 et Gradle 4.10.3
-> échouent sous tout JDK plus récent. C'est la première chose à régler, et la cause de
-> presque tous les échecs d'import.
+> ⚠️ **First of all: IntelliJ must use JDK 8.** ForgeGradle 2.3 and Gradle 4.10.3 fail on any
+> newer JDK. This is the first thing to set, and the cause of almost every import failure.
 
-## 1. Importer
+## 1. Import
 
-1. Ferme le client de dev s'il tourne.
-2. Dans IntelliJ : **File → Open**, puis choisis le dossier
+1. Close the dev client if it is running.
+2. In IntelliJ: **File → Open**, then pick the folder
    `C:\Users\Julien\Desktop\PackagedAutoTerminals`.
-3. IntelliJ détecte `build.gradle` et propose l'import Gradle. Accepte.
+3. IntelliJ detects `build.gradle` and offers the Gradle import. Accept it.
 
-## 2. Régler les deux JDK
+## 2. Set the two JDKs
 
-| Réglage | Valeur | Où |
+| Setting | Value | Where |
 |---|---|---|
 | **Gradle JVM** | `C:\Program Files\Eclipse Adoptium\jdk-8.0.472.8-hotspot` | Settings → Build, Execution, Deployment → Build Tools → Gradle |
-| **Project SDK** | le même JDK 8, niveau de langage **8** | File → Project Structure → Project |
-| **Distribution Gradle** | **Use Gradle from: gradle-wrapper.properties** | même page que le Gradle JVM |
+| **Project SDK** | the same JDK 8, language level **8** | File → Project Structure → Project |
+| **Gradle distribution** | **Use Gradle from: gradle-wrapper.properties** | same page as the Gradle JVM |
 
-> Si IntelliJ refuse Gradle 4.10.3 parce qu'il est trop ancien, garde le wrapper et ignore
-> l'avertissement. Ne mets **jamais** à jour le wrapper : ForgeGradle 2.3 ne va pas au-delà.
+> If IntelliJ refuses Gradle 4.10.3 because it is too old, keep the wrapper and ignore the
+> warning. **Never** update the wrapper: ForgeGradle 2.3 does not go beyond it.
 
-## 3. Les quatre configurations fournies
+## 3. The four run configurations provided
 
-Elles sont versionnées dans `.idea/runConfigurations/` et apparaissent dans le menu
-déroulant en haut à droite.
+They are versioned in `.idea/runConfigurations/` and appear in the drop-down menu at the top
+right.
 
-| Configuration | Type | Ce qu'elle fait |
+| Configuration | Type | What it does |
 |---|---|---|
-| **Gradle runClient** | Gradle | lance le client de dev par la tâche `runClient`. **C'est la voie recommandée.** |
-| **Gradle build** | Gradle | construit le jar |
-| **Minecraft Client** | Application | lance `GradleStart` directement, pour le débogage pas à pas |
-| **Minecraft Server** | Application | lance `GradleStartServer` |
+| **Gradle runClient** | Gradle | starts the dev client through the `runClient` task. **This is the recommended path.** |
+| **Gradle build** | Gradle | builds the jar |
+| **Minecraft Client** | Application | starts `GradleStart` directly, for step debugging |
+| **Minecraft Server** | Application | starts `GradleStartServer` |
 
-Toutes travaillent dans le dossier `run`, donc le monde, les touches et le pseudo `PAT_Dev`
-sont conservés d'une session à l'autre.
+All of them work in the `run` folder, so the world, the key bindings and the `PAT_Dev` user
+name are kept from one session to the next.
 
-### Quelle configuration choisir
+### Which configuration to choose
 
-- **Pour tester** : `Gradle runClient`. Elle passe par ForgeGradle, donc la version du mod
-  est injectée et les ressources sont placées correctement.
-- **Pour déboguer** : `Minecraft Client`, avec le bouton *Debug*. Les points d'arrêt
-  fonctionnent, et le rechargement à chaud des méthodes aussi.
+- **To test**: `Gradle runClient`. It goes through ForgeGradle, so the mod version is
+  injected and the resources are placed correctly.
+- **To debug**: `Minecraft Client`, with the *Debug* button. Breakpoints work, and so does
+  hot swapping of methods.
 
-> Avec `Minecraft Client`, la version du mod s'affiche `@MOD_VERSION@` dans la liste des
-> mods. C'est normal : la substitution est faite par ForgeGradle, que cette configuration
-> court-circuite. Rien d'autre ne change.
+> With `Minecraft Client`, the mod version shows as `@MOD_VERSION@` in the mod list. That is
+> expected: the substitution is done by ForgeGradle, which this configuration bypasses.
+> Nothing else changes.
 
-## 4. Si une configuration « Application » ne démarre pas
+## 4. If an "Application" configuration does not start
 
-Le nom du module doit correspondre à celui qu'IntelliJ a créé à l'import, normalement
-`packagedautoterminals.main`. S'il diffère, ouvre la configuration et choisis le bon module
-dans la liste.
+The module name must match the one IntelliJ created at import time, normally
+`packagedautoterminals.main`. If it differs, open the configuration and pick the right module
+from the list.
 
-Tu peux aussi laisser ForgeGradle les régénérer, une fois le projet importé :
+You can also let ForgeGradle regenerate them, once the project is imported:
 
 ```
 gradlew genIntellijRuns
 ```
 
-Cette tâche n'écrit rien tant qu'IntelliJ n'a pas importé le projet. C'est pourquoi les
-quatre fichiers ci-dessus sont fournis d'avance.
+This task writes nothing until IntelliJ has imported the project. That is why the four files
+above are provided up front.
 
-## 5. Ce que Git suit, et ce qu'il ignore
+## 5. What Git tracks, and what it ignores
 
-`.gitignore` ignore tout `.idea/`, **sauf** `.idea/runConfigurations/`. Les configurations
-de lancement sont donc partagées, et les réglages personnels restent locaux.
+`.gitignore` ignores all of `.idea/`, **except** `.idea/runConfigurations/`. The run
+configurations are therefore shared, and the personal settings stay local.

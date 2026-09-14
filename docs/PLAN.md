@@ -1,146 +1,146 @@
-# Plan d'action
+# Action plan
 
-> Validé le 2026-09-12. Aucun lot ne démarre avant que le précédent soit validé.
-> Chaque lot se termine par un critère observable en jeu.
+> Approved on 2026-09-12. No batch starts before the previous one is validated.
+> Each batch ends with a criterion observable in game.
 
-## Lot 0 — Lever les inconnues ✅ terminé
+## Batch 0 — Clear the unknowns ✅ done
 
-| Question | Réponse |
+| Question | Answer |
 |---|---|
-| Un mod fait-il déjà ce terminal ? | **Non.** Rien sur 1.12.2. `Extended Terminal` existe mais cible 1.20/1.21 et ne touche pas à PackagedAuto |
-| Licence amont de PackagedAuto | **MIT** — dépendance de compilation et réutilisation de l'API sans obstacle, avec attribution |
-| Comment obtenir AE2UEL pour compiler | **CurseMaven** en premier choix. Repli : jar local dans `libs/`, déjà présent sur le poste (`ae2-uel-v0.56.5.jar.bak`). Aucun dépôt Maven officiel trouvé |
-| Cleanroom pose-t-il un risque ? | **Non.** Confirmé par le joueur : tous les mods du pack tournent aussi sous Forge. MeatballCraft fonctionne sous Forge ou Cleanroom, sans impact |
+| Does a mod already provide this terminal? | **No.** Nothing on 1.12.2. `Extended Terminal` exists but targets 1.20/1.21 and does not touch PackagedAuto |
+| Upstream licence of PackagedAuto | **MIT** — compile dependency and API reuse with no obstacle, with attribution |
+| How to get AE2UEL to compile against | **CurseMaven** as first choice. Fallback: local jar in `libs/`, already present on the machine (`ae2-uel-v0.56.5.jar.bak`). No official Maven repository found |
+| Does Cleanroom add risk? | **No.** Confirmed by the player: every mod of the pack also runs on Forge. MeatballCraft works on Forge or Cleanroom, with no impact |
 
-Restent ouvertes : **Q1** (URL du fork AE2UEL du joueur) et **Q3** (dépôt public ou privé).
-Restent à vérifier dans le code, au début du lot 1 :
-parcours générique des nœuds de grille, effet exact de `setPatternStack()`, comportement du
-`Packager Extension`.
+Still open: **Q1** (URL of the player's AE2UEL fork) and **Q3** (public or private
+repository). Still to verify in the code, at the start of batch 1: generic walk over the grid
+nodes, exact effect of `setPatternStack()`, behaviour of the `Packager Extension`.
 
-## Lot 1 — Squelette et environnement de dev ✅ terminé le 2026-09-12
+## Batch 1 — Skeleton and dev environment ✅ done on 2026-09-12
 
-Dépôt Git, `build.gradle`, dépendances épinglées, `mcmod.info`, classe principale vide,
-`run/mods` peuplé.
+Git repository, `build.gradle`, pinned dependencies, `mcmod.info`, empty main class,
+populated `run/mods`.
 
-**Résultat** : `gradlew setupDecompWorkspace`, `gradlew build` et `gradlew runClient`
-passent. Le client de dev charge **17 mods**, dont `PackagedAuto Terminals 1.12.2-0.1.0`.
-Le journal affiche bien `pre-init` puis `init`.
+**Result**: `gradlew setupDecompWorkspace`, `gradlew build` and `gradlew runClient` pass. The
+dev client loads **17 mods**, including `PackagedAuto Terminals 1.12.2-0.1.0`. The log does
+show `pre-init` then `init`.
 
-**Trois points de code vérifiés au passage**, consignés dans `docs/PACKAGEDAUTO-MODEL.md`
-section 7 :
+**Three code points verified along the way**, recorded in `docs/PACKAGEDAUTO-MODEL.md`
+section 7:
 
-1. Le Recipe Holder occupe l'**emplacement 10** du Packager.
-2. Écrire cet emplacement appelle `updatePatternList()`, qui appelle `postPatternChange()`.
-   **Le point le plus fragile du projet est donc résolu avant d'avoir écrit une ligne de
-   GUI.** Règle qui en découle : toujours réécrire le stack, jamais modifier son NBT en place.
-3. La découverte se fait par `IGrid.getMachinesClasses()` puis `getMachines(cls)`, sans
-   connaître aucune classe d'addon à la compilation.
+1. The Recipe Holder sits in **slot 10** of the Packager.
+2. Writing that slot calls `updatePatternList()`, which calls `postPatternChange()`.
+   **The most fragile point of the project is therefore settled before a single line of GUI
+   was written.** Rule that follows: always rewrite the stack, never edit its NBT in place.
+3. Discovery goes through `IGrid.getMachinesClasses()` then `getMachines(cls)`, without
+   knowing any addon class at compile time.
 
-**Contrainte D20 prouvée** : une sonde a compilé contre les classes internes d'AE2
-(`AbstractPartTerminal`, `AEBasePoweredItem`). Le montage `flatDir` + `deobfProvided` tient.
+**Constraint D20 proven**: a probe compiled against the AE2 internal classes
+(`AbstractPartTerminal`, `AEBasePoweredItem`). The `flatDir` + `deobfProvided` setup holds.
 
-**Reste à faire par toi** : ouvrir le menu « Mods » du client déjà lancé, et vérifier la
-ligne `PackagedAuto Terminals`. Puis le test de chargement dans l'instance Cleanroom réelle,
-avec le jar de `build/libs/`.
+**Left for you**: open the "Mods" menu of the already running client, and check the
+`PackagedAuto Terminals` line. Then the load test in the real Cleanroom instance, with the
+jar from `build/libs/`.
 
-## Lot 2 — Lecture seule, terminal câblé ✅ terminé le 2026-09-12
+## Batch 2 — Read only, wired terminal ✅ done on 2026-09-12
 
-Découverte des `IPackageProvidingMachine` sur la grille. Instantané côté serveur. Paquet
-vers le client. GUI qui liste les machines et leurs recettes. Aucune écriture.
+Discovery of the `IPackageProvidingMachine` instances on the grid. Server-side snapshot.
+Packet to the client. GUI listing the machines and their recipes. No writing.
 
-**Résultat** : le terminal se pose sur un câble ME, s'ouvre, et affiche le Packager, son
-état, puis sa recette avec le type `Processing`. Infobulle au survol, ascenseur en place.
+**Result**: the terminal is placed on an ME cable, opens, and shows the Packager, its state,
+then its recipe with the `Processing` type. Tooltip on hover, scrollbar in place.
 
-**Mesure R2** : **344 octets** pour une machine et une recette. Le découpage en chunks reste
-donc inutile. La mesure sur un réseau chargé est à refaire avant de clore la révision R2.
+**R2 measurement**: **344 bytes** for one machine and one recipe. Chunk splitting therefore
+remains unnecessary. The measurement on a loaded network must be redone before closing
+revision R2.
 
-### Ce que ce lot a coûté, et pourquoi
+### What this batch cost, and why
 
-Sept défauts, tous dus à des suppositions non vérifiées sur l'API d'un autre mod :
+Seven defects, all caused by unverified assumptions about the API of another mod:
 
-| Défaut | Cause |
+| Defect | Cause |
 |---|---|
-| l'item ne se posait pas | `IPartItem` seul ne suffit pas ; il faut rediriger `onItemUse` vers `PartPlacement` |
-| la fenêtre ne s'ouvrait pas | `AEBaseContainer` refuse un `Slot` vanilla ; il exige un `AppEngSlot` |
-| la fenêtre se refermait | le constructeur à `TileEntity` appelé avec `null` |
-| traductions absentes | pas de `pack.mcmeta` ; Forge appliquait les règles d'avant la 1.11 |
-| planche de fond cassée | bande d'AE2 réutilisée sans la regarder ; c'était un champ de recherche |
-| texte chevauché | deux lignes dans une rangée de 18 pixels |
-| code périmé au lancement | FML charge le mod depuis le jar, pas depuis les classes |
+| the item would not place | `IPartItem` alone is not enough; `onItemUse` must be redirected to `PartPlacement` |
+| the screen would not open | `AEBaseContainer` refuses a vanilla `Slot`; it requires an `AppEngSlot` |
+| the screen closed itself | the `TileEntity` constructor called with `null` |
+| translations missing | no `pack.mcmeta`; Forge applied the pre-1.11 rules |
+| broken background sheet | an AE2 band reused without looking at it; it was a search field |
+| overlapping text | two lines inside an 18 pixel row |
+| stale code at launch | FML loads the mod from the jar, not from the classes |
 
-**Règle qui en découle, et qui vaut pour les lots suivants** : ne jamais supposer le
-comportement d'une classe d'AE2. La lire avec `javap`, ou lire la source amont, avant de
-l'utiliser. Les six premiers défauts auraient été évités par dix minutes de lecture.
+**Rule that follows, and that holds for the next batches**: never assume the behaviour of an
+AE2 class. Read it with `javap`, or read the upstream source, before using it. The first six
+defects would have been avoided by ten minutes of reading.
 
-## Lot 3 — Écriture ✅ terminé le 2026-09-13
+## Batch 3 — Writing ✅ done on 2026-09-13
 
-Éditeur piloté par `IRecipeType.getEnabledSlots()`, `getSlotColor()`, `canSetOutput()`.
-Encodage par `IRecipeInfo.generateFromStacks()`, côté serveur. Validation par `isValid()`.
-Écriture dans le holder, puis republication des patterns AE2.
+Editor driven by `IRecipeType.getEnabledSlots()`, `getSlotColor()`, `canSetOutput()`.
+Encoding through `IRecipeInfo.generateFromStacks()`, on the server. Validation through
+`isValid()`. Write into the holder, then republish the AE2 patterns.
 
-**Fait quand** : j'ajoute, je modifie et je supprime une recette depuis le terminal, et AE2
-voit le changement sans que je touche au bloc.
+**Done when**: I add, edit and remove a recipe from the terminal, and AE2 sees the change
+without me touching the block.
 
-## Lot 4 — JEI et confort ✅ écrit le 2026-09-13, non testé en jeu
+## Batch 4 — JEI and comfort ✅ written on 2026-09-13, not tested in game
 
-`IRecipeType.getRecipeTransferMap(IRecipeLayout, String)` existe déjà dans l'API. Le
-transfert JEI est donc peu coûteux, **à condition** que l'éditeur soit un vrai `Container`
-avec des slots fantômes indexés comme ceux de l'Encoder. Recherche, filtres, tri.
+`IRecipeType.getRecipeTransferMap(IRecipeLayout, String)` already exists in the API. The JEI
+transfer is therefore cheap, **provided** the editor is a real `Container` with ghost slots
+indexed like the Encoder ones. Search, filters, sorting.
 
-**Fait quand** : le bouton « + » de JEI remplit l'éditeur du terminal.
+**Done when**: the JEI "+" button fills the terminal editor.
 
-## Lot 5 — Onglet « Machines » et diagnostic ✅ écrit le 2026-09-13, non testé en jeu
+## Batch 5 — "Machines" tab and diagnostic ✅ written on 2026-09-13, not tested in game
 
-Table de correspondance `type de recette → classe de crafter`, une par module
-d'intégration. Liste des crafters, état `isBusy()`, alerte sur les recettes orphelines.
+Mapping table `recipe type → crafter class`, one per integration module. List of the
+crafters, `isBusy()` state, warning about orphan recipes.
 
-**Fait quand** : j'encode une recette Ultimate sans poser d'Ultimate Crafter, et le terminal
-me le signale.
+**Done when**: I encode an Ultimate recipe without placing an Ultimate Crafter, and the
+terminal reports it.
 
-## Lot 6 — Terminal sans fil — 1 à 2 sessions
+## Batch 6 — Wireless terminal — 1 to 2 sessions
 
-Item alimenté, `IWirelessTermHandler`, enregistrement au registre, portée, énergie.
+Powered item, `IWirelessTermHandler`, registration in the registry, range, energy.
 
-**Fait quand** : le terminal fonctionne à distance et se coupe hors de portée.
+**Done when**: the terminal works remotely and cuts out when out of range.
 
-## Lot 7 — Intégration, finition, publication 🔶 partiellement écrit
+## Batch 7 — Integration, polish, release 🔶 partly written
 
-AE2WUT avec identifiant de mode **configurable**, Baubles, `fr_fr`, workflow GitHub,
-`CHANGELOG.md`, test final dans l'instance réelle.
+AE2WUT with a **configurable** mode id, Baubles, `fr_fr`, GitHub workflow, `CHANGELOG.md`,
+final test in the real instance.
 
-**Total indicatif : 10 à 16 sessions.**
+**Indicative total: 10 to 16 sessions.**
 
 ---
 
-## Le point le plus fragile du projet
+## The most fragile point of the project
 
-Ce n'est ni la GUI, ni le réseau. C'est **la republication des patterns après écriture**.
-Si `setPatternStack()` ne notifie pas correctement la grille, AE2 gardera une vue périmée.
-Le joueur verra sa modification à l'écran, sans effet sur ses crafts.
-Ce point se vérifie au début du lot 1, jamais au lot 3.
+It is neither the GUI nor the network. It is **republishing the patterns after a write**. If
+`setPatternStack()` does not notify the grid correctly, AE2 keeps a stale view. The player
+sees their change on screen, with no effect on their crafts.
+This point is verified at the start of batch 1, never at batch 3.
 
 
 ---
 
-## État au 2026-09-13
+## State as of 2026-09-13
 
-| Lot | État | Reste |
+| Batch | State | Left |
 |---|---|---|
-| 0, 1, 2 | ✅ testés en jeu | |
-| 3 | ✅ écrit, suppression et édition testées | création, quantités et déplacement **non testés** |
-| 4 | ✅ écrit | transfert JEI et recherche **non testés** |
-| 5 | ✅ écrit | onglet Machines et diagnostic **non testés** |
-| 6 | ⬜ pas commencé | terminal sans fil, sur une branche séparée |
-| 7 | 🔶 licence, notice, journal, CI, configuration, recette de fabrication | AE2WUT, Baubles |
+| 0, 1, 2 | ✅ tested in game | |
+| 3 | ✅ written, removal and editing tested | creation, amounts and moving **untested** |
+| 4 | ✅ written | JEI transfer and search **untested** |
+| 5 | ✅ written | Machines tab and diagnostic **untested** |
+| 6 | ⬜ not started | wireless terminal, on a separate branch |
+| 7 | 🔶 licence, notice, changelog, CI, config, crafting recipe | AE2WUT, Baubles |
 
-> Tout ce qui porte « non testé » attend la session de tests décrite dans
-> `docs/TESTING.md`. Le code compile, mais n'a jamais tourné.
+> Everything marked "untested" waits for the test session described in `docs/TESTING.md`. The
+> code compiles, but has never run.
 
-### Ce qui reste, par ordre de valeur
+### What is left, by value
 
-1. **Dérouler `docs/TESTING.md`**, de T1 à T15. C'est le seul moyen de valider quinze
-   fonctions écrites sans jeu.
-2. **Lot 6**, le terminal sans fil. Il demande de détacher le conteneur de la part câblée,
-   ce qui touche du code qui marche. À faire sur une branche.
-3. **AE2WUT et Baubles**, une fois le sans-fil validé.
-4. **Fluides et gaz**, prévus en version 2 (décision D09).
+1. **Run through `docs/TESTING.md`**, from T1 to T15. That is the only way to validate
+   fifteen functions written without playing.
+2. **Batch 6**, the wireless terminal. It requires detaching the container from the wired
+   part, which touches working code. To be done on a branch.
+3. **AE2WUT and Baubles**, once the wireless terminal is validated.
+4. **Fluids and gases**, planned for version 2 (decision D09).

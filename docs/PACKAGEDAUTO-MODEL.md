@@ -1,130 +1,129 @@
-# Modèle de données de PackagedAuto — vérifié
+# PackagedAuto data model — verified
 
-> **Source des preuves** : `javap -p` sur les jars de l'instance
-> `H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`, le 2026-09-12.
-> Versions : PackagedAuto `1.0.24.73`, PackagedExCrafting `1.0.3.33`,
+> **Source of the evidence**: `javap -p` on the jars of the instance
+> `H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`, on 2026-09-12.
+> Versions: PackagedAuto `1.0.24.73`, PackagedExCrafting `1.0.3.33`,
 > PackagedAvaritia `1.0.3.25`, PackagedFluidCrafting `1.0.0.3`, PackagingProvider `1.0.0.2`.
-> Auteur amont : TheLMiffy1111, package racine `thelm.packagedauto`.
+> Upstream author: TheLMiffy1111, root package `thelm.packagedauto`.
 
 ---
 
-## 1. Le flux de jeu
+## 1. The gameplay flow
 
 ```
-  Package Recipe Encoder  (bloc, hors réseau ME)
-     │  encode jusqu'à N recettes d'un même type
+  Package Recipe Encoder  (block, outside the ME network)
+     │  encodes up to N recipes of a single type
      ▼
   Package Recipe Holder  (ITEM)
-     │  inséré à la main dans une machine « fournisseur »
+     │  inserted by hand into a "provider" machine
      ▼
   Packager / Unpackager / Packaging Provider
-     │  publient les patterns sur la grille ME (ICraftingProvider)
+     │  publish the patterns onto the ME grid (ICraftingProvider)
      ▼
-  AE2 planifie ──► Packager fabrique des Recipe Packages
+  AE2 schedules ──► Packager builds Recipe Packages
      │
      ▼
-  Unpackager distribue ──► crafters : Package Crafter, Basic → Ultimate,
-                            Combination, Ender, Extreme (Avaritia)
+  Unpackager distributes ──► crafters: Package Crafter, Basic to Ultimate,
+                              Combination, Ender, Extreme (Avaritia)
 ```
 
-Point clé : **la recette vit dans un item**, le Recipe Holder. Elle ne vit pas dans le bloc.
-Le bloc fournisseur ne fait que porter cet item et republier les patterns.
+Key point: **the recipe lives in an item**, the Recipe Holder. It does not live in the block.
+The provider block only carries that item and republishes the patterns.
 
 ---
 
-## 2. L'API publique : `thelm.packagedauto.api`
+## 2. The public API: `thelm.packagedauto.api`
 
-| Type | Signature utile | Rôle |
+| Type | Useful signature | Role |
 |---|---|---|
-| `IRecipeListItem` | `getRecipeList(ItemStack)` / `setRecipeList(ItemStack, IRecipeList)` | implémenté par `ItemRecipeHolder` |
-| `IRecipeList` | `getRecipeList(): List<IRecipeInfo>` / `setRecipeList(List)` / NBT | le contenu du holder |
-| `IRecipeInfo` | `getRecipeType()`, `getInputs()`, `getOutputs()`, `getPatterns()`, `getEncoderStacks()`, `generateFromStacks(...)`, `isValid()` | **une recette** |
-| `IRecipeType` | `getName(): ResourceLocation`, `getEnabledSlots(): IntSet`, `canSetOutput()`, `getJEICategories()`, `getSlotColor(int)`, `getNewRecipeInfo()` | **le type**, décrit la grille d'édition |
-| `RecipeTypeRegistry` | `getRegistry(): NavigableMap<ResourceLocation, IRecipeType>`, `getId`, `getRecipeType`, `getNextRecipeType` | registre global extensible |
-| `IPackagePattern` | `getRecipeInfo()`, `getIndex()`, `getInputs()`, `getOutput()` | un pattern AE2 dérivé d'une recette |
-| `IPackageProvidingMachine` | `getPatternStack()` / `setPatternStack(ItemStack)` | **machine qui porte un holder** |
-| `IPackageCraftingMachine` | `acceptPackage(...)`, `isBusy()` | **machine qui exécute** |
-| `ISettingsCloneable` | copie de configuration entre machines | hors périmètre v1 |
-| `MiscUtil` | `writeRecipeToNBT`, `readRecipeFromNBT`, `writeRecipeListToNBT`, `readRecipeListFromNBT`, `getPatternHelper`, `condenseStacks`, `recipeEquals`, `recipeHashCode`, `arePatternsDisjoint` | **boîte à outils de sérialisation prête à l'emploi** |
+| `IRecipeListItem` | `getRecipeList(ItemStack)` / `setRecipeList(ItemStack, IRecipeList)` | implemented by `ItemRecipeHolder` |
+| `IRecipeList` | `getRecipeList(): List<IRecipeInfo>` / `setRecipeList(List)` / NBT | the contents of the holder |
+| `IRecipeInfo` | `getRecipeType()`, `getInputs()`, `getOutputs()`, `getPatterns()`, `getEncoderStacks()`, `generateFromStacks(...)`, `isValid()` | **one recipe** |
+| `IRecipeType` | `getName(): ResourceLocation`, `getEnabledSlots(): IntSet`, `canSetOutput()`, `getJEICategories()`, `getSlotColor(int)`, `getNewRecipeInfo()` | **the type**, describes the editing grid |
+| `RecipeTypeRegistry` | `getRegistry(): NavigableMap<ResourceLocation, IRecipeType>`, `getId`, `getRecipeType`, `getNextRecipeType` | extensible global registry |
+| `IPackagePattern` | `getRecipeInfo()`, `getIndex()`, `getInputs()`, `getOutput()` | an AE2 pattern derived from a recipe |
+| `IPackageProvidingMachine` | `getPatternStack()` / `setPatternStack(ItemStack)` | **machine that carries a holder** |
+| `IPackageCraftingMachine` | `acceptPackage(...)`, `isBusy()` | **machine that runs it** |
+| `ISettingsCloneable` | configuration copy between machines | out of scope for v1 |
+| `MiscUtil` | `writeRecipeToNBT`, `readRecipeFromNBT`, `writeRecipeListToNBT`, `readRecipeListFromNBT`, `getPatternHelper`, `condenseStacks`, `recipeEquals`, `recipeHashCode`, `arePatternsDisjoint` | **ready-made serialisation toolbox** |
 
-`MiscUtil` est décisif : la sérialisation des recettes est déjà écrite et publique. Le
-terminal n'a pas à réinventer le format NBT.
+`MiscUtil` is decisive: recipe serialisation is already written and public. The terminal does
+not have to reinvent the NBT format.
 
 ---
 
-## 3. Qui porte des recettes, qui les exécute
+## 3. Who carries recipes, who runs them
 
-| Bloc | `IPackageProvidingMachine` | `ICraftingProvider` | `IPackageCraftingMachine` | Champ interne |
+| Block | `IPackageProvidingMachine` | `ICraftingProvider` | `IPackageCraftingMachine` | Internal field |
 |---|:---:|:---:|:---:|---|
 | Packager | ✅ | ✅ | ❌ | `List<IPackagePattern> patternList` |
 | Unpackager | ✅ | ✅ | ❌ | `List<IRecipeInfo> recipeList` |
 | Packaging Provider | ✅ | ✅ | ❌ | `List<IRecipeInfo> recipeList` |
-| Package Crafter | ❌ | ❌ | ✅ | `currentRecipe`, volatil |
-| Basic → Ultimate Crafter | ❌ | ❌ | ✅ | `currentRecipe`, volatil |
-| Combination / Ender Crafter | ❌ | ❌ | ✅ | volatil |
-| Extreme Crafter (Avaritia) | ❌ | ❌ | ✅ | volatil |
-| Positioned Package Distributor | ❌ | ❌ | ✅ | positions + marqueurs |
-| Package Crafting Machine Proxy | ❌ | ❌ | ✅ | une cible |
-| Package Recipe Encoder | ❌ | ❌ | ❌ | **hors grille ME** |
+| Package Crafter | ❌ | ❌ | ✅ | `currentRecipe`, volatile |
+| Basic to Ultimate Crafter | ❌ | ❌ | ✅ | `currentRecipe`, volatile |
+| Combination / Ender Crafter | ❌ | ❌ | ✅ | volatile |
+| Extreme Crafter (Avaritia) | ❌ | ❌ | ✅ | volatile |
+| Positioned Package Distributor | ❌ | ❌ | ✅ | positions + markers |
+| Package Crafting Machine Proxy | ❌ | ❌ | ✅ | a single target |
+| Package Recipe Encoder | ❌ | ❌ | ❌ | **off the ME grid** |
 
-**Conséquence majeure** : le niveau du craft (Basic, Advanced, Elite, Ultimate, Extreme…)
-n'est **pas** une propriété de la machine. C'est une propriété du **type de recette**,
-porté par `IRecipeInfo.getRecipeType()`. Le crafter correspondant se contente d'accepter le
-package.
+**Major consequence**: the craft tier (Basic, Advanced, Elite, Ultimate, Extreme and so on)
+is **not** a property of the machine. It is a property of the **recipe type**, carried by
+`IRecipeInfo.getRecipeType()`. The matching crafter only accepts the package.
 
 ---
 
-## 4. Les types de recettes présents dans l'instance
+## 4. The recipe types present in the instance
 
-| Mod | Types enregistrés |
+| Mod | Registered types |
 |---|---|
 | PackagedAuto | `Crafting`, `Processing`, `ProcessingOrdered`, `ProcessingPositioned` |
 | PackagedExCrafting | `Basic`, `Advanced`, `Elite`, `Ultimate`, `Combination`, `Ender` |
 | PackagedAvaritia | `Extreme` |
-| PackagedFluidCrafting | étend le core **par mixins** : fluides et gaz |
+| PackagedFluidCrafting | extends the core **through mixins**: fluids and gases |
 
-Le terminal ne code aucun de ces types en dur. Il lit `RecipeTypeRegistry.getRegistry()`.
-Tout addon futur apparaît donc sans modification du code.
+The terminal hard codes none of these types. It reads `RecipeTypeRegistry.getRegistry()`. Any
+future addon therefore appears with no code change.
 
-`IRecipeType.getEnabledSlots()` donne la forme de la grille d'édition. `getSlotColor(int)`
-donne la couleur de chaque emplacement. `canSetOutput()` dit si la sortie est éditable.
-Ces trois méthodes suffisent à construire un éditeur générique.
+`IRecipeType.getEnabledSlots()` gives the shape of the editing grid. `getSlotColor(int)`
+gives the colour of each slot. `canSetOutput()` says whether the output is editable. These
+three methods are enough to build a generic editor.
 
 ---
 
-## 5. Le bloc Encoder, à répliquer dans le terminal
+## 5. The Encoder block, to be replicated in the terminal
 
-`TileEncoder` expose : `patternInventories`, `patternIndex`, `setPatternIndex(int)`,
-`saveRecipeList(boolean)`, `loadRecipeList(boolean, boolean)`, et le champ statique
+`TileEncoder` exposes: `patternInventories`, `patternIndex`, `setPatternIndex(int)`,
+`saveRecipeList(boolean)`, `loadRecipeList(boolean, boolean)`, and the static field
 `disabledRecipeTypes`.
 
-Ses paquets réseau montrent les actions à reproduire : `PacketSetRecipe`,
+Its network packets show the actions to reproduce: `PacketSetRecipe`,
 `PacketSaveRecipeList`, `PacketLoadRecipeList`, `PacketCycleRecipeType`,
 `PacketSetPatternIndex`, `PacketSetItemStack`.
 
-Le nombre de recettes par holder vient de la configuration : `TileEncoder.patternSlots`.
+The number of recipes per holder comes from the config: `TileEncoder.patternSlots`.
 
 ---
 
-## 6. Points encore à vérifier avant de coder
+## 6. Points still to verify before coding
 
-1. Comment parcourir tous les nœuds d'une grille AE2UEL de façon générique :
-   `IGrid.getMachines(Class)` par classe connue, ou parcours des nœuds via `IGridVisitor`.
-   Le parcours générique est préférable : il capte les addons inconnus.
-2. Ce que `setPatternStack()` déclenche exactement côté AE2 : republication des patterns,
-   ou simple stockage. Vérifier `HostHelperTilePackager` et l'appel à
+1. How to walk every node of an AE2UEL grid generically: `IGrid.getMachines(Class)` by known
+   class, or a node walk through `IGridVisitor`. The generic walk is preferable: it catches
+   unknown addons.
+2. What `setPatternStack()` triggers exactly on the AE2 side: pattern republication, or plain
+   storage. Check `HostHelperTilePackager` and the call to
    `postChange` / `MENetworkCraftingPatternChange`.
-3. La licence amont de PackagedAuto, pour la dépendance de compilation.
-4. Le comportement du `Packager Extension` : il partage les patterns du Packager voisin
-   (`InventoryPackager.updatePatternList()` scanne les `TilePackagerExtension`).
+3. The upstream licence of PackagedAuto, for the compile dependency.
+4. The behaviour of the `Packager Extension`: it shares the patterns of the neighbouring
+   Packager (`InventoryPackager.updatePatternList()` scans the `TilePackagerExtension`).
 
 ---
 
-## 7. Réponses aux points laissés ouverts — vérifiées le 2026-09-12
+## 7. Answers to the open points — verified on 2026-09-12
 
-### 7.1 Où vit le Recipe Holder dans la machine
+### 7.1 Where the Recipe Holder lives inside the machine
 
-Source amont, branche `1.12` de `TheLMiffy1111/PackagedAuto` :
+Upstream source, `1.12` branch of `TheLMiffy1111/PackagedAuto`:
 
 ```java
 @Override
@@ -138,21 +137,21 @@ public void setPatternStack(ItemStack stack) {
 }
 ```
 
-Le holder occupe donc l'**emplacement 10** de l'inventaire du Packager. Le filtre
-d'insertion l'exige :
+The holder therefore sits in **slot 10** of the Packager inventory. The insertion filter
+requires it:
 
 ```java
 case 10: return stack.getItem() instanceof IRecipeListItem
              || stack.getItem() instanceof IPackageItem;
 ```
 
-### 7.2 La republication des patterns est automatique
+### 7.2 Pattern republication is automatic
 
-`InventoryPackager.setInventorySlotContents(10, …)` appelle `updatePatternList()`.
-Cette méthode reconstruit la liste, prévient les `Packager Extension` voisins, puis appelle
-`tile.hostHelper.postPatternChange()` quand le monde existe et n'est pas distant.
+`InventoryPackager.setInventorySlotContents(10, ...)` calls `updatePatternList()`. That method
+rebuilds the list, notifies the neighbouring `Packager Extension` blocks, then calls
+`tile.hostHelper.postPatternChange()` when the world exists and is not remote.
 
-`provideCrafting()` republie ensuite chaque pattern sur la grille :
+`provideCrafting()` then republishes every pattern onto the grid:
 
 ```java
 @Optional.Method(modid="appliedenergistics2")
@@ -166,16 +165,16 @@ public void provideCrafting(ICraftingProviderHelper craftingTracker) {
 }
 ```
 
-> **Règle d'implémentation qui en découle.** Après toute modification d'une recette, le
-> terminal doit **réécrire le stack** par `setPatternStack()`. Modifier le contenu NBT du
-> holder en place, sans réécrire l'emplacement, n'appelle pas `updatePatternList()`. AE2
-> garderait alors une vue périmée des recettes.
+> **Implementation rule that follows.** After any recipe change, the terminal must **rewrite
+> the stack** through `setPatternStack()`. Editing the NBT content of the holder in place,
+> without rewriting the slot, does not call `updatePatternList()`. AE2 would then keep a stale
+> view of the recipes.
 
-Ce point était classé « le plus fragile du projet ». Il est désormais résolu et documenté.
+This point was listed as "the most fragile of the project". It is now settled and documented.
 
-### 7.3 Parcours générique de la grille AE2
+### 7.3 Generic walk over the AE2 grid
 
-`appeng.api.networking.IGrid` expose :
+`appeng.api.networking.IGrid` exposes:
 
 ```java
 IReadOnlyCollection<Class<? extends IGridHost>> getMachinesClasses();
@@ -183,27 +182,28 @@ IMachineSet getMachines(Class<? extends IGridHost>);
 IReadOnlyCollection<IGridNode> getNodes();
 ```
 
-La découverte se fait donc sans connaître aucune classe à l'avance :
+Discovery therefore happens without knowing any class in advance:
 
-1. parcourir `getMachinesClasses()` ;
-2. ne garder que celles où `IPackageProvidingMachine.class.isAssignableFrom(cls)` ;
-3. pour chacune, parcourir `getMachines(cls)` et lire `node.getMachine()`.
+1. walk `getMachinesClasses()`;
+2. keep only those where `IPackageProvidingMachine.class.isAssignableFrom(cls)`;
+3. for each one, walk `getMachines(cls)` and read `node.getMachine()`.
 
-C'est préférable à `getNodes()`, qui traverse aussi chaque câble. Tout addon futur est
-capté sans modification du code.
+This is preferable to `getNodes()`, which also visits every cable. Any future addon is caught
+with no code change.
 
-`IGridBlock.getLocation()` fournit la position, et `getMachineRepresentation()` fournit
-l'icône de la machine. Les deux servent directement à l'affichage des lignes du terminal.
+`IGridBlock.getLocation()` provides the position, and `getMachineRepresentation()` provides
+the machine icon. Both are used directly to render the terminal rows.
 
-### 7.4 Le Packager Extension
+### 7.4 The Packager Extension
 
-`InventoryPackager.updatePatternList()` prévient les `TilePackagerExtension` voisins.
-L'extension partage donc bien les patterns de son Packager. La décision **D04** tient.
+`InventoryPackager.updatePatternList()` notifies the neighbouring `TilePackagerExtension`
+blocks. The extension therefore does share the patterns of its Packager. Decision **D04**
+holds.
 
-### 7.5 Compilation vérifiée
+### 7.5 Compilation verified
 
-Une sonde temporaire a compilé, le 2026-09-12, contre : `IGrid`, `IGridNode`,
-`IPackageProvidingMachine`, `IRecipeListItem`, `RecipeTypeRegistry`, et les classes
-**internes** `appeng.parts.reporting.AbstractPartTerminal` et
-`appeng.items.tools.powered.powersink.AEBasePoweredItem`. La contrainte **D20** est donc
-satisfaite par le montage `flatDir` + `deobfProvided`.
+A temporary probe compiled, on 2026-09-12, against: `IGrid`, `IGridNode`,
+`IPackageProvidingMachine`, `IRecipeListItem`, `RecipeTypeRegistry`, and the **internal**
+classes `appeng.parts.reporting.AbstractPartTerminal` and
+`appeng.items.tools.powered.powersink.AEBasePoweredItem`. Constraint **D20** is therefore
+satisfied by the `flatDir` + `deobfProvided` setup.

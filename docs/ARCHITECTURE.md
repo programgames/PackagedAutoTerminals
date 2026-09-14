@@ -1,100 +1,100 @@
-# Architecture cible
+# Target architecture
 
-## 1. Périmètre fonctionnel
+## 1. Functional scope
 
-### Onglet 1 — « Patterns » (lecture et écriture)
+### Tab 1 — "Patterns" (read and write)
 
-Le terminal parcourt la grille ME. Il retient chaque machine qui répond à
-`instanceof IPackageProvidingMachine`. Il lit son `getPatternStack()`. Si le stack
-implémente `IRecipeListItem`, il en tire la `IRecipeList`, donc la liste des `IRecipeInfo`.
+The terminal walks the ME grid. It keeps every machine that answers
+`instanceof IPackageProvidingMachine`. It reads its `getPatternStack()`. When the stack
+implements `IRecipeListItem`, it pulls the `IRecipeList` out of it, hence the list of
+`IRecipeInfo`.
 
-Affichage : une ligne par machine, puis ses recettes, comme l'Interface Terminal d'AE2.
-Le `Packager Extension` s'affiche en ligne rattachée à son Packager, jamais en machine
-séparée.
+Display: one line per machine, then its recipes, like the AE2 Interface Terminal. The
+`Packager Extension` is shown as a line attached to its Packager, never as a separate
+machine.
 
-Actions : ajouter une recette, supprimer une recette, modifier une recette, changer son
-type, déplacer un Recipe Holder d'une machine à l'autre.
+Actions: add a recipe, remove a recipe, edit a recipe, change its type, move a Recipe Holder
+from one machine to another.
 
-Filtres : par nom de machine, par type de recette, par item d'entrée ou de sortie.
+Filters: by machine name, by recipe type, by input or output item.
 
-### Onglet 2 — « Machines » (lecture seule)
+### Tab 2 — "Machines" (read only)
 
-Il liste les machines `IPackageCraftingMachine` du réseau, groupées par type de recette
-accepté. Il indique l'état `isBusy()`.
+It lists the `IPackageCraftingMachine` machines of the network, grouped by the recipe type
+they accept. It reports the `isBusy()` state.
 
-Son intérêt principal est le **diagnostic** : il signale toute recette encodée qui n'a
-aucun crafter capable de l'exécuter sur le réseau. C'est l'erreur la plus fréquente en jeu,
-et aucun mod ne la détecte aujourd'hui.
+Its main value is the **diagnostic**: it reports every encoded recipe that has no crafter
+able to run it on the network. That is the most frequent mistake in game, and no mod detects
+it today.
 
-### Hors périmètre v1
+### Out of scope for v1
 
-- Fluides et gaz (`PackagedFluidCrafting`) → v2
-- Panneau d'items du réseau ME dans la même fenêtre → non, on reste sur une liste de
-  patterns, comme l'Interface Terminal
-- `ISettingsCloneable` → plus tard
+- Fluids and gases (`PackagedFluidCrafting`) → v2
+- ME network item panel in the same screen → no, we stay on a pattern list, like the
+  Interface Terminal
+- `ISettingsCloneable` → later
 
 ---
 
 ## 2. Modules
 
-Un seul module Gradle au départ (révision **R3**). Découpage par paquets :
+A single Gradle module to start with (revision **R3**). Split by package:
 
 ```
 fr.julien.packagedautoterminals/
- ├── api/                  interfaces stables pour les adaptateurs de types de recettes
- ├── common/               registre, passerelle vers l'API PackagedAuto, modèle de données
- ├── network/              paquets et mises à jour incrémentales
- ├── part/                 PartPackagedAutoTerminal (terminal câblé)
+ ├── api/                  stable interfaces for the recipe type adapters
+ ├── common/               registry, bridge to the PackagedAuto API, data model
+ ├── network/              packets and incremental updates
+ ├── part/                 PartPackagedAutoTerminal (wired terminal)
  ├── item/                 ItemWirelessPackagedAutoTerminal (IWirelessTermHandler)
- ├── container/            ContainerPackagedAutoTerminal + variante sans fil + éditeur
- ├── client/gui/           GUI, widgets, recherche, éditeur de recette
+ ├── container/            ContainerPackagedAutoTerminal + wireless variant + editor
+ ├── client/gui/           GUI, widgets, search, recipe editor
  └── integration/          packagedexcrafting, packagedavaritia, packagedfluidcrafting,
                            packagingprovider, ae2wut, jei
 ```
 
-L'éditeur de recette est un vrai `Container`, avec des slots fantômes indexés comme ceux de
-l'Encoder. C'est la contrainte **D22**, sans laquelle JEI devient inutilisable.
+The recipe editor is a real `Container`, with ghost slots indexed like the Encoder ones. That
+is constraint **D22**, without which JEI becomes unusable.
 
-## 3. Flux de données
+## 3. Data flow
 
 ```
-SERVEUR                                            CLIENT
-  parcours de la grille ME
-  → instantané des machines fournisseuses
-  → diff avec l'instantané précédent
-  → paquet delta, découpé en chunks           →    application du delta
-                                                   rendu de la liste
-  validation (droits AE2, énergie, distance)  ←    intention utilisateur
-  écriture dans le Recipe Holder
-  republication des patterns AE2
+SERVER                                             CLIENT
+  walk the ME grid
+  → snapshot of the providing machines
+  → diff against the previous snapshot
+  → delta packet, split into chunks            →   apply the delta
+                                                   render the list
+  validation (AE2 permissions, energy, range)  ←   user intent
+  write into the Recipe Holder
+  republish the AE2 patterns
 ```
 
-Quatre décisions structurantes :
+Four structuring decisions:
 
-1. **Le serveur est l'autorité.** Le client envoie une intention, jamais un NBT de recette.
-2. **Pas de mixin tant qu'une API suffit.**
-3. **Chaque intégration est optionnelle**, détectée par modid.
-4. **Mises à jour incrémentales simples**, sur le modèle de `ContainerInterfaceTerminal`
-   d'AE2. Le découpage en chunks n'arrive que si la mesure du lot 2 le prouve (révision
-   **R2**).
+1. **The server is the authority.** The client sends an intent, never a recipe NBT.
+2. **No mixin as long as an API is enough.**
+3. **Every integration is optional**, detected by modid.
+4. **Simple incremental updates**, following the AE2 `ContainerInterfaceTerminal`. Chunk
+   splitting only arrives if the batch 2 measurement proves it necessary (revision **R2**).
 
 ---
 
-## 4. Points d'accroche AE2UEL
+## 4. AE2UEL hook points
 
-| Besoin | Classe AE2UEL de référence |
+| Need | Reference AE2UEL class |
 |---|---|
-| Terminal câblé | `AbstractPartTerminal`, `PartInterfaceTerminal` |
-| Conteneur distant | `ContainerInterfaceTerminal` |
-| Terminal sans fil | `IWirelessTermHandler`, `IWirelessTermRegistry`, `WirelessTerminalGuiObject`, `ToolWirelessInterfaceTerminal` |
-| Hôte de terminal | `ITerminalHost` |
-| Sécurité | `ISecurityGrid`, `SecurityPermissions` |
-| Notification de changement | `MENetworkCraftingPatternChange` |
+| Wired terminal | `AbstractPartTerminal`, `PartInterfaceTerminal` |
+| Remote container | `ContainerInterfaceTerminal` |
+| Wireless terminal | `IWirelessTermHandler`, `IWirelessTermRegistry`, `WirelessTerminalGuiObject`, `ToolWirelessInterfaceTerminal` |
+| Terminal host | `ITerminalHost` |
+| Security | `ISecurityGrid`, `SecurityPermissions` |
+| Change notification | `MENetworkCraftingPatternChange` |
 
-## 5. Précédents à étudier dans l'instance
+## 5. Precedents to study in the instance
 
-| Mod | Ce qu'il démontre |
+| Mod | What it demonstrates |
 |---|---|
-| `cell-terminal-1.6.7` | terminal tiers complet : part + item sans fil, NBT en chunks, deltas, intégration AE2WUT (`AE2WUTIntegration`, `WUTModeSwitcher`), registres de scanners par mod |
-| `ae2wut-1.0.5` | absorption d'un terminal tiers dans le terminal universel, par mixins |
-| `apiarist-terminal-0.3.0` | petit terminal tiers, bon exemple minimal |
+| `cell-terminal-1.6.7` | a complete third-party terminal: part + wireless item, NBT in chunks, deltas, AE2WUT integration (`AE2WUTIntegration`, `WUTModeSwitcher`), scanner registries per mod |
+| `ae2wut-1.0.5` | absorbing a third-party terminal into the universal terminal, through mixins |
+| `apiarist-terminal-0.3.0` | a small third-party terminal, a good minimal example |
