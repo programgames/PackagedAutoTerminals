@@ -43,60 +43,58 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.wrapper.InvWrapper;
 
 /**
- * Éditeur d'une recette, ouvert depuis le terminal.
+ * Editor for one recipe, opened from the terminal.
  *
- * <p>Les emplacements sont des copies fantômes : cliquer avec un objet en main y dépose son
- * image, sans consommer l'objet. Ce sont les classes de PackagedAuto, {@link SlotFalseCopy}
- * et {@link SlotPreview}, donc le comportement est identique à celui de l'Encoder.
+ * <p>The slots are ghost copies: clicking with an item in hand drops its image there, without
+ * consuming the item. The behaviour matches the Encoder.
  *
- * <p>La recette est construite **par le serveur** (décision D05), à chaque changement
- * d'emplacement. Le client ne fait qu'afficher le résultat.
+ * <p>The recipe is built **by the server** (decision D05), on every slot change. The client
+ * only displays the result.
  */
 public class ContainerPatEditor extends AEBaseContainer {
 
-    // Géométrie de la fenêtre. Ces valeurs doivent rester identiques à celles de
-    // tools/make_gui_texture.py. La disposition reprend celle du Package Recipe Encoder.
+    // Screen geometry. These values must stay identical to the ones in
+    // tools/make_gui_texture.py. The layout follows the Package Recipe Encoder.
     public static final int WIDTH = 258;
     public static final int HEIGHT = 338;
-    /** Champ de nom du groupe, sur la ligne de titre. */
+    /** Group name field, on the title line. */
     public static final int NAME_LEFT = 8;
     public static final int NAME_TOP = 4;
     public static final int NAME_WIDTH = 162;
     public static final int NAME_HEIGHT = 16;
-    /** Rangée d'onglets : une case par recette du groupe. */
+    /** Tab row: one slot per recipe of the group. */
     public static final int TAB_LEFT = 8;
     public static final int TAB_TOP = 32;
-    /** Dix colonnes sur deux rangées, comme le Package Recipe Encoder. */
+    /** Ten columns over two rows, like the Package Recipe Encoder. */
     public static final int TAB_COLUMNS = 10;
     public static final int TAB_ROWS = 2;
     public static final int TAB_COUNT = TAB_COLUMNS * TAB_ROWS;
-    /** Coin haut-gauche de la grille des entrées, 9 sur 9. */
+    /** Top left corner of the input grid, 9 by 9. */
     public static final int GRID_LEFT = 8;
     public static final int GRID_TOP = 72;
-    /** Coin haut-gauche des sorties, 3 sur 3. */
+    /** Top left corner of the outputs, 3 by 3. */
     public static final int OUTPUT_LEFT = 190;
     public static final int OUTPUT_TOP = 112;
-    /** Coin haut-gauche de l'aperçu des colis, 3 sur 3. */
+    /** Top left corner of the package preview, 3 by 3. */
     public static final int PREVIEW_LEFT = 190;
     public static final int PREVIEW_TOP = 172;
     public static final int PLAYER_INVENTORY_TOP = 256;
-    /** Décalage horizontal de l'inventaire. AE2 pose ses cases à 8 + colonne * 18 + décalage. */
+    /** Horizontal offset of the inventory. AE2 places slots at 8 + column * 18 + offset. */
     public static final int PLAYER_INVENTORY_OFFSET_X = 12;
-    /** Quantité maximale d'un emplacement de recette. */
+    /** Maximum amount in one recipe slot. */
     public static final int MAX_SLOT_COUNT = 4096;
 
     private final TerminalContext terminal;
     public final EditorInventory editor;
 
-    /** Machine visée, et rang de la recette. Un rang négatif signifie « nouvelle recette ». */
+    /** Target machine, and recipe index. A negative index means "new recipe". */
     public final int dimension;
     public final BlockPos pos;
     /**
-     * Rang de la recette dans le groupe. Négatif tant qu'elle n'existe pas.
+     * Index of the recipe in the group. Negative for as long as it does not exist.
      *
-     * <p>Il n'est pas final : après l'enregistrement d'une recette neuve, l'éditeur bascule
-     * sur la recette créée. Sans cela, un second appui sur Enregistrer en ajouterait une
-     * copie.
+     * <p>It is not final: after a new recipe is saved, the editor switches to the created
+     * recipe. Without that, pressing Save a second time would add a copy.
      */
     private int index;
 
@@ -108,8 +106,8 @@ public class ContainerPatEditor extends AEBaseContainer {
         this.dimension = dimension;
         this.pos = pos;
         this.index = index;
-        // Sans cette ligne, le cadre vert se posait sur l'onglet de création, car
-        // `currentTab` valait -1 tant qu'aucune bascule n'avait eu lieu.
+        // Without this line, the green frame sat on the creation tab, because `currentTab`
+        // stayed -1 until a switch happened.
         this.currentTab = index;
 
         bindEditorSlots();
@@ -117,21 +115,19 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
-     * Pose les 99 emplacements, toujours dans le même ordre et de la même classe des deux
-     * côtés.
+     * Places the 99 slots, always in the same order and of the same class on both sides.
      *
-     * <p>PIÈGE évité ici : si la classe d'un emplacement dépendait du type de recette, le
-     * client et le serveur pourraient en poser de différentes, car le client ignore le type
-     * au moment de construire la fenêtre. La synchronisation des emplacements se ferait
-     * alors de travers. Le droit d'écrire est donc vérifié ailleurs : par
-     * {@code EditorInventory.isItemValidForSlot}, côté serveur, et par le grisage dans la
-     * fenêtre.
+     * <p>PITFALL avoided here: if the class of a slot depended on the recipe type, client and
+     * server could place different ones, because the client does not know the type when it
+     * builds the screen. Slot synchronisation would then go wrong. The right to write is
+     * therefore checked elsewhere: by {@code EditorInventory.isItemValidForSlot} on the
+     * server, and by the greying out in the screen.
      */
     /**
-     * Icônes des onglets : la sortie de chaque recette du groupe.
+     * Tab icons: the output of each recipe of the group.
      *
-     * <p>Ce sont de **vrais** emplacements. La synchronisation des objets vers le client est
-     * donc prise en charge par le conteneur vanilla, sans paquet de notre part.
+     * <p>These are **real** slots. Item synchronisation to the client is therefore handled by
+     * the vanilla container, with no packet of our own.
      */
     public final net.minecraft.inventory.InventoryBasic tabs =
             new net.minecraft.inventory.InventoryBasic("tabs", false, TAB_COUNT);
@@ -168,16 +164,16 @@ public class ContainerPatEditor extends AEBaseContainer {
         }
     }
 
-    /** Onglet : il montre la sortie d'une recette, et ne se manipule pas comme un objet. */
+    /** Tab: it shows the output of a recipe, and is not handled like an item. */
     private static final class SlotTab extends AppEngSlot {
         SlotTab(IItemHandler inventory, int index, int x, int y) {
             super(inventory, index, x, y);
             setNotDraggable();
         }
 
-        // PIÈGE : ne PAS refuser l'objet ici. AE2 peint en rouge tout emplacement qu'il juge
-        // invalide, et l'onglet se retrouvait barré de rouge. Le clic est de toute façon
-        // intercepté par le conteneur, qui ne déplace jamais rien.
+        // PITFALL: do NOT refuse the item here. AE2 paints every slot it considers invalid
+        // in red, and the tab ended up crossed out in red. The click is intercepted by the
+        // container anyway, which never moves anything.
 
         @Override
         public boolean canTakeStack(EntityPlayer player) {
@@ -185,7 +181,7 @@ public class ContainerPatEditor extends AEBaseContainer {
         }
     }
 
-    /** Emplacement d'aperçu : il montre le résultat calculé, et refuse toute manipulation. */
+    /** Preview slot: it shows the computed result, and refuses any handling. */
     private static final class SlotResult extends AppEngSlot {
         SlotResult(IItemHandler inventory, int index, int x, int y) {
             super(inventory, index, x, y);
@@ -204,16 +200,15 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
-     * Comportement des emplacements fantômes.
+     * Behaviour of the ghost slots.
      *
-     * <p>Le conteneur, et non l'emplacement, porte ce comportement. C'est aussi le choix de
-     * PackagedAuto, dans {@code ContainerTileBase.slotClick}.
+     * <p>The container, not the slot, carries this behaviour. That is also the PackagedAuto
+     * choice, in {@code ContainerTileBase.slotClick}.
      *
-     * <p>PIÈGE : {@code AEBaseContainer.addSlotToContainer} refuse tout emplacement qui
-     * n'hérite pas d'{@code AppEngSlot}. Les emplacements de PackagedAuto sont donc
-     * inutilisables ici. AE2 fournit les siens, dont {@link SlotFake}, qui implémente en
-     * prime {@code IJEITargetSlot} : le glisser-déposer depuis JEI arrivera sans travail
-     * supplémentaire.
+     * <p>PITFALL: {@code AEBaseContainer.addSlotToContainer} refuses any slot that does not
+     * extend {@code AppEngSlot}. The PackagedAuto slots are therefore unusable here. AE2
+     * provides its own, including {@link SlotFake}, which also implements
+     * {@code IJEITargetSlot}: drag and drop from JEI comes for free.
      */
     @Override
     public ItemStack slotClick(int slotId, int dragType, ClickType clickType, EntityPlayer player) {
@@ -246,16 +241,16 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
-     * Type de recette courant, synchronisé par AE2.
+     * Current recipe type, synchronised by AE2.
      *
-     * <p>PIÈGE : {@code updateProgressBar} est `final` dans {@code AEBaseContainer}. Le
-     * mécanisme vanilla est donc inutilisable. AE2 fournit le sien : tout champ annoté
-     * {@link GuiSync} part vers le client, et {@link #onUpdate} le signale à l'arrivée.
+     * <p>PITFALL: {@code updateProgressBar} is `final` in {@code AEBaseContainer}. The vanilla
+     * mechanism is therefore unusable. AE2 provides its own: every field annotated with
+     * {@link GuiSync} travels to the client, and {@link #onUpdate} reports it on arrival.
      */
     @GuiSync(0)
     public int recipeTypeId = -1;
 
-    /** Ticks écoulés, pour n'interroger la portée qu'à la cadence de rafraîchissement. */
+    /** Elapsed ticks, so range is only checked at the refresh rate. */
     private int ticks;
 
     @Override
@@ -264,9 +259,8 @@ public class ContainerPatEditor extends AEBaseContainer {
 
         World world = getPlayerInv().player.world;
         if (!world.isRemote) {
-            // L'éditeur suit la même règle que le terminal : sorti de portée ou à court
-            // d'énergie, il se referme au lieu de montrer une recette qu'il ne peut plus
-            // écrire.
+            // The editor follows the same rule as the terminal: out of range or out of
+            // energy, it closes instead of showing a recipe it can no longer write.
             if (ticks++ % Math.max(1, PatConfig.refreshTicks) == 0) {
                 String refusal = terminal.refusal(PatConfig.refreshTicks);
                 if (refusal != null) {
@@ -278,7 +272,7 @@ public class ContainerPatEditor extends AEBaseContainer {
                     return;
                 }
             }
-            // Le nom est relu à chaque cycle : une autre fenêtre a pu le changer.
+            // The name is read again on every cycle: another screen may have changed it.
             groupName = GroupNames.get(world).get(pos);
             refreshTabs();
         }
@@ -290,18 +284,18 @@ public class ContainerPatEditor extends AEBaseContainer {
         if ("recipeTypeId".equals(field)) {
             int id = (Integer) newValue;
             editor.recipeType = id < 0 ? null : RecipeTypeRegistry.getRecipeType(id);
-            // Le client doit recalculer son aperçu : un changement de type modifie la
-            // recette sans qu'aucun emplacement ne bouge.
+            // The client must recompute its preview: a type change alters the recipe
+            // without any slot moving.
             editor.updateRecipeInfo();
         }
         super.onUpdate(field, oldValue, newValue);
     }
 
     /**
-     * Remplit l'éditeur depuis une recette de JEI.
+     * Fills the editor from a JEI recipe.
      *
-     * <p>Le serveur ne fait pas confiance à la correspondance reçue : il impose le type,
-     * puis n'écrit que dans les emplacements que ce type active.
+     * <p>The server does not trust the mapping it receives: it forces the type, then writes
+     * only into the slots that type enables.
      */
     public void fillFromRecipe(int typeId, Int2ObjectMap<ItemStack> transfer) {
         IRecipeType type = RecipeTypeRegistry.getRecipeType(typeId);
@@ -327,12 +321,12 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
-     * Ajuste la quantité d'un emplacement.
+     * Adjusts the amount in one slot.
      *
-     * <p>La limite haute n'est pas 64 : PackagedAuto sait écrire de grandes quantités, par
-     * {@code MiscUtil.saveItemWithLargeCount}. Les recettes de traitement en ont besoin.
+     * <p>The upper bound is not 64: PackagedAuto can write large amounts, through
+     * {@code MiscUtil.saveItemWithLargeCount}. Processing recipes need that.
      */
-    /** Fixe la quantité d'un emplacement, saisie au clavier. */
+    /** Sets the amount of one slot, typed on the keyboard. */
     public void setSlotCount(int slot, int amount) {
         changeSlotCount(slot, amount - editor.getStackInSlot(slot).getCount());
     }
@@ -354,17 +348,17 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
-     * Écrit la recette dans **toutes les machines du groupe**.
+     * Writes the recipe into **every machine of the group**.
      *
-     * <p>PackagedAuto exige la même recette dans le Packager et dans l'Unpackager. Écrire
-     * d'un seul côté casserait l'automatisation en silence.
+     * <p>PackagedAuto requires the same recipe in the Packager and in the Unpackager. Writing
+     * one side only would break the automation silently.
      *
-     * <p>Cas d'un groupe incomplet, fréquent : le joueur vient de poser une paire et encode
-     * sa première recette, si bien que les deux porte-recettes ne partagent encore rien. Si
-     * le réseau ne compte qu'une seule machine du rôle manquant, elle rejoint la cible. S'il
-     * y en a plusieurs, le terminal n'invente rien et le dit.
+     * <p>The incomplete group case is common: the player has just placed a pair and encodes
+     * the first recipe, so the two recipe holders share nothing yet. When the network holds a
+     * single machine of the missing role, it joins the targets. When there are several, the
+     * terminal invents nothing and says so.
      *
-     * @return vrai si au moins une machine a été modifiée.
+     * @return true when at least one machine was changed.
      */
     public boolean save() {
         if (editor.recipeInfo == null) {
@@ -402,9 +396,9 @@ public class ContainerPatEditor extends AEBaseContainer {
             return false;
         }
 
-        // Le joueur reçoit toujours un retour, et **un seul**. Deux appels successifs à
-        // `tell` s'écrasaient : le joueur voyait l'avertissement, jamais la confirmation,
-        // et ne savait plus si l'écriture avait abouti.
+        // The player always gets one piece of feedback, and **only one**. Two successive
+        // `tell` calls overwrote each other: the player saw the warning, never the
+        // confirmation, and no longer knew whether the write had succeeded.
         if (result.withoutHolder > 0) {
             tell("gui.packagedautoterminals.applied_partial",
                     result.changed, result.withoutHolder);
@@ -417,8 +411,8 @@ public class ContainerPatEditor extends AEBaseContainer {
                     result.changed);
         }
 
-        // L'éditeur suit la recette qu'il vient d'écrire : le prochain enregistrement la
-        // modifiera, au lieu d'en créer une copie.
+        // The editor follows the recipe it has just written: the next save will edit it,
+        // instead of creating a copy.
         ProviderPairing.Group after = currentGroup();
         if (after != null) {
             for (int i = 0; i < after.recipes.size(); i++) {
@@ -435,9 +429,9 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
-     * Écrit le nom du groupe dans **toutes** ses machines.
+     * Writes the group name into **every** one of its machines.
      *
-     * <p>Le nom est rangé par machine, car un groupe se recompose à chaque scan. Voir
+     * <p>The name is stored per machine, because a group is rebuilt on every scan. See
      * {@link GroupNames}.
      */
     public void renameGroup(String name) {
@@ -466,53 +460,53 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
-     * Nom courant du groupe.
+     * Current name of the group.
      *
-     * <p>{@code SyncData} d'AE2 sait transmettre une chaîne : le champ part donc vers le
-     * client sans paquet supplémentaire.
+     * <p>The AE2 {@code SyncData} can carry a string: the field therefore travels to the
+     * client with no extra packet.
      */
     @GuiSync(1)
     public String groupName = "";
 
-    /** Rang de la recette affichée dans la rangée d'onglets. Négatif : l'onglet de création. */
+    /** Index of the displayed recipe in the tab row. Negative: the creation tab. */
     @GuiSync(2)
     public int currentTab = -1;
-    /** Nombre de recettes du groupe. Sert au client pour placer l'onglet de création. */
+    /** Number of recipes in the group. Used by the client to place the creation tab. */
     @GuiSync(3)
     public int recipeCount;
-    /** Première recette montrée dans la rangée. Les flèches la déplacent. */
+    /** First recipe shown in the row. The arrows move it. */
     @GuiSync(4)
     public int tabOffset;
-    /** Message à montrer, clé et paramètres assemblés. */
+    /** Message to show, key and arguments packed together. */
     @GuiSync(10)
     public String feedback = "";
-    /** Compteur de messages. Il change même quand le texte se répète. */
+    /** Message counter. It changes even when the text repeats. */
     @GuiSync(11)
     public int feedbackCount;
 
     /**
-     * L'éditeur porte-t-il une modification non enregistrée ?
+     * Does the editor hold an unsaved change?
      *
-     * <p>Le champ est **synchronisé** : le client en a besoin pour marquer l'onglet ouvert
-     * d'un point. Sans ce point, le joueur n'apprenait qu'il avait du travail en cours
-     * qu'après avoir cliqué un autre onglet, et reçu un refus.
+     * <p>The field is **synchronised**: the client needs it to mark the open tab with a dot.
+     * Without that dot, the player only learned about work in progress after clicking another
+     * tab and being refused.
      */
     @GuiSync(5)
     public boolean dirty;
-    /** Onglet demandé alors qu'un travail non enregistré était en cours. */
+    /** Tab requested while unsaved work was in progress. */
     private int pendingTab = Integer.MIN_VALUE;
 
-    /** Message affiché dans la fenêtre, et non dans la barre d'action. */
+    /** Message shown inside the screen, not in the action bar. */
     private void tell(String key, Object... arguments) {
         feedback = Feedback.pack(key, arguments);
         feedbackCount++;
     }
 
     /**
-     * Bascule sur une autre recette du groupe.
+     * Switches to another recipe of the group.
      *
-     * <p>Un travail non enregistré n'est jamais perdu sans avertissement : le premier clic
-     * prévient, le second bascule.
+     * <p>Unsaved work is never lost without a warning: the first click warns, the second
+     * switches.
      */
     public void selectTab(int slot) {
         int target = tabOffset + slot;
@@ -530,10 +524,10 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
-     * Remplit la rangée d'onglets avec la sortie de chaque recette du groupe.
+     * Fills the tab row with the output of each recipe of the group.
      *
-     * <p>La dernière case reste vide : c'est l'onglet de création. Les emplacements étant
-     * réels, le client reçoit ces objets sans paquet supplémentaire.
+     * <p>The last slot stays empty: that is the creation tab. Since the slots are real, the
+     * client receives these items with no extra packet.
      */
     private void refreshTabs() {
         ProviderPairing.Group group = currentGroup();
@@ -559,13 +553,13 @@ public class ContainerPatEditor extends AEBaseContainer {
         }
     }
 
-    /** Déplace la rangée d'onglets, quand le groupe porte plus de recettes qu'elle n'a de cases. */
+    /** Scrolls the tab row, when the group holds more recipes than the row has slots. */
     public void scrollTabs(boolean forward) {
         int maximum = Math.max(0, recipeCount + 1 - TAB_COUNT);
         tabOffset = Math.max(0, Math.min(maximum, tabOffset + (forward ? 1 : -1)));
     }
 
-    /** Charge la recette de rang donné, ou vide l'éditeur pour une création. */
+    /** Loads the recipe at the given index, or clears the editor for a creation. */
     private void load(int target) {
         currentTab = target;
         index = target;
@@ -582,14 +576,14 @@ public class ContainerPatEditor extends AEBaseContainer {
         editor.updateRecipeInfo();
         dirty = false;
 
-        // Envoi complet : la synchronisation par différence laissait la grille vide à
-        // l'écran après un changement d'onglet.
+        // Full send: differential synchronisation left the grid empty on screen after a tab
+        // change.
         for (net.minecraft.inventory.IContainerListener listener : listeners) {
             listener.sendAllContents(this, getInventory());
         }
     }
 
-    /** Supprime la recette en cours, dans toutes les machines du groupe. */
+    /** Deletes the current recipe, in every machine of the group. */
     public void deleteCurrent() {
         if (index < 0) {
             tell("gui.packagedautoterminals.nothing_to_delete");
@@ -611,7 +605,7 @@ public class ContainerPatEditor extends AEBaseContainer {
         load(-1);
     }
 
-    /** Vide la grille, sans rien écrire dans les machines. */
+    /** Clears the grid, without writing anything into the machines. */
     public void clearGrid() {
         editor.clear();
         editor.recipeType = editor.recipeType == null ? defaultRecipeType() : editor.recipeType;
@@ -620,12 +614,12 @@ public class ContainerPatEditor extends AEBaseContainer {
         tell("gui.packagedautoterminals.cleared");
     }
 
-    /** Grille du terminal, ou {@code null}. */
+    /** Grid of the terminal, or {@code null}. */
     private IGrid grid() {
         return terminal.grid();
     }
 
-    /** Groupe visé, recalculé à la demande. */
+    /** Target group, recomputed on demand. */
     private ProviderPairing.Group currentGroup() {
         IGrid grid = grid();
         if (grid == null) {
@@ -635,16 +629,16 @@ public class ContainerPatEditor extends AEBaseContainer {
                 dimension, pos);
     }
 
-    /** Referme l'éditeur et rouvre le terminal, à la même part. */
+    /** Closes the editor and reopens the terminal, on the same part. */
     public void backToTerminal() {
         terminal.openTerminal(getPlayerInv().player);
     }
 
     /**
-     * Passe au type de recette suivant ou précédent, puis reconstruit la recette.
+     * Moves to the next or previous recipe type, then rebuilds the recipe.
      *
-     * <p>Le cas du type nul est traité ici : sur une recette neuve, l'éditeur peut s'ouvrir
-     * sans type, et {@code getNextRecipeType} n'a alors aucun point de départ.
+     * <p>The null type case is handled here: on a new recipe, the editor can open with no
+     * type, and {@code getNextRecipeType} then has no starting point.
      */
     public void cycleRecipeType(boolean forward) {
         if (editor.recipeType == null) {
@@ -657,11 +651,11 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
-     * Type proposé à l'ouverture d'une recette neuve.
+     * Type offered when a new recipe is opened.
      *
-     * <p>Le craft de base vient en premier s'il existe : c'est le cas le plus courant. Le
-     * Package Crafter peut être désactivé en configuration, auquel cas ce type n'est pas
-     * enregistré, et le premier type disponible fait l'affaire.
+     * <p>Basic crafting comes first when it exists: that is the most common case. The Package
+     * Crafter can be disabled in the config, in which case that type is not registered, and
+     * the first available type will do.
      */
     public static IRecipeType defaultRecipeType() {
         NavigableMap<ResourceLocation, IRecipeType> registry = RecipeTypeRegistry.getRegistry();

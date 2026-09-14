@@ -8,15 +8,15 @@ import net.minecraftforge.fml.common.Loader;
 import zone.rong.mixinbooter.ILateMixinLoader;
 
 /**
- * Déclare notre configuration de mixin à MixinBooter.
+ * Declares our mixin configuration to MixinBooter.
  *
- * <p>MixinBooter parcourt les jars des mods et instancie tout ce qui implémente cette
- * interface. Aucune entrée de manifeste, aucun coremod : c'est la voie que suit AE2WUT
- * lui-même, avec {@code WUTLateMixinLoader}.
+ * <p>MixinBooter walks the mod jars and instantiates everything that implements this
+ * interface. No manifest entry, no coremod: this is the path AE2WUT itself follows, with
+ * {@code WUTLateMixinLoader}.
  *
- * <p>Cette classe ne se charge que si MixinBooter est présent. Sans lui, elle n'est jamais
- * lue, et le mod démarre sans intégration. Sans AE2WUT, la configuration reste en file et ne
- * s'applique pas.
+ * <p>This class is only loaded when MixinBooter is present. Without it, the class is never
+ * read, and the mod starts with no integration. Without AE2WUT, the configuration stays
+ * queued and is not applied.
  */
 public class PatLateMixinLoader implements ILateMixinLoader {
 

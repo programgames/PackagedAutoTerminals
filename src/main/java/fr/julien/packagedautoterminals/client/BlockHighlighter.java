@@ -19,18 +19,18 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11;
 
 /**
- * Fait clignoter des blocs dans le monde, pour les retrouver depuis le terminal.
+ * Blinks blocks in the world, so the player can find them from the terminal.
  *
- * <p>Le contour se dessine **sans test de profondeur** : les machines sont presque toujours
- * derrière un mur, et un repérage invisible ne servirait à rien.
+ * <p>The outline is drawn **without a depth test**: machines almost always sit behind a
+ * wall, and a marker you cannot see would be useless.
  */
 @SideOnly(Side.CLIENT)
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Side.CLIENT)
 public final class BlockHighlighter {
 
-    /** Durée du clignotement, en millisecondes. */
+    /** Blink duration, in milliseconds. */
     private static final long DURATION = 5_000L;
-    /** Période d'un battement, en millisecondes. */
+    /** Length of one beat, in milliseconds. */
     private static final long PERIOD = 600L;
 
     private static final float RED = 0.15f;
@@ -41,7 +41,7 @@ public final class BlockHighlighter {
 
     private BlockHighlighter() {}
 
-    /** Marque ces positions, dans cette dimension, pour les cinq prochaines secondes. */
+    /** Marks these positions, in this dimension, for the next five seconds. */
     public static void highlight(int dimension, List<BlockPos> positions) {
         long expiry = System.currentTimeMillis() + DURATION;
         ENTRIES.clear();
@@ -78,8 +78,8 @@ public final class BlockHighlighter {
         double y = player.lastTickPosY + (player.posY - player.lastTickPosY) * partial;
         double z = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * partial;
 
-        // Le battement va de discret à franc, sans jamais disparaître : un contour absent
-        // au mauvais moment se lit comme une panne.
+        // The beat goes from faint to strong, but never vanishes: an outline missing at the
+        // wrong moment reads as a failure.
         float beat = 0.35f + 0.45f * (float) Math.abs(Math.sin(Math.PI * (now % PERIOD) / PERIOD));
 
         GlStateManager.pushMatrix();

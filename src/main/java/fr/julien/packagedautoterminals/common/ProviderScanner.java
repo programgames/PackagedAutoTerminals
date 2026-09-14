@@ -15,15 +15,15 @@ import thelm.packagedauto.api.IRecipeList;
 import thelm.packagedauto.api.IRecipeListItem;
 
 /**
- * Découvre les machines qui portent des recettes, sur une grille ME.
+ * Discovers the machines that carry recipes, on an ME grid.
  *
- * <p>Le critère est {@code instanceof IPackageProvidingMachine} (décision D02). Ce sont les
- * seuls blocs qui portent un Package Recipe Holder. Les crafters n'en portent aucun : leur
- * champ {@code currentRecipe} ne dure que le temps d'un craft.
+ * <p>The criterion is {@code instanceof IPackageProvidingMachine} (decision D02). These are
+ * the only blocks that hold a Package Recipe Holder. Crafters hold none: their
+ * {@code currentRecipe} field only lives for the duration of one craft.
  *
- * <p>Le parcours passe par {@code getMachinesClasses()} puis {@code getMachines(cls)}, et non
- * par {@code getNodes()}, qui traverserait aussi chaque câble. Aucune classe d'addon n'est
- * connue à la compilation : tout addon futur est capté sans modifier ce code.
+ * <p>The walk goes through {@code getMachinesClasses()} then {@code getMachines(cls)}, not
+ * through {@code getNodes()}, which would also visit every cable. No addon class is known at
+ * compile time: any future addon is picked up without changing this code.
  */
 public final class ProviderScanner {
 
@@ -51,11 +51,11 @@ public final class ProviderScanner {
     }
 
     /**
-     * Retrouve une machine par sa position, **sur la grille du terminal**.
+     * Finds a machine by its position, **on the terminal grid**.
      *
-     * <p>Toute écriture passe par ici. Le client envoie une position ; le serveur ne lui
-     * fait pas confiance. Si la machine n'est pas sur cette grille, la méthode renvoie
-     * {@code null} et l'ordre est ignoré.
+     * <p>Every write goes through here. The client sends a position; the server does not
+     * trust it. When the machine is not on this grid, the method returns {@code null} and
+     * the command is ignored.
      */
     public static IPackageProvidingMachine find(IGrid grid, int dimension, BlockPos pos) {
         if (grid == null) {
@@ -110,7 +110,7 @@ public final class ProviderScanner {
         return snapshot;
     }
 
-    /** Traduction sans passer par le client, utilisable des deux côtés. */
+    /** Translation without going through the client, usable on both sides. */
     public static String translate(String key, Object... args) {
         return I18n.translateToLocalFormatted(key, args);
     }

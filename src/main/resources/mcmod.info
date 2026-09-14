@@ -2,12 +2,12 @@
   {
     "modid": "packagedautoterminals",
     "name": "PackagedAuto Terminals",
-    "description": "Terminaux AE2 pour consulter et modifier les recettes de PackagedAuto a distance.",
+    "description": "AE2 terminals to browse and edit PackagedAuto recipes remotely.",
     "version": "${version}",
     "mcversion": "${mcversion}",
     "url": "",
     "authorList": ["Julien"],
-    "credits": "PackagedAuto par TheLMiffy1111 (MIT). AE2 Unofficial Extended Life par l'equipe AE2-UEL.",
+    "credits": "PackagedAuto by TheLMiffy1111 (MIT). AE2 Unofficial Extended Life by the AE2-UEL team.",
     "dependencies": ["appliedenergistics2", "packagedauto"]
   }
 ]

@@ -13,25 +13,25 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * D'où vient le terminal ouvert : une part posée sur un câble, ou un objet sans fil.
+ * Where the open terminal comes from: a part placed on a cable, or a wireless item.
  *
- * <p>Cette classe existe pour que les conteneurs ignorent la différence. Les deux sources
- * implémentent {@link IActionHost}, donc donnent leur nœud de grille de la même façon. Seule
- * la réouverture de la fenêtre diffère, car {@code openGui} ne transporte que trois entiers.
+ * <p>This class exists so that the containers can ignore the difference. Both sources
+ * implement {@link IActionHost}, hence give their grid node the same way. Only reopening the
+ * screen differs, because {@code openGui} only carries three integers.
  *
- * <p>PIÈGE d'AE2, contourné ici : {@code WirelessRegistry.openWirelessTerminalGui} caste le
- * gestionnaire rendu par {@code IWirelessTermHandler.getGuiHandler} en {@code GuiBridge},
- * une énumération interne. Un mod tiers qui passerait par cette méthode recevrait une
- * {@code ClassCastException}. Le terminal sans fil ouvre donc sa fenêtre lui-même.
+ * <p>AE2 PITFALL, worked around here: {@code WirelessRegistry.openWirelessTerminalGui} casts
+ * the handler returned by {@code IWirelessTermHandler.getGuiHandler} to {@code GuiBridge}, an
+ * internal enum. A third-party mod going through that method would get a
+ * {@code ClassCastException}. The wireless terminal therefore opens its own screen.
  */
 public final class TerminalContext {
 
     private final IActionHost host;
-    /** Part câblée : position de la tuile hôte. */
+    /** Wired part: position of the host tile. */
     private final BlockPos pos;
-    /** Part câblée : face de la part. */
+    /** Wired part: face the part sits on. */
     private final int side;
-    /** Objet sans fil : emplacement dans l'inventaire du joueur. Sinon -1. */
+    /** Wireless item: slot in the player inventory. Otherwise -1. */
     private final int inventorySlot;
 
     private TerminalContext(IActionHost host, BlockPos pos, int side, int inventorySlot) {
@@ -57,29 +57,29 @@ public final class TerminalContext {
         return host;
     }
 
-    /** Grille du terminal, ou {@code null} s'il n'est relié à rien. */
+    /** Grid of the terminal, or {@code null} when it is linked to nothing. */
     public IGrid grid() {
         IGridNode node = host.getActionableNode();
         return node == null ? null : node.getGrid();
     }
 
     /**
-     * Raison de fermer la fenêtre, ou {@code null} si tout va bien.
+     * Reason to close the screen, or {@code null} when everything is fine.
      *
-     * <p>PIÈGE corrigé, premier temps : les contrôles de portée et d'énergie existaient,
-     * mais aucun conteneur ne les appelait. Sorti de portée, le terminal sans fil restait
-     * ouvert et vide, et il ne consommait jamais d'énergie.
+     * <p>PITFALL fixed, first part: the range and energy checks existed, but no container
+     * called them. Out of range, the wireless terminal stayed open and empty, and it never
+     * drew any energy.
      *
-     * <p>PIÈGE corrigé, second temps : **l'ordre des trois questions compte**. Le bytecode
-     * d'AE2UEL montre que {@code WirelessTerminalGuiObject.getActionableNode} appelle
-     * {@code rangeCheck} puis rend {@code null} quand aucun point d'accès n'est à portée.
-     * Interroger la grille en premier faisait donc annoncer une absence de liaison à chaque
-     * fois que le joueur s'éloignait. La portée passe devant.
+     * <p>PITFALL fixed, second part: **the order of the three questions matters**. The
+     * AE2UEL bytecode shows that {@code WirelessTerminalGuiObject.getActionableNode} calls
+     * {@code rangeCheck} then returns {@code null} when no access point is in range. Asking
+     * the grid first therefore reported a missing link every time the player walked away.
+     * Range comes first.
      *
-     * <p>L'énergie vient en dernier, donc elle n'est prélevée que si le reste est bon.
-     * Facturer un terminal hors de portée n'aurait aucun sens.
+     * <p>Energy comes last, so it is only drawn when the rest is fine. Charging a terminal
+     * that is out of range would make no sense.
      *
-     * @param ticks nombre de ticks écoulés depuis le dernier appel.
+     * @param ticks number of ticks elapsed since the last call.
      */
     public String refusal(int ticks) {
         if (host instanceof WirelessTerminalGuiObject
@@ -96,11 +96,11 @@ public final class TerminalContext {
     }
 
     /**
-     * Prévient le joueur, puis laisse AE2 refermer la fenêtre.
+     * Warns the player, then lets AE2 close the screen.
      *
-     * <p>Nous n'appelons pas {@code closeScreen} nous-mêmes, en pleine mise à jour du
-     * conteneur. `AEBaseContainer.canInteractWith` rend faux dès que le conteneur est
-     * déclaré invalide, et le serveur referme alors la fenêtre à son propre rythme.
+     * <p>We do not call {@code closeScreen} ourselves in the middle of a container update.
+     * `AEBaseContainer.canInteractWith` returns false as soon as the container is marked
+     * invalid, and the server then closes the screen at its own pace.
      */
     public static void refuse(net.minecraft.entity.player.EntityPlayerMP player, String key) {
         player.sendStatusMessage(
@@ -108,11 +108,11 @@ public final class TerminalContext {
     }
 
     /**
-     * Prélève l'énergie d'un terminal sans fil.
+     * Draws the energy of a wireless terminal.
      *
-     * <p>Le terminal câblé, lui, ne consomme rien de plus : la grille paie déjà son nœud.
+     * <p>The wired terminal draws nothing extra: the grid already pays for its node.
      *
-     * @return vrai si l'énergie était disponible.
+     * @return true when the energy was available.
      */
     public boolean drainPower(double amount) {
         if (!(host instanceof WirelessTerminalGuiObject)) {
@@ -134,8 +134,8 @@ public final class TerminalContext {
     }
 
     /**
-     * Pour la part, {@code openGui} transporte la position du bloc. Pour le sans-fil, il n'y
-     * a pas de bloc : l'emplacement d'inventaire prend la place de la coordonnée x.
+     * For the part, {@code openGui} carries the block position. For the wireless item there
+     * is no block: the inventory slot takes the place of the x coordinate.
      */
     private void open(EntityPlayer player, int id) {
         if (isWireless()) {

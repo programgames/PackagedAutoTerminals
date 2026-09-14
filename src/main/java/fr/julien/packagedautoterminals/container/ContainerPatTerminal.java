@@ -36,40 +36,40 @@ import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.IRecipeInfo;
 
 /**
- * Conteneur du terminal. Le serveur reste l'autorité (décision D05) : il construit
- * l'instantané, le client ne fait que l'afficher.
+ * Terminal container. The server stays the authority (decision D05): it builds the snapshot,
+ * the client only displays it.
  */
 public class ContainerPatTerminal extends AEBaseContainer {
 
-    // L'intervalle de rafraîchissement vient de la configuration, PatConfig.refreshTicks.
+    // The refresh interval comes from the config, PatConfig.refreshTicks.
 
-    // Géométrie de la fenêtre. Ces valeurs doivent rester identiques à celles de
-    // tools/make_gui_texture.py, qui dessine la planche.
-    /** Largeur de la fenêtre. */
+    // Screen geometry. These values must stay identical to the ones in
+    // tools/make_gui_texture.py, which draws the sheet.
+    /** Screen width. */
     public static final int WIDTH = 320;
-    /** Rangées visibles. La planche en dessine seize : ce nombre peut grandir sans la refaire. */
+    /** Visible rows. The sheet draws sixteen: this number can grow without redrawing it. */
     public static final int ROWS = 12;
-    /** Rangées dessinées dans la planche. Sert à retrouver le bas de la fenêtre. */
+    /** Rows drawn in the sheet. Used to locate the bottom of the screen. */
     public static final int SHEET_ROWS = 16;
-    /** Hauteur du bas de la fenêtre : libellé, inventaire, marge. */
+    /** Height of the screen footer: label, inventory, margin. */
     public static final int FOOTER = 100;
-    /** Hauteur d'une rangée, en pixels. */
+    /** Height of one row, in pixels. */
     public static final int ROW_HEIGHT = 18;
-    /** Bord gauche de la zone de liste. */
+    /** Left edge of the list area. */
     public static final int LIST_LEFT = 8;
-    /** Haut de la zone de liste. */
+    /** Top of the list area. */
     public static final int LIST_TOP = 22;
-    /** Largeur de la zone de liste. */
+    /** Width of the list area. */
     public static final int LIST_WIDTH = 288;
-    /** Hauteur de la fenêtre, déduite du nombre de rangées. */
+    /** Screen height, derived from the row count. */
     public static final int HEIGHT = LIST_TOP + ROWS * ROW_HEIGHT + FOOTER;
-    /** Bord gauche de l'ascenseur. */
+    /** Left edge of the scrollbar. */
     public static final int SCROLL_LEFT = 300;
-    /** Décalage horizontal de l'inventaire, pour le centrer dans la fenêtre élargie. */
+    /** Horizontal offset of the inventory, to centre it in the widened screen. */
     public static final int PLAYER_INVENTORY_OFFSET_X = 71;
-    /** Haut de l'inventaire du joueur. */
+    /** Top of the player inventory. */
     public static final int PLAYER_INVENTORY_TOP = LIST_TOP + ROWS * ROW_HEIGHT + 16;
-    /** Champ de recherche, sur la ligne de titre. */
+    /** Search field, on the title line. */
     public static final int SEARCH_LEFT = 150;
     public static final int SEARCH_TOP = 4;
     public static final int SEARCH_WIDTH = 146;
@@ -79,31 +79,31 @@ public class ContainerPatTerminal extends AEBaseContainer {
     private int ticks;
     private NBTTagCompound lastSent;
 
-    /** Côté client seulement. Rempli par {@link PacketProviderList}. */
+    /** Client side only. Filled in by {@link PacketProviderList}. */
     public List<ProviderSnapshot> providers = new ArrayList<>();
-    /** Côté client seulement. Machines d'exécution, pour l'onglet Machines. */
+    /** Client side only. Crafting machines, for the Machines tab. */
     public List<MachineSnapshot> machines = new ArrayList<>();
-    /** Taille du dernier paquet reçu ou envoyé, en octets. Sert à la mesure du lot 2. */
+    /** Size of the last packet received or sent, in bytes. Used by the batch 2 measurement. */
     public int lastPayloadBytes;
 
-    /** Message à montrer au joueur, clé et paramètres assemblés. */
+    /** Message to show the player, key and arguments packed together. */
     @GuiSync(10)
     public String feedback = "";
-    /** Compteur de messages. Il change même quand le texte se répète. */
+    /** Message counter. It changes even when the text repeats. */
     @GuiSync(11)
     public int feedbackCount;
 
     public ContainerPatTerminal(InventoryPlayer inventory, TerminalContext terminal) {
-        // PIÈGE : le constructeur (InventoryPlayer, TileEntity, IPart) exige une TileEntity.
-        // Avec `null`, `canInteractWith` échoue et la fenêtre se referme aussitôt, sans
-        // erreur. AE2 utilise lui-même la version (InventoryPlayer, Object) pour ses parts,
-        // qui retrouve seule la tuile hôte.
+        // PITFALL: the (InventoryPlayer, TileEntity, IPart) constructor requires a
+        // TileEntity. With `null`, `canInteractWith` fails and the screen closes right away,
+        // with no error. AE2 itself uses the (InventoryPlayer, Object) version for its parts,
+        // which finds the host tile on its own.
         super(inventory, terminal.host());
         this.terminal = terminal;
 
-        // PIÈGE : `AEBaseContainer.addSlotToContainer` refuse un `Slot` vanilla et lève
-        // « Invalid Slot […] for AE Container instead of AppEngSlot ». La fenêtre ne s'ouvre
-        // alors jamais. AE2 fournit sa propre liaison d'inventaire, qui pose des AppEngSlot.
+        // PITFALL: `AEBaseContainer.addSlotToContainer` refuses a vanilla `Slot` and throws
+        // "Invalid Slot [...] for AE Container instead of AppEngSlot". The screen then never
+        // opens. AE2 provides its own inventory binding, which places AppEngSlot instances.
         bindPlayerInventory(inventory, PLAYER_INVENTORY_OFFSET_X, PLAYER_INVENTORY_TOP);
     }
 
@@ -117,16 +117,16 @@ public class ContainerPatTerminal extends AEBaseContainer {
             return;
         }
 
-        // Portée, liaison et énergie. Un refus ferme la fenêtre au tick suivant.
+        // Range, link and energy. A refusal closes the screen on the next tick.
         String refusal = terminal.refusal(PatConfig.refreshTicks);
         if (refusal != null) {
             setValidContainer(false);
             TerminalContext.refuse((EntityPlayerMP) getPlayerInv().player, refusal);
             return;
         }
-        // PIÈGE évité : la comparaison doit porter sur l'ENSEMBLE du message. Comparer les
-        // seuls fournisseurs laisserait passer un changement d'état des machines, qui ne
-        // serait alors jamais envoyé.
+        // PITFALL avoided: the comparison must cover the WHOLE message. Comparing the
+        // providers alone would miss a machine state change, which would then never be
+        // sent.
         NBTTagCompound wrapper = new NBTTagCompound();
         wrapper.setTag("Providers", buildPayload());
         wrapper.setTag("Machines", buildMachinePayload());
@@ -148,16 +148,15 @@ public class ContainerPatTerminal extends AEBaseContainer {
     }
 
     /**
-     * Supprime une recette, **de toutes les machines du groupe**.
+     * Removes a recipe, **from every machine of the group**.
      *
-     * <p>PackagedAuto exige la même recette dans le Packager et dans l'Unpackager. La
-     * supprimer d'un seul côté casserait l'automatisation sans le moindre message.
+     * <p>PackagedAuto requires the same recipe in the Packager and in the Unpackager.
+     * Removing it from one side only would break the automation without a single message.
      *
-     * <p>L'indice porte sur la liste du **groupe**, telle que le terminal l'affiche, et non
-     * sur celle d'une machine : le client et le serveur calculent le même regroupement, à
-     * partir des mêmes données.
+     * <p>The index refers to the **group** list, as the terminal shows it, not to the list of
+     * one machine: client and server compute the same grouping, from the same data.
      */
-    /** Machines d'exécution du réseau. Vide si l'onglet est désactivé en configuration. */
+    /** Crafting machines of the network. Empty when the tab is disabled in the config. */
     private NBTTagList buildMachinePayload() {
         NBTTagList list = new NBTTagList();
         if (!PatConfig.machinesTab) {
@@ -169,7 +168,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
         return list;
     }
 
-    /** Grille du terminal, ou {@code null} s'il n'est relié à rien. */
+    /** Grid of the terminal, or {@code null} when it is linked to nothing. */
     private IGrid grid() {
         return terminal.grid();
     }
@@ -197,11 +196,11 @@ public class ContainerPatTerminal extends AEBaseContainer {
     }
 
     /**
-     * Ouvre l'éditeur sur une recette neuve.
+     * Opens the editor on a brand new recipe.
      *
-     * <p>Le terminal ne sort **rien** du réseau de lui-même : si la machine n'a pas de
-     * porte-recettes, il refuse et le dit. Sortir un objet du stockage reste une décision du
-     * joueur.
+     * <p>The terminal pulls **nothing** out of the network on its own: when the machine has
+     * no recipe holder, it refuses and says so. Taking an item out of storage stays the
+     * player's decision.
      */
     public void newRecipe(int dimension, BlockPos pos) {
         IGrid grid = grid();
@@ -218,13 +217,13 @@ public class ContainerPatTerminal extends AEBaseContainer {
     }
 
     /**
-     * Renvoie au réseau les porte-recettes de **tout le groupe**.
+     * Sends the recipe holders of **the whole group** back to the network.
      *
-     * <p>Les deux machines d'une paire portent la même recette. Ne vider qu'un côté
-     * laisserait une automatisation à moitié déclarée. Le groupe part donc ensemble.
+     * <p>Both machines of a pair carry the same recipe. Emptying one side only would leave an
+     * automation half declared. The group therefore goes together.
      *
-     * <p>Si le réseau refuse un porte-recettes, faute de place, la machine le garde. Rien ne
-     * peut se perdre.
+     * <p>When the network refuses a recipe holder, for lack of room, the machine keeps it.
+     * Nothing can be lost.
      */
     public void removeHolder(int dimension, BlockPos pos) {
         IGrid grid = grid();
@@ -272,17 +271,17 @@ public class ContainerPatTerminal extends AEBaseContainer {
         refreshNow();
     }
 
-    /** Message affiché dans la fenêtre, et non dans la barre d'action. */
+    /** Message shown inside the screen, not in the action bar. */
     private void tell(String key, Object... arguments) {
         feedback = Feedback.pack(key, arguments);
         feedbackCount++;
     }
 
     /**
-     * Ouvre l'éditeur sur une recette du groupe, ou sur une recette vide.
+     * Opens the editor on a recipe of the group, or on an empty recipe.
      *
-     * <p>Les mêmes vérifications que pour la suppression s'appliquent : la machine doit être
-     * sur cette grille, et le joueur doit avoir le droit {@code BUILD}.
+     * <p>The same checks as for removal apply: the machine must be on this grid, and the
+     * player must hold the {@code BUILD} permission.
      */
     public void openEditor(int dimension, BlockPos pos, int index) {
         IGrid grid = grid();
@@ -306,7 +305,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
         terminal.openEditor(player);
     }
 
-    /** Force l'envoi d'un nouvel instantané, pour que le joueur voie le changement aussitôt. */
+    /** Forces a new snapshot to be sent, so the player sees the change right away. */
     private void refreshNow() {
         ticks = 0;
         lastSent = null;

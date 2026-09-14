@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Lecture et ecriture de PNG, sans dependance. Sert aux outils de texture."""
+"""PNG reading and writing, with no dependency. Used by the texture tools."""
 import zlib, struct
 
 

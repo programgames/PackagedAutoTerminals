@@ -12,41 +12,41 @@ import thelm.packagedauto.api.IRecipeList;
 import thelm.packagedauto.api.IRecipeListItem;
 
 /**
- * Écrit une recette dans les porte-recettes d'un groupe de machines.
+ * Writes a recipe into the recipe holders of a machine group.
  *
- * <p>PackagedAuto exige la **même** recette dans le Packager et dans l'Unpackager. Modifier
- * un seul côté casse l'automatisation en silence. Toute écriture passe donc par ici, et
- * s'applique à toutes les machines du groupe.
+ * <p>PackagedAuto requires the **same** recipe in the Packager and in the Unpackager.
+ * Editing one side only breaks the automation silently. Every write therefore goes through
+ * here, and applies to all machines of the group.
  *
- * <p>Chaque écriture se termine par {@code setPatternStack}. C'est cet appel, et lui seul,
- * qui déclenche {@code updatePatternList} puis {@code postPatternChange} chez PackagedAuto.
- * Voir docs/PACKAGEDAUTO-MODEL.md, section 7.2.
+ * <p>Each write ends with {@code setPatternStack}. That call, and only that call, triggers
+ * {@code updatePatternList} then {@code postPatternChange} in PackagedAuto. See
+ * docs/PACKAGEDAUTO-MODEL.md, section 7.2.
  */
 public final class RecipeWriter {
 
     private RecipeWriter() {}
 
-    /** Résultat d'une écriture de groupe. */
+    /** Result of a group write. */
     public static final class Result {
-        /** Machines réellement modifiées. */
+        /** Machines actually changed. */
         public int changed;
-        /** Machines écartées faute de porte-recettes disponible. */
+        /** Machines skipped for lack of an available recipe holder. */
         public int withoutHolder;
     }
 
     /**
-     * Applique un changement à chaque machine de la liste.
+     * Applies a change to every machine in the list.
      *
-     * <p>Une machine du groupe qui ne porte **pas** la recette visée la reçoit quand même,
-     * lors d'une modification. C'est tout l'intérêt : réparer une paire désynchronisée d'un
-     * seul geste. Sans cette règle, la machine en retard resterait en retard.
+     * <p>A machine of the group that does **not** carry the target recipe receives it anyway
+     * on an edit. That is the whole point: repairing an out-of-sync pair in one gesture.
+     * Without this rule, the machine left behind would stay behind.
      *
-     * <p>Une machine **sans porte-recettes est laissée intacte**, et comptée dans
-     * {@link Result#withoutHolder}. Le terminal le dit, mais ne prend rien dans le réseau de
-     * lui-même : sortir un objet du stockage est une décision du joueur.
+     * <p>A machine **without a recipe holder is left untouched**, and counted in
+     * {@link Result#withoutHolder}. The terminal reports it, but takes nothing from the
+     * network on its own: pulling an item out of storage is the player's decision.
      *
-     * @param oldRecipe recette visée. {@code null} pour un ajout.
-     * @param newRecipe recette à écrire. {@code null} pour une suppression.
+     * @param oldRecipe target recipe. {@code null} for an addition.
+     * @param newRecipe recipe to write. {@code null} for a removal.
      */
     public static Result apply(IGrid grid, IActionSource source, List<ProviderSnapshot> machines,
                                IRecipeInfo oldRecipe, IRecipeInfo newRecipe) {
@@ -78,8 +78,8 @@ public final class RecipeWriter {
 
         ItemStack holder = machine.getPatternStack();
         if (holder.isEmpty()) {
-            // Une suppression n'a rien à faire sur une machine vide ; une écriture, elle,
-            // exige un porte-recettes que le joueur aura posé lui-même.
+            // A removal has nothing to do on an empty machine; a write, on the other hand,
+            // needs a recipe holder that the player put there themselves.
             return newRecipe == null ? Outcome.UNCHANGED : Outcome.NO_HOLDER;
         }
         if (!(holder.getItem() instanceof IRecipeListItem)) {
@@ -103,7 +103,7 @@ public final class RecipeWriter {
         } else if (index >= 0) {
             recipes.set(index, newRecipe);
         } else {
-            // La machine ne porte pas encore cette recette : elle la reçoit.
+            // The machine does not carry this recipe yet: it receives it.
             if (indexOf(recipes, newRecipe) >= 0) {
                 return Outcome.UNCHANGED;
             }

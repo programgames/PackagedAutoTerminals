@@ -4,12 +4,12 @@ import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 
 /**
- * API publique de Mouse Tweaks, requise à la compilation seulement.
+ * Public Mouse Tweaks API, required at compile time only.
  *
- * <p>Motif : {@code appeng.client.gui.AEBaseGui} implémente cette interface. Sans elle sur
- * le chemin de compilation, toute classe qui hérite d'AEBaseGui échoue sur
- * {@code cannot access IMTModGuiContainer2}. Mouse Tweaks publie cette API pour que les
- * mods l'embarquent. Les signatures reprennent exactement l'original.
+ * <p>Reason: {@code appeng.client.gui.AEBaseGui} implements this interface. Without it on the
+ * compile path, every class that extends AEBaseGui fails with
+ * {@code cannot access IMTModGuiContainer2}. Mouse Tweaks publishes this API so that mods can
+ * bundle it. The signatures match the original exactly.
  */
 public interface IMTModGuiContainer2 {
 

@@ -37,15 +37,15 @@ import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.IRecipeType;
 
 /**
- * Liste des machines et de leurs recettes.
+ * List of the machines and of their recipes.
  *
- * <p>Trois règles de mise en page, issues de l'échec de la première version :
+ * <p>Three layout rules, learned from the failure of the first version:
  *
  * <ol>
- *   <li>une seule ligne de texte par rangée. L'état de la machine va à droite, jamais sous
- *       son nom, sans quoi les deux lignes se chevauchent dans 18 pixels ;
- *   <li>la recette est en retrait, pour montrer à quelle machine elle appartient ;
- *   <li>le détail passe par l'infobulle, pas par la ligne.
+ *   <li>one single line of text per row. The machine state goes on the right, never below its
+ *       name, otherwise the two lines overlap inside 18 pixels;
+ *   <li>the recipe is indented, to show which machine it belongs to;
+ *   <li>detail goes into the tooltip, not into the line.
  * </ol>
  */
 public class GuiPatTerminal extends AEBaseGui {
@@ -56,59 +56,59 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int LIST_TOP = ContainerPatTerminal.LIST_TOP;
     private static final int LIST_WIDTH = ContainerPatTerminal.LIST_WIDTH;
 
-    /** Décalage du texte pour centrer une ligne de 8 pixels dans une rangée de 18. */
+    /** Text offset, to centre an 8 pixel line inside an 18 pixel row. */
     private static final int TEXT_OFFSET = 5;
     /**
-     * Retrait d'une rangée de recette.
+     * Indent of a recipe row.
      *
-     * <p>Il vaut vingt pixels depuis l'arrivée du chevron de pliage : l'icône du groupe a
-     * reculé de dix pixels, et une recette doit rester en retrait derrière elle.
+     * <p>It is twenty pixels since the collapse chevron arrived: the group icon moved ten
+     * pixels to the right, and a recipe must stay indented behind it.
      */
     private static final int INDENT = 20;
 
-    /** Chevron de pliage : bord gauche, et largeur. */
+    /** Collapse chevron: left edge, and size. */
     private static final int CHEVRON_LEFT = LIST_LEFT + 2;
     private static final int CHEVRON_SIZE = 8;
     private static final int CHEVRON_U = 330;
     private static final int CHEVRON_V = 20;
-    /** Le second chevron, celui du groupe déplié, suit le premier sur la planche. */
+    /** The second chevron, the expanded one, sits next to the first on the sheet. */
     private static final int CHEVRON_OPEN_U = CHEVRON_U + 10;
 
-    /** Icône du groupe, et début de son nom, après le chevron. */
+    /** Group icon, and start of its name, after the chevron. */
     private static final int GROUP_ICON = LIST_LEFT + 12;
     private static final int GROUP_TEXT = LIST_LEFT + 32;
 
     private static final int COLOR_TEXT = 0x404040;
     private static final int COLOR_DIM = 0x808080;
     private static final int COLOR_WARNING = 0x803030;
-    /** Voile posé sur la machine absente du réseau. */
+    /** Veil drawn over a machine absent from the network. */
     private static final int COLOR_ABSENT = 0x80404040;
-    /** E4 : une rangée sur deux, très légèrement assombrie. */
+    /** E4: every other row, very slightly darkened. */
     private static final int COLOR_STRIPE = 0x14000000;
-    /** E1 : rangée survolée. */
+    /** E1: hovered row. */
     private static final int COLOR_HOVER = 0x4066A0D0;
 
-    /** E3 : croix qui vide la recherche, à l'intérieur du champ. */
+    /** E3: cross that clears the search, inside the field. */
     private static final int CLEAR_LEFT =
             ContainerPatTerminal.SEARCH_LEFT + ContainerPatTerminal.SEARCH_WIDTH - 12;
     private static final int CLEAR_TOP = ContainerPatTerminal.SEARCH_TOP + 2;
     private static final int CLEAR_SIZE = 9;
 
-    /** Icône « œil » : position dans la planche, et taille. */
+    /** "Eye" icon: position on the sheet, and size. */
     private static final int LOCATE_U = 330;
     private static final int LOCATE_V = 4;
     private static final int LOCATE_SIZE = 12;
-    /** Durée d'affichage d'un message, en millisecondes. */
+    /** How long a message stays on screen, in milliseconds. */
     private static final long MESSAGE_DURATION = 3_000L;
     private static final int COLOR_OK = 0x2E7D32;
-    /** Taille de la planche, en pixels. */
+    /** Sheet size, in pixels. */
     private static final int SHEET = 512;
-    /** Texte des champs de saisie, clair sur leur fond sombre. */
+    /** Text of the input fields, light on their dark background. */
     private static final int COLOR_FIELD_TEXT = 0xE0E0E0;
-    /** Bord gauche du bouton, dans la rangée d'un groupe. */
+    /** Left edge of the button, inside a group row. */
     /**
-     * L'œil, le nom du type et l'icône de la machine partagent le **même** bord droit.
-     * Sans cela, la colonne de droite ondulait de deux pixels d'une rangée à l'autre.
+     * The eye, the type name and the machine icon share the **same** right edge. Without
+     * that, the right column wobbled by two pixels from one row to the next.
      */
     private static final int LOCATE_LEFT = LIST_LEFT + LIST_WIDTH - LOCATE_SIZE - 4;
 
@@ -117,15 +117,15 @@ public class GuiPatTerminal extends AEBaseGui {
     private final ContainerPatTerminal terminalContainer;
     private GuiTextField search;
     private GuiButton viewButton;
-    /** Faux : onglet des patterns. Vrai : onglet des machines. */
+    /** False: patterns tab. True: machines tab. */
     private boolean machinesView;
     /**
-     * Groupes dépliés à la main, par leur clé.
+     * Groups expanded by hand, by their key.
      *
-     * <p>La liste s'ouvre toujours pliée : cet ensemble part donc vide, et il ne quitte
-     * jamais le client. Un groupe n'a pas d'identité stable — il se recompose à chaque
-     * scan — donc la clé est la **plus petite** position de ses machines, qui ne dépend pas
-     * de l'ordre du scan.
+     * <p>The list always opens collapsed: this set therefore starts empty, and it never
+     * leaves the client. A group has no stable identity — it is rebuilt on every scan — so
+     * the key is the **smallest** position of its machines, which does not depend on the scan
+     * order.
      */
     private final Set<Long> expanded = new HashSet<>();
     private int lastFeedbackCount;
@@ -145,22 +145,22 @@ public class GuiPatTerminal extends AEBaseGui {
     public void initGui() {
         super.initGui();
 
-        // Le fond du champ est dessiné dans la planche : le widget ne peint que le texte.
-        // PIÈGE : tout texte du jeu est dessiné avec une ombre portée. Sur un panneau clair,
-        // elle se lit comme une seconde lettre décalée d'un pixel, et la saisie paraît
-        // floue. Le fond du champ est donc sombre, et le texte clair, comme chez AE2.
+        // The field background is drawn on the sheet: the widget only paints the text.
+        // PITFALL: every piece of game text is drawn with a drop shadow. On a light panel it
+        // reads as a second letter offset by one pixel, and the input looks blurry. The field
+        // background is therefore dark, and the text light, as in AE2.
         String previous = search == null ? "" : search.getText();
         search = new GuiTextField(0, fontRenderer,
                 guiLeft + ContainerPatTerminal.SEARCH_LEFT + 3,
                 guiTop + ContainerPatTerminal.SEARCH_TOP + 3,
-                // E3 : la largeur laisse dix pixels à la croix, toujours, pour que le
-                // texte saisi ne passe jamais dessous.
+                // E3: the width always leaves ten pixels for the cross, so the typed text
+                // never runs underneath it.
                 ContainerPatTerminal.SEARCH_WIDTH - 16, 8);
         search.setEnableBackgroundDrawing(false);
         search.setMaxStringLength(64);
         search.setTextColor(COLOR_FIELD_TEXT);
         search.setText(previous);
-        // Le champ prend le focus tout de suite : le joueur ouvre le terminal pour chercher.
+        // The field takes focus right away: the player opens the terminal to search.
         search.setFocused(true);
 
         buttonList.clear();
@@ -177,9 +177,9 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * La planche dessine seize rangées ; la fenêtre n'en montre que {@code ROWS}. Le haut se
-     * copie tel quel, puis le bas de la planche vient se poser juste sous la dernière
-     * rangée affichée. Changer le nombre de rangées ne demande donc pas de redessiner.
+     * The sheet draws sixteen rows; the screen only shows {@code ROWS}. The top is copied as
+     * it is, then the bottom of the sheet is placed right under the last displayed row.
+     * Changing the row count therefore needs no redrawing.
      */
     @Override
     public void drawBG(int offsetX, int offsetY, int mouseX, int mouseY) {
@@ -196,30 +196,30 @@ public class GuiPatTerminal extends AEBaseGui {
 
     @Override
     public void drawFG(int offsetX, int offsetY, int mouseX, int mouseY) {
-        // Sans l'onglet Machines, le bouton n'existe pas : le titre reprend sa place.
+        // Without the Machines tab, the button does not exist: the title takes its place.
         if (!PatConfig.machinesTab) {
-            // La place va jusqu'au champ de recherche, et non jusqu'à la largeur de
-            // l'ancien bouton : celui-ci n'existe plus dans ce mode.
+            // The space reaches the search field, not the width of the old button: that
+            // button does not exist in this mode.
             fontRenderer.drawString(
                     trim(I18n.format("gui.packagedautoterminals.pat_terminal"),
                             ContainerPatTerminal.SEARCH_LEFT - 6 - LIST_LEFT),
                     LIST_LEFT, 6, COLOR_TEXT);
         }
 
-        // Libellé de l'inventaire, et résumé du réseau. Le résumé parle au joueur ; la
-        // taille du paquet, qui ne dit rien à personne, passe dans l'infobulle. Elle sert à
-        // trancher la révision R2.
-        // Le résumé occupe toute la ligne. Le libellé « Inventaire » a disparu : il tenait
-        // la moitié de la place, et n'apprenait rien à personne.
+        // Inventory label, and network summary. The summary speaks to the player; the packet
+        // size, which means nothing to anyone, goes into the tooltip. It serves to settle
+        // revision R2.
+        // The summary takes the whole line. The "Inventory" label is gone: it took half the
+        // space, and taught nobody anything.
         int summaryY = ContainerPatTerminal.PLAYER_INVENTORY_TOP - 11;
 
-        // Les rangées se construisent avant le résumé : le compteur de résultats en dépend.
+        // The rows are built before the summary: the result counter depends on them.
         List<Line> lines = buildLines();
         getScrollBar().setRange(0, Math.max(0, lines.size() - ROWS), 2);
 
-        // Le message prend la place du résumé pendant trois secondes. La ligne de titre est
-        // déjà prise par l'onglet et la recherche, et la barre d'action du jeu se dessine
-        // sous la fenêtre, donc hors de vue.
+        // The message takes the place of the summary for three seconds. The title line is
+        // already taken by the tab and the search, and the game action bar is drawn below the
+        // screen, hence out of sight.
         String message = currentMessage();
         if (message != null) {
             fontRenderer.drawString(trim(message, LIST_WIDTH), LIST_LEFT, summaryY,
@@ -229,16 +229,16 @@ public class GuiPatTerminal extends AEBaseGui {
             drawResultCount(lines, summaryY);
         }
 
-        // E3 : la croix ne se montre que s'il y a quelque chose à effacer.
+        // E3: the cross only shows when there is something to clear.
         if (hasQuery()) {
             fontRenderer.drawString("×", CLEAR_LEFT + 2, CLEAR_TOP, COLOR_FIELD_TEXT);
         }
 
         if (lines.isEmpty()) {
-            // Le message est découpé à la largeur du cadre : sinon il déborde sur
-            // l'ascenseur, puis hors de la fenêtre.
-            // Deux causes, deux messages : le réseau est vide, ou la recherche ne donne
-            // rien. Les confondre envoyait le joueur vérifier ses câbles pour rien.
+            // The message is wrapped to the frame width: otherwise it spills over the
+            // scrollbar, then out of the screen.
+            // Two causes, two messages: the network is empty, or the search returns nothing.
+            // Mixing them up sent the player checking their cables for nothing.
             boolean filtered = search != null && !search.getText().trim().isEmpty();
             List<String> wrapped = fontRenderer.listFormattedStringToWidth(
                     I18n.format(filtered
@@ -252,12 +252,12 @@ public class GuiPatTerminal extends AEBaseGui {
         }
 
         int first = getScrollBar().getCurrentScroll();
-        // Les coordonnées de la souris sont absolues, le dessin est relatif à la fenêtre.
+        // Mouse coordinates are absolute, drawing is relative to the screen.
         int hoverRow = rowUnder(mouseX - offsetX, mouseY - offsetY);
 
-        // E4 puis E1. Les deux bandes passent **avant** le texte, sans quoi elles le
-        // recouvriraient. Le zébrage suit l'indice absolu de la rangée, et non sa place à
-        // l'écran : sans cela, le motif sauterait à chaque cran de l'ascenseur.
+        // E4 then E1. Both bands are drawn **before** the text, otherwise they would cover
+        // it. The striping follows the absolute row index, not its place on screen: without
+        // that, the pattern would jump on every scrollbar notch.
         for (int row = 0; row < ROWS && first + row < lines.size(); row++) {
             int top = LIST_TOP + row * ROW_HEIGHT;
             if ((first + row) % 2 == 1) {
@@ -300,13 +300,13 @@ public class GuiPatTerminal extends AEBaseGui {
         }
 
         if (line.isGroupHeader()) {
-            // Un groupe sans recette n'a rien à déplier : il ne porte pas de chevron, pour
-            // qu'aucun clic ne reste sans effet.
+            // A group with no recipe has nothing to expand: it carries no chevron, so no
+            // click stays without effect.
             if (!line.group.recipes.isEmpty()) {
                 bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
-                // PIÈGE : `drawTexturedModalRect` suppose une planche de 256 sur 256. La
-                // nôtre en fait 512 : toute coordonnée au-delà de 256 sortait de la plage,
-                // et le jeu dessinait un morceau du cadre à la place de l'icône.
+                // PITFALL: `drawTexturedModalRect` assumes a 256 by 256 sheet. Ours is 512:
+                // any coordinate beyond 256 fell out of range, and the game drew a piece of
+                // the frame instead of the icon.
                 drawModalRectWithCustomSizedTexture(CHEVRON_LEFT, y + 5,
                         isExpanded(line.group) ? CHEVRON_OPEN_U : CHEVRON_U, CHEVRON_V,
                         CHEVRON_SIZE, CHEVRON_SIZE, SHEET, SHEET);
@@ -320,7 +320,7 @@ public class GuiPatTerminal extends AEBaseGui {
                     LOCATE_LEFT - 4 - fontRenderer.getStringWidth(state), y + TEXT_OFFSET,
                     COLOR_DIM);
 
-            // La planche est reliée pour l'icône, puis le rendu du texte reprend la main.
+            // The sheet is bound for the icon, then text rendering takes over again.
             bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
             drawModalRectWithCustomSizedTexture(LOCATE_LEFT, y + 3, LOCATE_U, LOCATE_V,
                     LOCATE_SIZE, LOCATE_SIZE, SHEET, SHEET);
@@ -335,15 +335,15 @@ public class GuiPatTerminal extends AEBaseGui {
                 ? I18n.format("gui.packagedautoterminals.no_output")
                 : outputs.get(0).getDisplayName();
 
-        // Une recette présente d'un seul côté de la paire s'affiche en rouge : AE2 ne peut
-        // pas l'exécuter.
+        // A recipe present on only one side of the pair is shown in red: AE2 cannot run
+        // it.
         boolean complete = line.group.isComplete(line.recipe);
         IRecipeType type = line.recipe.getRecipeType();
         int textLeft = LIST_LEFT + INDENT + 20;
         int rightEdge = LIST_LEFT + LIST_WIDTH - 4;
 
-        // La machine d'exécution prend la place du nom du type : elle dit la même chose,
-        // en seize pixels, et elle se reconnaît d'un coup d'œil.
+        // The crafting machine takes the place of the type name: it says the same thing, in
+        // sixteen pixels, and it is recognised at a glance.
         ItemStack machine = CrafterTypes.iconFor(type);
         int textWidth;
         if (machine.isEmpty()) {
@@ -363,10 +363,10 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Clé d'un groupe, pour l'état de pliage.
+     * Key of a group, for the collapsed state.
      *
-     * <p>La plus petite position de ses machines. Elle ne change ni avec l'ordre du scan,
-     * ni avec l'ajout d'une machine dont la position est plus grande.
+     * <p>The smallest position of its machines. It changes neither with the scan order, nor
+     * when a machine with a larger position is added.
      */
     private static long keyOf(ProviderPairing.Group group) {
         long key = Long.MAX_VALUE;
@@ -380,7 +380,7 @@ public class GuiPatTerminal extends AEBaseGui {
         return expanded.contains(keyOf(group));
     }
 
-    /** Une machine capable d'exécuter ce type est-elle posée sur le réseau ? */
+    /** Is a machine able to run this type placed on the network? */
     private boolean onNetwork(IRecipeType type) {
         String machineClass = CrafterTypes.machineClassFor(type);
         if (machineClass == null) {
@@ -395,10 +395,10 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Assombrit une icône de seize pixels : la machine n'est pas sur le réseau.
+     * Darkens a sixteen pixel icon: the machine is not on the network.
      *
-     * <p>Le voile est repoussé en avant. Sans ce décalage, il passerait **sous** l'objet,
-     * que le jeu dessine déjà à une centaine d'unités de profondeur.
+     * <p>The veil is pushed forward. Without that offset it would go **under** the item,
+     * which the game already draws about a hundred units deep.
      */
     private void dim(int x, int y) {
         GlStateManager.pushMatrix();
@@ -408,21 +408,22 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Place laissée au nom, entre sa marge gauche et le texte aligné à droite.
+     * Space left for the name, between its left margin and the right-aligned text.
      *
-     * <p>Ces largeurs étaient écrites en dur, et venaient de la fenêtre de 256 pixels. Depuis
-     * l'agrandissement à 320, un nom se coupait au milieu d'une zone restée vide. Le calcul
-     * suit désormais la largeur réelle du texte de droite, quelle que soit la traduction.
+     * <p>These widths used to be hard coded, and came from the 256 pixel screen. Since the
+     * widening to 320, a name was trimmed in the middle of an area that stayed empty. The
+     * computation now follows the real width of the right-hand text, whatever the
+     * translation.
      */
     private int budget(int left, String right, int rightEdge) {
         return rightEdge - fontRenderer.getStringWidth(right) - 6 - left;
     }
 
     /**
-     * E3 : nombre de recettes trouvées, aligné à droite du résumé.
+     * E3: number of recipes found, aligned to the right of the summary.
      *
-     * <p>Il ne s'affiche que pendant une recherche. Hors recherche, le résumé du réseau dit
-     * déjà tout, et un second compte ferait doublon.
+     * <p>It only shows during a search. Outside a search the network summary already says
+     * everything, and a second count would duplicate it.
      */
     private void drawResultCount(List<Line> lines, int y) {
         if (!hasQuery()) {
@@ -441,12 +442,12 @@ public class GuiPatTerminal extends AEBaseGui {
                 LIST_LEFT + LIST_WIDTH - fontRenderer.getStringWidth(text), y, COLOR_DIM);
     }
 
-    /** La recherche porte-t-elle un texte ? */
+    /** Does the search carry any text? */
     private boolean hasQuery() {
         return search != null && !search.getText().isEmpty();
     }
 
-    /** Texte aligné à droite de la zone de liste. */
+    /** Text aligned to the right of the list area. */
     private void drawRight(String text, int y, int color) {
         fontRenderer.drawString(text,
                 LIST_LEFT + LIST_WIDTH - 4 - fontRenderer.getStringWidth(text),
@@ -454,10 +455,10 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Message du serveur, affiché sous la ligne de titre.
+     * Server message, shown below the title line.
      *
-     * <p>Il remplace la barre d'action du jeu, qui se dessine **sous** la fenêtre et passait
-     * donc inaperçue.
+     * <p>It replaces the game action bar, which is drawn **below** the screen and therefore
+     * went unnoticed.
      */
     private String currentMessage() {
         if (terminalContainer.feedbackCount != lastFeedbackCount) {
@@ -465,7 +466,7 @@ public class GuiPatTerminal extends AEBaseGui {
             message = I18n.format(Feedback.key(terminalContainer.feedback),
                     Feedback.arguments(terminalContainer.feedback));
             messageExpiry = System.currentTimeMillis() + MESSAGE_DURATION;
-            // Un refus se reconnaît à sa clé : rien à traduire pour le savoir.
+            // A refusal is recognised by its key: no translation needed to tell.
             messageRefused = terminalContainer.feedback.contains("no_")
                     || terminalContainer.feedback.contains("failed");
         }
@@ -476,10 +477,10 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Étiquette d'un groupe.
+     * Label of a group.
      *
-     * <p>Le nom donné par le joueur prime. Sinon, une paire s'annonce comme telle : c'est
-     * plus parlant que « Packager +1 », et cela ne dépend pas de la longueur des noms.
+     * <p>The name given by the player wins. Otherwise a pair announces itself as one: that
+     * says more than "Packager +1", and it does not depend on the length of the names.
      */
     private String groupTitle(ProviderPairing.Group group) {
         String custom = group.customName();
@@ -495,7 +496,7 @@ public class GuiPatTerminal extends AEBaseGui {
         return I18n.format("gui.packagedautoterminals.group_of", group.size());
     }
 
-    /** État d'un groupe : nombre de recettes, ou rôle manquant. */
+    /** State of a group: recipe count, or missing role. */
     private String groupState(ProviderPairing.Group group) {
         if (group.recipes.isEmpty()) {
             return I18n.format("gui.packagedautoterminals.no_recipe_yet");
@@ -532,18 +533,18 @@ public class GuiPatTerminal extends AEBaseGui {
     @Override
     public void updateScreen() {
         super.updateScreen();
-        // Sans cet appel, le trait du curseur ne clignote jamais : le joueur croit que le
-        // champ n'a pas le focus.
+        // Without this call the caret never blinks: the player believes the field does not
+        // have focus.
         search.updateCursorCounter();
     }
 
     /**
-     * Le champ de recherche se dessine ici, et non dans {@code drawFG}.
+     * The search field is drawn here, and not in {@code drawFG}.
      *
-     * <p>PIÈGE corrigé : il porte des coordonnées **absolues**, car {@code mouseClicked} lui
-     * transmet des coordonnées absolues. Or {@code drawFG} dessine dans un repère déjà
-     * décalé à l'angle de la fenêtre. Le texte partait donc deux fois plus loin, hors de
-     * l'écran : ni le texte saisi, ni le curseur n'étaient visibles.
+     * <p>PITFALL fixed: it carries **absolute** coordinates, because {@code mouseClicked}
+     * hands it absolute coordinates. But {@code drawFG} draws in a frame already shifted to
+     * the corner of the screen. The text therefore went twice as far, off screen: neither the
+     * typed text nor the caret was visible.
      */
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
@@ -553,12 +554,12 @@ public class GuiPatTerminal extends AEBaseGui {
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
-        // Le champ garde la main sur toutes les lettres, y compris celle de l'inventaire :
-        // taper « e » dans une recherche fermait la fenêtre. Seule Échap en sort.
+        // The field keeps every letter, including the inventory key: typing "e" in a search
+        // used to close the screen. Only Escape leaves it.
         if (search.isFocused() && keyCode != Keyboard.KEY_ESCAPE) {
             if (search.textboxKeyTyped(typedChar, keyCode)) {
-                // La plage de l'ascenseur est recalculée à chaque dessin ; elle se recale
-                // donc seule sur la liste filtrée.
+                // The scrollbar range is recomputed on every draw; it therefore settles on
+                // the filtered list by itself.
                 return;
             }
         }
@@ -567,23 +568,23 @@ public class GuiPatTerminal extends AEBaseGui {
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
-        // E3 : la croix passe avant le champ, sinon le clic ne ferait que placer le curseur.
+        // E3: the cross comes before the field, otherwise the click would only move the caret.
         if (hasQuery() && overClear(mouseX - guiLeft, mouseY - guiTop)) {
             search.setText("");
             search.setFocused(true);
             return;
         }
         search.mouseClicked(mouseX, mouseY, mouseButton);
-        // Clic gauche sur une machine : nouvelle recette.
-        // Clic droit sur une recette : l'éditer. Maj + clic droit : la supprimer.
+        // Left click on a machine: new recipe.
+        // Right click on a recipe: edit it. Shift + right click: delete it.
         Line clicked = machinesView ? null : lineUnder(mouseX - guiLeft, mouseY - guiTop);
         if (clicked != null && clicked.isGroupHeader()
                 && overLocate(mouseX - guiLeft, mouseY - guiTop)) {
             locate(clicked.group);
             return;
         }
-        // Le chevron passe avant tout : sans cette sortie, le même clic créerait aussi une
-        // recette, car la ligne d'un groupe répond déjà au clic gauche.
+        // The chevron comes first: without this early return, the same click would also
+        // create a recipe, because a group row already answers the left click.
         if (clicked != null && clicked.isGroupHeader() && mouseButton == 0
                 && !clicked.group.recipes.isEmpty()
                 && overChevron(mouseX - guiLeft, mouseY - guiTop)) {
@@ -611,26 +612,26 @@ public class GuiPatTerminal extends AEBaseGui {
         super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
-    /** La souris est-elle sur la croix de la recherche ? Coordonnées relatives. */
+    /** Is the mouse over the search cross? Relative coordinates. */
     private boolean overClear(int x, int y) {
         return x >= CLEAR_LEFT && x < CLEAR_LEFT + CLEAR_SIZE
                 && y >= CLEAR_TOP && y < CLEAR_TOP + CLEAR_SIZE;
     }
 
-    /** La souris est-elle sur le chevron de la rangée survolée ? Coordonnées relatives. */
+    /** Is the mouse over the chevron of the hovered row? Relative coordinates. */
     private boolean overChevron(int x, int y) {
         int row = rowUnder(x, y);
         if (row < 0) {
             return false;
         }
-        // La zone cliquable fait toute la hauteur de la rangée : un chevron de huit pixels
-        // se rate une fois sur deux.
+        // The clickable area covers the whole row height: an eight pixel chevron is missed
+        // every other time.
         int top = LIST_TOP + row * ROW_HEIGHT;
         return x >= CHEVRON_LEFT - 2 && x < CHEVRON_LEFT + CHEVRON_SIZE + 2
                 && y >= top && y < top + ROW_HEIGHT;
     }
 
-    /** La souris est-elle sur le bouton de repérage de la rangée survolée ? */
+    /** Is the mouse over the locate button of the hovered row? */
     private boolean overLocate(int x, int y) {
         int row = rowUnder(x, y);
         if (row < 0) {
@@ -642,9 +643,9 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Fait clignoter les machines du groupe, et ferme la fenêtre.
+     * Blinks the machines of the group, and closes the screen.
      *
-     * <p>Sans la fermeture, le joueur ne verrait pas le monde, donc rien du tout.
+     * <p>Without the close, the player would not see the world, hence nothing at all.
      */
     private void locate(ProviderPairing.Group group) {
         List<BlockPos> positions = new ArrayList<>();
@@ -660,7 +661,7 @@ public class GuiPatTerminal extends AEBaseGui {
                 new PacketRecipeAction(anchor.dimension, anchor.pos, index, action));
     }
 
-    /** Rangée affichée sous la souris, ou {@code null}. Coordonnées relatives. */
+    /** Displayed row under the mouse, or {@code null}. Relative coordinates. */
     private Line lineUnder(int x, int y) {
         int row = rowUnder(x, y);
         if (row < 0) {
@@ -671,7 +672,7 @@ public class GuiPatTerminal extends AEBaseGui {
         return index < lines.size() ? lines.get(index) : null;
     }
 
-    /** Rangée sous la souris, ou -1. Les coordonnées sont relatives à la fenêtre. */
+    /** Row under the mouse, or -1. Coordinates are relative to the screen. */
     private int rowUnder(int x, int y) {
         if (x < LIST_LEFT || x > LIST_LEFT + LIST_WIDTH) {
             return -1;
@@ -709,8 +710,8 @@ public class GuiPatTerminal extends AEBaseGui {
             }
             ProviderRole missing = ProviderPairing.missingRoleOf(line.group);
             if (missing != null) {
-                // Ce message ne s'affiche que si le groupe porte au moins une recette :
-                // `missingRoleOf` rend `null` sur un groupe vide.
+                // This message only shows when the group carries at least one recipe:
+                // `missingRoleOf` returns `null` on an empty group.
                 lines.add(TextFormatting.RED + I18n.format(
                         "gui.packagedautoterminals.missing_group_help",
                         I18n.format("gui.packagedautoterminals.role_"
@@ -729,8 +730,8 @@ public class GuiPatTerminal extends AEBaseGui {
             return lines;
         }
 
-        // Les entrées et les sorties ne figurent plus ici : la liste sert à retrouver une
-        // recette, l'éditeur à la lire en détail.
+        // Inputs and outputs no longer appear here: the list serves to find a recipe, the
+        // editor to read it in detail.
         lines.add(line.recipe.getRecipeType().getLocalizedName());
         lines.add(machineHint(line.recipe.getRecipeType()));
         if (!line.group.isComplete(line.recipe)) {
@@ -746,11 +747,11 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Ligne d'infobulle sur la machine d'exécution.
+     * Tooltip line about the crafting machine.
      *
-     * <p>Trois cas, trois phrases : la machine est là, la machine manque au réseau, ou le
-     * type n'exige aucune machine. Le troisième cas concerne {@code processing}, qui envoie
-     * son colis vers un inventaire quelconque.
+     * <p>Three cases, three sentences: the machine is there, the machine is missing from the
+     * network, or the type needs no machine. The third case covers {@code processing}, which
+     * sends its package to any inventory.
      */
     private String machineHint(IRecipeType type) {
         ItemStack machine = CrafterTypes.iconFor(type);
@@ -766,11 +767,11 @@ public class GuiPatTerminal extends AEBaseGui {
                 "gui.packagedautoterminals.machine_absent", machine.getDisplayName());
     }
 
-    /** Résumé lisible du réseau : machines porteuses et recettes encodées. */
+    /** Readable network summary: providing machines and encoded recipes. */
     private String networkSummary() {
-        // Les recettes sont comptées **par groupe**, et non par machine. Une paire porte la
-        // même recette des deux côtés : la compter deux fois annonçait quatre recettes là
-        // où la liste en montrait deux.
+        // Recipes are counted **per group**, not per machine. A pair carries the same recipe
+        // on both sides: counting it twice reported four recipes where the list showed
+        // two.
         int recipes = 0;
         for (ProviderPairing.Group group
                 : ProviderPairing.group(terminalContainer.providers)) {
@@ -793,7 +794,7 @@ public class GuiPatTerminal extends AEBaseGui {
         if (!machine.holderPresent) {
             return I18n.format("gui.packagedautoterminals.no_holder");
         }
-        // Le singulier a sa propre clé : « 1 recettes » se voit tout de suite en jeu.
+        // The singular has its own key: "1 recipes" stands out at once in game.
         int count = machine.recipes.size();
         return I18n.format(count == 1
                 ? "gui.packagedautoterminals.recipe"
@@ -808,11 +809,11 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Construit les rangées affichées, filtrées par la recherche.
+     * Builds the displayed rows, filtered by the search.
      *
-     * <p>Une machine reste visible si son nom correspond, ou si l'une de ses recettes
-     * correspond. Sans cette règle, une recette trouvée apparaîtrait sans sa machine, et le
-     * joueur ne saurait pas où elle se trouve.
+     * <p>A machine stays visible when its name matches, or when one of its recipes matches.
+     * Without this rule, a recipe found would appear without its machine, and the player
+     * would not know where it sits.
      */
     private List<Line> buildLines() {
         Query query = Query.parse(search == null ? "" : search.getText());
@@ -820,11 +821,11 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Recherche découpée en critères.
+     * Search split into criteria.
      *
-     * <p>Trois préfixes, repris des terminaux d'AE2 et de JEI : {@code @} vise le mod
-     * d'origine, {@code #} vise le type de recette, et le reste est cherché dans les noms.
-     * Tous les critères doivent être satisfaits à la fois.
+     * <p>Three prefixes, taken from the AE2 and JEI terminals: {@code @} targets the source
+     * mod, {@code #} targets the recipe type, and the rest is searched in the names. All
+     * criteria must be satisfied at once.
      */
     private static final class Query {
         final List<String> text = new ArrayList<>();
@@ -854,10 +855,10 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Onglet Machines : les crafters du réseau, précédés des recettes orphelines.
+     * Machines tab: the crafters of the network, preceded by the orphan recipes.
      *
-     * <p>Une recette est orpheline quand aucun crafter du réseau ne sait exécuter son type.
-     * C'est l'erreur la plus fréquente en jeu, et aucun autre mod ne la signale.
+     * <p>A recipe is an orphan when no crafter on the network can run its type. That is the
+     * most frequent mistake in game, and no other mod reports it.
      */
     private List<Line> buildMachineLines(Query query) {
         List<Line> lines = new ArrayList<>();
@@ -883,8 +884,8 @@ public class GuiPatTerminal extends AEBaseGui {
             lines.add(Line.warning(I18n.format("gui.packagedautoterminals.orphan", type)));
         }
 
-        // Les crafters d'abord, puis les aiguilleurs. Un Proxy ressemble à un crafter dans
-        // une liste à plat, alors qu'il ne fabrique rien.
+        // Crafters first, then routers. In a flat list a Proxy looks like a crafter, while
+        // it builds nothing.
         List<Line> crafters = new ArrayList<>();
         List<Line> routers = new ArrayList<>();
         for (MachineSnapshot machine : terminalContainer.machines) {
@@ -910,11 +911,11 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Onglet Patterns : un en-tête par groupe de machines, puis ses recettes, une seule fois.
+     * Patterns tab: one header per machine group, then its recipes, once only.
      *
-     * <p>PackagedAuto demande la même recette dans le Packager et dans l'Unpackager. Les
-     * afficher séparément montrerait deux fois la même chose, et inviterait à n'en modifier
-     * qu'une.
+     * <p>PackagedAuto needs the same recipe in the Packager and in the Unpackager. Showing
+     * them separately would display the same thing twice, and invite the player to edit only
+     * one of them.
      */
     private List<Line> buildPatternLines(Query query) {
         List<Line> lines = new ArrayList<>();
@@ -938,10 +939,10 @@ public class GuiPatTerminal extends AEBaseGui {
             }
             lines.add(Line.group(group));
 
-            // Deux règles, et une seule ligne pour les dire : hors recherche, le groupe
-            // s'ouvre au chevron ; en recherche, il s'ouvre sur le résultat trouvé. Le
-            // dépliage par la recherche ne touche pas `expanded` : vider le champ rend donc
-            // la liste à son état plié, et le joueur retrouve ce qu'il avait ouvert.
+            // Two rules, said in a single line: outside a search the group opens on the
+            // chevron; during a search it opens on the result found. Expanding through the
+            // search does not touch `expanded`: clearing the field therefore returns the list
+            // to its collapsed state, and the player finds back what they had opened.
             if (searching || isExpanded(group)) {
                 lines.addAll(recipes);
             }
@@ -949,7 +950,7 @@ public class GuiPatTerminal extends AEBaseGui {
         return lines;
     }
 
-    /** Une recette satisfait-elle **tous** les critères ? */
+    /** Does a recipe satisfy **all** the criteria? */
     private boolean matches(IRecipeInfo recipe, Query query) {
         if (query.isEmpty()) {
             return true;
@@ -977,7 +978,7 @@ public class GuiPatTerminal extends AEBaseGui {
         return true;
     }
 
-    /** Un des objets de la recette vient-il de ce mod ? */
+    /** Does one of the recipe items come from this mod? */
     private boolean hasMod(IRecipeInfo recipe, String mod) {
         for (ItemStack stack : allStacks(recipe)) {
             if (stack.getItem().getRegistryName() != null
@@ -989,7 +990,7 @@ public class GuiPatTerminal extends AEBaseGui {
         return false;
     }
 
-    /** Un des objets de la recette porte-t-il ce texte dans son nom ? */
+    /** Does one of the recipe items carry this text in its name? */
     private boolean hasText(IRecipeInfo recipe, String text) {
         for (ItemStack stack : allStacks(recipe)) {
             if (stack.getDisplayName().toLowerCase(Locale.ROOT).contains(text)) {
@@ -1025,18 +1026,17 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Une rangée affichée : soit une machine, soit une recette.
+     * A displayed row: either a machine, or a recipe.
      *
-     * <p>Une rangée de recette porte aussi sa machine et son indice dans le porte-recettes.
-     * Les ordres d'édition désignent la machine par sa **position**, jamais par son rang
-     * dans la liste : l'ordre du scan peut changer d'un rafraîchissement à l'autre.
+     * <p>A recipe row also carries its machine and its index in the recipe holder. Edit
+     * commands name the machine by its **position**, never by its rank in the list: the scan
+     * order can change from one refresh to the next.
      */
     /**
-     * Une rangée affichée.
+     * A displayed row.
      *
-     * <p>Une rangée de recette porte son **groupe** et l'indice de la recette dans ce
-     * groupe. Les ordres d'édition désignent ainsi une recette unique, et non une copie
-     * parmi deux.
+     * <p>A recipe row carries its **group** and the index of the recipe inside that group.
+     * Edit commands therefore name a single recipe, and not one copy out of two.
      */
     private static final class Line {
         final ProviderPairing.Group group;
@@ -1062,7 +1062,7 @@ public class GuiPatTerminal extends AEBaseGui {
             return new Line(null, null, -1, null, warning);
         }
 
-        /** Intertitre de l'onglet Machines : « Crafters », puis « Aiguilleurs ». */
+        /** Subheading of the Machines tab: "Crafters", then "Routers". */
         static Line section(String title) {
             Line line = new Line(null, null, -1, null, title);
             line.section = true;
@@ -1073,7 +1073,7 @@ public class GuiPatTerminal extends AEBaseGui {
             return group != null && recipe == null;
         }
 
-        /** Machine qui sert de point d'entrée aux ordres. N'importe laquelle du groupe suffit. */
+        /** Machine used as the entry point for commands. Any one of the group will do. */
         ProviderSnapshot anchor() {
             return group.machines.get(0);
         }

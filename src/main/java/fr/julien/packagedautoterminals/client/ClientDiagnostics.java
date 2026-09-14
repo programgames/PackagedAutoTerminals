@@ -17,11 +17,11 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
- * Vérifie que les ressources du mod sont bien vues par le jeu.
+ * Checks that the mod resources are actually seen by the game.
  *
- * <p>Le contrôle attend le premier tick client. Testé plus tôt, à
- * {@code FMLLoadCompleteEvent}, il donne un faux négatif : Minecraft recharge ses
- * ressources, donc ses traductions, APRÈS le chargement des mods.
+ * <p>The check waits for the first client tick. Run earlier, at
+ * {@code FMLLoadCompleteEvent}, it gives a false negative: Minecraft reloads its resources,
+ * hence its translations, AFTER the mods are loaded.
  */
 @SideOnly(Side.CLIENT)
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Side.CLIENT)
@@ -43,16 +43,16 @@ public final class ClientDiagnostics {
         String value = I18n.format(key);
         if (key.equals(value)) {
             PackagedAutoTerminals.LOGGER.error(
-                    "Les traductions du mod NE sont PAS chargees : {} reste brut.", key);
+                    "Mod translations are NOT loaded: {} stays raw.", key);
         } else {
-            PackagedAutoTerminals.LOGGER.info("Traductions chargees : {} = {}", key, value);
+            PackagedAutoTerminals.LOGGER.info("Translations loaded: {} = {}", key, value);
         }
 
         ModContainer container = Loader.instance().getIndexedModList().get(Reference.MOD_ID);
-        PackagedAutoTerminals.LOGGER.info("Source du mod : {}",
-                container == null ? "introuvable" : container.getSource());
+        PackagedAutoTerminals.LOGGER.info("Mod source: {}",
+                container == null ? "not found" : container.getSource());
 
-        PackagedAutoTerminals.LOGGER.info("Domaines de ressources : {}",
+        PackagedAutoTerminals.LOGGER.info("Resource domains: {}",
                 Minecraft.getMinecraft().getResourceManager().getResourceDomains());
 
         for (String path : new String[] {"lang/en_us.lang", "lang/fr_fr.lang",
@@ -64,9 +64,9 @@ public final class ClientDiagnostics {
             ResourceLocation location = new ResourceLocation(Reference.MOD_ID, path);
             try {
                 Minecraft.getMinecraft().getResourceManager().getResource(location);
-                PackagedAutoTerminals.LOGGER.info("  ressource TROUVEE : {}", location);
+                PackagedAutoTerminals.LOGGER.info("  resource FOUND: {}", location);
             } catch (IOException exception) {
-                PackagedAutoTerminals.LOGGER.error("  ressource ABSENTE : {}", location);
+                PackagedAutoTerminals.LOGGER.error("  resource MISSING: {}", location);
             }
         }
     }

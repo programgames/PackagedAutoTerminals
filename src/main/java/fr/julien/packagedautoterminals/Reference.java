@@ -1,6 +1,6 @@
 package fr.julien.packagedautoterminals;
 
-/** Constantes d'identité du mod. La version est injectée au build par ForgeGradle. */
+/** Mod identity constants. The version is injected at build time by ForgeGradle. */
 public final class Reference {
 
     public static final String MOD_ID = "packagedautoterminals";
@@ -8,19 +8,19 @@ public final class Reference {
     public static final String VERSION = "@MOD_VERSION@";
 
     /**
-     * Nom du canal reseau. Il ne doit jamais depasser 20 caracteres : en 1.12.2,
-     * CPacketCustomPayload lit le nom du canal avec buf.readString(20). Un nom plus
-     * long deconnecte le joueur sur un serveur dedie avec
+     * Network channel name. It must never exceed 20 characters: on 1.12.2,
+     * CPacketCustomPayload reads the channel name with buf.readString(20). A longer
+     * name disconnects the player on a dedicated server with
      * "The received string length is longer than maximum allowed".
-     * MOD_ID fait 21 caracteres, donc on ne peut pas le reutiliser ici.
+     * MOD_ID is 21 characters long, so it cannot be reused here.
      */
     public static final String CHANNEL = "pat_terminals";
 
-    /** Modid d'AE2 Unofficial Extended Life. Identique à celui d'AE2 officiel. */
+    /** Modid of AE2 Unofficial Extended Life. Same as the official AE2 one. */
     public static final String AE2 = "appliedenergistics2";
     public static final String PACKAGED_AUTO = "packagedauto";
 
-    /** Addons facultatifs. Chaque intégration se détecte par son modid (décision D07). */
+    /** Optional addons. Each integration is detected by its modid (decision D07). */
     public static final String PACKAGED_EX_CRAFTING = "packagedexcrafting";
     public static final String PACKAGED_AVARITIA = "packagedavaritia";
     public static final String PACKAGED_FLUID_CRAFTING = "packagedfluidcrafting";

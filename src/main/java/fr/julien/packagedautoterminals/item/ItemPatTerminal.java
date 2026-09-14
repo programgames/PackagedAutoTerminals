@@ -13,16 +13,16 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 /**
- * L'item qui pose la part sur un câble.
+ * The item that places the part on a cable.
  *
- * <p>Deux moitiés sont nécessaires, et l'oubli de la seconde rend l'item inerte, sans
- * aucune erreur :
+ * <p>Two halves are needed, and forgetting the second one makes the item inert, with no
+ * error at all:
  *
  * <ol>
- *   <li>{@link IPartItem#createPartFromItemStack} dit à AE2 quelle part construire ;
- *   <li>{@link #onItemUse} déclenche la pose. AE2 n'intercepte pas le clic droit pour les
- *       items d'autres mods. Sans cette redirection vers {@link PartPlacement}, le clic
- *       droit sur un câble ME ne fait rien.
+ *   <li>{@link IPartItem#createPartFromItemStack} tells AE2 which part to build;
+ *   <li>{@link #onItemUse} triggers the placement. AE2 does not intercept the right click
+ *       for items from other mods. Without this redirection to {@link PartPlacement}, right
+ *       clicking an ME cable does nothing.
  * </ol>
  */
 public class ItemPatTerminal extends Item implements IPartItem<PartPatTerminal> {

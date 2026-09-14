@@ -28,16 +28,16 @@ import net.minecraftforge.fml.common.network.IGuiHandler;
 import thelm.packagedauto.api.IRecipeInfo;
 
 /**
- * AE2 ouvre ses propres fenêtres par une énumération interne, fermée aux mods tiers. On
- * passe donc par le gestionnaire de FML.
+ * AE2 opens its own screens through an internal enum, closed to third-party mods. We
+ * therefore go through the FML handler.
  *
- * <p>L'identifiant porte la fenêtre voulue et sa source :
+ * <p>The id carries both the wanted screen and its source:
  *
  * <ul>
- *   <li>0 à 6 : terminal câblé, sur la face correspondante ;
- *   <li>10 à 16 : éditeur ouvert depuis cette part ;
- *   <li>20 : terminal sans fil. La coordonnée x porte l'emplacement d'inventaire ;
- *   <li>21 : éditeur ouvert depuis le terminal sans fil.
+ *   <li>0 to 6: wired terminal, on the matching face;
+ *   <li>10 to 16: editor opened from that part;
+ *   <li>20: wireless terminal. The x coordinate carries the inventory slot;
+ *   <li>21: editor opened from the wireless terminal.
  * </ul>
  */
 public class PatGuiHandler implements IGuiHandler {
@@ -48,13 +48,13 @@ public class PatGuiHandler implements IGuiHandler {
     public static final int WIRELESS_EDITOR = 21;
 
     /**
-     * Cible de l'édition en cours, par joueur.
+     * Target of the current edit, per player.
      *
-     * <p>Motif : {@code openGui} ne transporte que trois entiers, déjà pris par la position
-     * ou l'emplacement d'inventaire. La machine visée et le rang de la recette passent donc
-     * par ici. Le serveur écrit l'entrée juste avant d'ouvrir la fenêtre, et la relit
-     * aussitôt. Le contexte du terminal, lui, se reconstruit depuis l'identifiant : il n'a
-     * pas besoin de cette table.
+     * <p>Reason: {@code openGui} only carries three integers, already taken by the position
+     * or the inventory slot. The target machine and the recipe index therefore go through
+     * here. The server writes the entry just before opening the screen, and reads it back
+     * right away. The terminal context, on the other hand, is rebuilt from the id: it does
+     * not need this table.
      */
     private static final Map<UUID, EditTarget> PENDING = new HashMap<>();
 
@@ -100,7 +100,7 @@ public class PatGuiHandler implements IGuiHandler {
         if (!isEditor(id)) {
             return new GuiPatTerminal(player.inventory, context);
         }
-        // Le client ignore la cible : seul le serveur l'utilise, au moment d'écrire.
+        // The client ignores the target: only the server uses it, at write time.
         return new GuiPatEditor(player.inventory, context,
                 new EditorInventory(world, null), 0, BlockPos.ORIGIN, -1);
     }
@@ -109,7 +109,7 @@ public class PatGuiHandler implements IGuiHandler {
         return id == WIRELESS_EDITOR || (id >= EDITOR && id < WIRELESS);
     }
 
-    /** Reconstruit la source du terminal à partir de l'identifiant. */
+    /** Rebuilds the terminal source from the id. */
     private static TerminalContext context(int id, EntityPlayer player, World world,
                                            int x, int y, int z) {
         if (id >= WIRELESS) {
@@ -127,16 +127,16 @@ public class PatGuiHandler implements IGuiHandler {
     }
 
     /**
-     * Construit l'objet de fenêtre sans fil d'AE2.
+     * Builds the AE2 wireless screen object.
      *
-     * <p>PIÈGE : son constructeur lit la clé de liaison et appelle {@code Long.parseLong}.
-     * Sur un terminal jamais lié, la clé est vide et l'appel lève une exception. AE2 vérifie
-     * ce point avant de construire l'objet ; nous devons faire de même.
+     * <p>PITFALL: its constructor reads the link key and calls {@code Long.parseLong}. On a
+     * terminal that was never linked, the key is empty and the call throws. AE2 checks this
+     * before building the object; we must do the same.
      *
-     * <p>Deux objets peuvent ouvrir cette fenêtre : le nôtre, et le Wireless Universal
-     * Terminal réglé sur notre mode. Le gestionnaire vient donc du registre d'AE2, et non
-     * d'un transtypage vers notre classe. Tout le reste — portée, énergie, clé — passe par
-     * {@code WirelessTerminalGuiObject}, qui ne connaît que l'interface.
+     * <p>Two items can open this screen: ours, and the Wireless Universal Terminal set to
+     * our mode. The handler therefore comes from the AE2 registry, not from a cast to our
+     * class. Everything else — range, energy, key — goes through
+     * {@code WirelessTerminalGuiObject}, which only knows the interface.
      */
     private static TerminalContext wireless(EntityPlayer player, World world, int slot) {
         if (slot < 0 || slot >= player.inventory.getSizeInventory()) {
@@ -156,7 +156,7 @@ public class PatGuiHandler implements IGuiHandler {
                 new WirelessTerminalGuiObject(handler, stack, player, world, slot, 0, 0));
     }
 
-    /** Machine visée et rang de la recette. Un rang négatif signifie « nouvelle recette ». */
+    /** Target machine and recipe index. A negative index means "new recipe". */
     private static final class EditTarget {
         final int dimension;
         final BlockPos pos;

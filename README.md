@@ -1,16 +1,16 @@
 # PackagedAuto Terminals
 
-Terminaux AE2 pour consulter et modifier les recettes de **PackagedAuto** à distance,
-depuis n'importe quel point du réseau ME.
+AE2 terminals to browse and edit **PackagedAuto** recipes remotely, from anywhere on the ME
+network.
 
-- Minecraft **1.12.2**, Forge, sur base **AE2 Unofficial Extended Life**
-- Un terminal câblé, puis un terminal sans fil
-- Onglet **Patterns** : ajouter, supprimer et modifier les recettes des Packager,
-  Unpackager et Packaging Provider
-- Onglet **Machines** : diagnostic des recettes sans crafter capable de les exécuter
-- Tous les types de recettes du registre sont pris en charge, y compris ceux des addons
-  (Basic → Ultimate, Combination, Ender, Extreme)
+- Minecraft **1.12.2**, Forge, on top of **AE2 Unofficial Extended Life**
+- A wired terminal, then a wireless terminal
+- **Patterns** tab: add, remove and edit the recipes of Packagers, Unpackagers and Packaging
+  Providers
+- **Machines** tab: diagnostic of the recipes that have no crafter able to run them
+- Every recipe type in the registry is supported, including the addon ones
+  (Basic to Ultimate, Combination, Ender, Extreme)
 
-## État
+## Status
 
-Projet en préparation. Voir `docs/DECISIONS.md` et `docs/PACKAGEDAUTO-MODEL.md`.
+Project in preparation. See `docs/DECISIONS.md` and `docs/PACKAGEDAUTO-MODEL.md`.

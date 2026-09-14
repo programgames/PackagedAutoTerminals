@@ -14,11 +14,11 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 /**
- * Remplit l'éditeur depuis une recette de JEI.
+ * Fills the editor from a JEI recipe.
  *
- * <p>Le client envoie le type visé et la correspondance « emplacement → objet ». Le serveur
- * vérifie chaque emplacement avant d'écrire : une correspondance falsifiée ne peut donc pas
- * remplir un emplacement que le type n'active pas.
+ * <p>The client sends the target type and the "slot to item" mapping. The server checks each
+ * slot before writing: a forged mapping therefore cannot fill a slot the type does not
+ * enable.
  */
 public class PacketEditorFill implements IMessage {
 
@@ -76,7 +76,7 @@ public class PacketEditorFill implements IMessage {
         }
     }
 
-    /** Taille maximale acceptée, par sécurité : la grille de l'éditeur. */
+    /** Maximum size accepted, as a safety net: the editor grid. */
     public static int maxSlots() {
         return EditorInventory.SIZE;
     }

@@ -1,22 +1,22 @@
 package fr.julien.packagedautoterminals.common;
 
 /**
- * Message court renvoyé au joueur, affiché **dans** la fenêtre.
+ * Short message sent back to the player, shown **inside** the screen.
  *
- * <p>La barre d'action du jeu ne convenait pas : elle se dessine sous la fenêtre, et le
- * message y passait inaperçu.
+ * <p>The game action bar did not fit: it is drawn below the screen, and the message went
+ * unnoticed there.
  *
- * <p>Le texte voyage sous forme de clé de traduction, suivie de ses paramètres. La mise en
- * forme a lieu sur le client, dans sa propre langue.
+ * <p>The text travels as a translation key, followed by its arguments. Formatting happens on
+ * the client, in its own language.
  */
 public final class Feedback {
 
-    /** Séparateur entre la clé et ses paramètres. Aucun texte ne le contient. */
+    /** Separator between the key and its arguments. No text contains it. */
     private static final String SEPARATOR = "";
 
     private Feedback() {}
 
-    /** Assemble une clé et ses paramètres en une seule chaîne. */
+    /** Packs a key and its arguments into a single string. */
     public static String pack(String key, Object... arguments) {
         StringBuilder packed = new StringBuilder(key);
         for (Object argument : arguments) {
@@ -25,13 +25,13 @@ public final class Feedback {
         return packed.toString();
     }
 
-    /** Clé de traduction portée par une chaîne assemblée. */
+    /** Translation key carried by a packed string. */
     public static String key(String packed) {
         int end = packed.indexOf(SEPARATOR);
         return end < 0 ? packed : packed.substring(0, end);
     }
 
-    /** Paramètres portés par une chaîne assemblée. */
+    /** Arguments carried by a packed string. */
     public static Object[] arguments(String packed) {
         int end = packed.indexOf(SEPARATOR);
         if (end < 0) {

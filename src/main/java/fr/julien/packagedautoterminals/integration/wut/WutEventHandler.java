@@ -13,14 +13,14 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 /**
- * Ouvre notre fenêtre quand le joueur clique un terminal universel réglé sur notre mode.
+ * Opens our screen when the player clicks a universal terminal set to our mode.
  *
- * <p>Pourquoi un événement, et non une troisième greffe : le clic droit d'AE2WUT vit dans
- * {@code Item.onItemRightClick}, une méthode **de Minecraft**. Son nom change entre le poste
- * de développement et le jeu publié, {@code onItemRightClick} d'un côté, {@code func_77659_a}
- * de l'autre. Y greffer quelque chose exigerait une table de remappage, donc un processeur
- * d'annotations, donc toute une chaîne de compilation de plus. L'événement de Forge fait le
- * même travail, et il passe **avant** la méthode de l'objet.
+ * <p>Why an event, and not a third injection: the AE2WUT right click lives in
+ * {@code Item.onItemRightClick}, a **Minecraft** method. Its name differs between the
+ * development workspace and the shipped game, {@code onItemRightClick} on one side,
+ * {@code func_77659_a} on the other. Injecting there would need a remapping table, hence an
+ * annotation processor, hence a whole extra build chain. The Forge event does the same work,
+ * and it runs **before** the item method.
  */
 public final class WutEventHandler {
 
@@ -33,16 +33,16 @@ public final class WutEventHandler {
             return;
         }
 
-        // PIÈGE : ne **jamais** annuler côté client. `PlayerControllerMP.processRightClick`
-        // sort dès que l'événement est annulé, et n'envoie plus le paquet de clic droit. Le
-        // serveur ne verrait donc rien, et aucune fenêtre ne s'ouvrirait. On laisse le clic
-        // client suivre son cours : la méthode d'AE2WUT n'a aucun cas pour notre mode, donc
-        // elle ne fait rien.
+        // PITFALL: **never** cancel on the client. `PlayerControllerMP.processRightClick`
+        // returns as soon as the event is cancelled, and no longer sends the right-click
+        // packet. The server would see nothing, and no screen would open. We let the client
+        // click run its course: the AE2WUT method has no case for our mode, so it does
+        // nothing.
         if (event.getWorld().isRemote) {
             return;
         }
 
-        // Côté serveur, l'annulation empêche AE2WUT d'ouvrir sa propre fenêtre par-dessus.
+        // On the server, cancelling stops AE2WUT from opening its own screen on top.
         event.setCanceled(true);
         event.setCancellationResult(EnumActionResult.SUCCESS);
 

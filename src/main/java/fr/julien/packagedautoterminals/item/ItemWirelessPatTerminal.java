@@ -19,23 +19,23 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.IGuiHandler;
 
 /**
- * Terminal PackagedAuto sans fil.
+ * Wireless PackagedAuto terminal.
  *
- * <p>Il ouvre **lui-même** sa fenêtre, et n'appelle jamais
- * {@code WirelessRegistry.openWirelessTerminalGui}. Motif, vérifié dans le bytecode
- * d'AE2UEL : cette méthode caste le gestionnaire rendu par {@link #getGuiHandler} en
- * {@code appeng.core.sync.GuiBridge}, une énumération interne. Tout mod tiers qui
- * l'utiliserait recevrait une {@code ClassCastException}. C'est aussi le choix de
- * {@code cell-terminal}, qui ouvre sa fenêtre par son propre paquet.
+ * <p>It opens its screen **itself**, and never calls
+ * {@code WirelessRegistry.openWirelessTerminalGui}. Reason, verified in the AE2UEL bytecode:
+ * that method casts the handler returned by {@link #getGuiHandler} to
+ * {@code appeng.core.sync.GuiBridge}, an internal enum. Any third-party mod using it would
+ * get a {@code ClassCastException}. {@code cell-terminal} makes the same choice, and opens
+ * its screen through its own packet.
  *
- * <p>Le reste de {@link IWirelessTermHandler} sert bien : l'énergie, la clé de liaison et la
- * portée sont gérées par AE2, via {@code WirelessTerminalGuiObject}.
+ * <p>The rest of {@link IWirelessTermHandler} is useful: energy, link key and range are
+ * handled by AE2, through {@code WirelessTerminalGuiObject}.
  */
 public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirelessTermHandler {
 
-    /** Énergie stockée, en unités AE. Même ordre de grandeur que les terminaux d'AE2. */
+    /** Stored energy, in AE units. Same order of magnitude as the AE2 terminals. */
     private static final double POWER_CAPACITY = 1_600_000d;
-    /** Coût d'une ouverture, en unités AE. */
+    /** Cost of one opening, in AE units. */
     private static final double POWER_PER_OPEN = 0.5d;
 
     private static final String KEY_ENCRYPTION = "encryptionKey";
@@ -69,13 +69,13 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
     }
 
     /**
-     * Le terminal ne rejoue pas son animation d'équipement à chaque décharge.
+     * The terminal does not replay its equip animation on every discharge.
      *
-     * <p>Vanilla compare l'ancienne et la nouvelle pile, **NBT compris**, pour décider de
-     * rejouer l'animation. Or l'énergie vit dans le NBT : le terminal ouvert se déchargeant
-     * une fois par seconde, la main du joueur sursautait à chaque prélèvement.
+     * <p>Vanilla compares the old and the new stack, **NBT included**, to decide whether to
+     * replay the animation. Energy lives in the NBT: with the open terminal discharging once
+     * per second, the player's hand jumped on every draw.
      *
-     * <p>Seul un vrai changement d'objet, ou un changement d'emplacement, mérite l'animation.
+     * <p>Only a real item change, or a slot change, deserves the animation.
      */
     @Override
     public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack,
@@ -83,7 +83,7 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
         return slotChanged || oldStack.getItem() != newStack.getItem();
     }
 
-    /** Même motif : une décharge ne doit pas interrompre le minage en cours. */
+    /** Same reason: a discharge must not interrupt the block being mined. */
     @Override
     public boolean shouldCauseBlockBreakReset(ItemStack oldStack, ItemStack newStack) {
         return oldStack.getItem() != newStack.getItem();
@@ -108,14 +108,14 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
 
     @Override
     public IConfigManager getConfigManager(ItemStack stack) {
-        // Le terminal n'a aucun réglage propre. AE2 appelle pourtant cette méthode : il faut
-        // donc rendre un gestionnaire vide, jamais `null`.
+        // The terminal has no setting of its own. AE2 still calls this method: we must
+        // therefore return an empty manager, never `null`.
         return new ConfigManager((manager, setting, value) -> { });
     }
 
     @Override
     public IGuiHandler getGuiHandler(ItemStack stack) {
-        // Jamais utilisé : voir l'explication en tête de classe. AE2 casterait ce résultat.
+        // Never used: see the explanation at the top of the class. AE2 would cast this.
         return null;
     }
 
@@ -137,12 +137,12 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
         tag.setString(KEY_ENCRYPTION, encryptionKey);
     }
 
-    /** Coût d'une ouverture, lu par le conteneur pour prélever l'énergie. */
+    /** Cost of one opening, read by the container to draw the energy. */
     public static double powerPerOpen() {
         return POWER_PER_OPEN;
     }
 
-    /** Identifiant de mode pour AE2 Wireless Universal Terminal, réglable en configuration. */
+    /** Mode id for AE2 Wireless Universal Terminal, adjustable in the config. */
     public static byte wutMode() {
         return (byte) PatConfig.wutModeId;
     }

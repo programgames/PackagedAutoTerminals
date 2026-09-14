@@ -15,24 +15,23 @@ import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.IRecipeType;
 
 /**
- * Les emplacements de l'éditeur de recette.
+ * The slots of the recipe editor.
  *
- * <p>La disposition des **indices** reprend celle de l'Encoder de PackagedAuto, et doit le
- * rester :
+ * <p>The layout of the **indexes** follows the PackagedAuto Encoder, and must keep doing so:
  *
  * <ul>
- *   <li>0 à 80 : les entrées, une grille de 9 sur 9 ;
- *   <li>81 à 89 : les sorties, modifiables seulement si {@code canSetOutput()} ;
- *   <li>90 à 98 : l'aperçu du résultat, jamais modifiable.
+ *   <li>0 to 80: the inputs, a 9 by 9 grid;
+ *   <li>81 to 89: the outputs, editable only when {@code canSetOutput()};
+ *   <li>90 to 98: the result preview, never editable.
  * </ul>
  *
- * <p>Motif : {@code IRecipeType.getEnabledSlots()} et
- * {@code IRecipeType.getRecipeTransferMap()} raisonnent sur ces indices. Les changer
- * couperait le transfert depuis JEI (contrainte D22). La position à l'écran, elle, nous
- * appartient.
+ * <p>Reason: {@code IRecipeType.getEnabledSlots()} and
+ * {@code IRecipeType.getRecipeTransferMap()} reason on these indexes. Changing them would
+ * break the transfer from JEI (constraint D22). The position on screen, on the other hand,
+ * is ours.
  *
- * <p>Cette classe ne dépend d'aucune tuile. L'Encoder amont, lui, exige un
- * {@code TileEncoder} ; nous ne pouvons donc pas le réutiliser tel quel.
+ * <p>This class depends on no tile. The upstream Encoder requires a {@code TileEncoder}; we
+ * therefore cannot reuse it as it is.
  */
 public class EditorInventory implements IInventory {
 
@@ -43,12 +42,12 @@ public class EditorInventory implements IInventory {
 
     private final NonNullList<ItemStack> stacks = NonNullList.withSize(SIZE, ItemStack.EMPTY);
 
-    /** Type courant. Il décide des emplacements actifs et de la forme de la grille. */
+    /** Current type. It drives the enabled slots and the shape of the grid. */
     public IRecipeType recipeType;
-    /** Recette construite à partir des emplacements. {@code null} tant qu'elle est invalide. */
+    /** Recipe built from the slots. {@code null} for as long as it is invalid. */
     public IRecipeInfo recipeInfo;
 
-    /** Le monde sert à {@code generateFromStacks}, qui résout les recettes de craft. */
+    /** The world is needed by {@code generateFromStacks}, which resolves crafting recipes. */
     private final World world;
 
     public EditorInventory(World world, IRecipeType recipeType) {
@@ -56,7 +55,7 @@ public class EditorInventory implements IInventory {
         this.recipeType = recipeType;
     }
 
-    /** Recharge l'éditeur depuis une recette existante. */
+    /** Reloads the editor from an existing recipe. */
     public void load(IRecipeInfo recipe) {
         clear();
         recipeType = recipe.getRecipeType();
@@ -73,10 +72,10 @@ public class EditorInventory implements IInventory {
     }
 
     /**
-     * Reconstruit la recette à partir des emplacements.
+     * Rebuilds the recipe from the slots.
      *
-     * <p>La découpe des listes reprend celle de l'Encoder : les 81 premiers emplacements
-     * sont les entrées, et les sorties ne comptent que si le type les rend modifiables.
+     * <p>The list split follows the Encoder: the first 81 slots are the inputs, and the
+     * outputs only count when the type makes them editable.
      */
     public void updateRecipeInfo() {
         recipeInfo = null;
@@ -105,7 +104,7 @@ public class EditorInventory implements IInventory {
         }
     }
 
-    /** Un emplacement est modifiable si le type l'active, et s'il n'est pas un aperçu. */
+    /** A slot is editable when the type enables it, and when it is not a preview. */
     public boolean isEditable(int slot) {
         if (recipeType == null || slot >= INPUT_SLOTS + OUTPUT_SLOTS) {
             return false;

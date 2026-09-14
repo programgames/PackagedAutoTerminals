@@ -13,7 +13,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-/** Application côté client de l'instantané envoyé par le serveur. */
+/** Client-side application of the snapshot sent by the server. */
 @SideOnly(Side.CLIENT)
 public final class ClientHandler {
 

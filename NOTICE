@@ -1,16 +1,16 @@
-# Dépendances et licences
+# Dependencies and licences
 
-Ce mod ne contient aucun fichier provenant des mods ci-dessous. Il est seulement compilé
-contre leurs classes, et les appelle à l'exécution.
+This mod contains no file from the mods listed below. It is only compiled against their
+classes, and calls them at runtime.
 
-| Mod | Licence | Usage |
+| Mod | Licence | Use |
 |---|---|---|
-| Applied Energistics 2 Unofficial Extended Life | LGPL v3 | classes de terminal, de conteneur et de réseau ME |
-| PackagedAuto (TheLMiffy1111) | MIT | API des recettes et des machines |
-| Mouse Tweaks (YaLTeR) | interface publique | `IMTModGuiContainer2`, requise à la compilation car `AEBaseGui` l'implémente |
+| Applied Energistics 2 Unofficial Extended Life | LGPL v3 | terminal, container and ME network classes |
+| PackagedAuto (TheLMiffy1111) | MIT | recipe and machine API |
+| Mouse Tweaks (YaLTeR) | public interface | `IMTModGuiContainer2`, required at compile time because `AEBaseGui` implements it |
 
-Le fichier `src/api/java/yalter/mousetweaks/api/IMTModGuiContainer2.java` reproduit une
-interface publique, destinée par son auteur à être embarquée par les mods qui en dépendent.
+The file `src/api/java/yalter/mousetweaks/api/IMTModGuiContainer2.java` reproduces a public
+interface, which its author intends to be bundled by the mods that depend on it.
 
-La documentation de `docs/PACKAGEDAUTO-MODEL.md` cite de courts extraits de PackagedAuto,
-sous licence MIT, à titre de preuve technique.
+The documentation in `docs/PACKAGEDAUTO-MODEL.md` quotes short excerpts of PackagedAuto,
+under the MIT licence, as technical evidence.

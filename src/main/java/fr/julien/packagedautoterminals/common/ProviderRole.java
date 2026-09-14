@@ -4,33 +4,32 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Rôle d'une machine porteuse de recettes.
+ * Role of a machine that carries recipes.
  *
- * <p>PackagedAuto demande **deux** porte-recettes par automatisation, avec la même recette
- * dans les deux : l'un dans le Packager, l'autre dans l'Unpackager. Les deux publient vers
- * AE2, mais pas la même chose :
+ * <p>PackagedAuto needs **two** recipe holders per automation, with the same recipe in both:
+ * one in the Packager, one in the Unpackager. Both publish to AE2, but not the same thing:
  *
  * <ul>
- *   <li>le Packager publie {@code PackageCraftingPatternHelper} : objets vers colis ;
- *   <li>l'Unpackager publie {@code RecipeCraftingPatternHelper} : ingrédients vers produit.
+ *   <li>the Packager publishes {@code PackageCraftingPatternHelper}: items to package;
+ *   <li>the Unpackager publishes {@code RecipeCraftingPatternHelper}: ingredients to output.
  * </ul>
  *
- * <p>Sans la copie du Packager, AE2 ne sait pas fabriquer le colis. Sans celle de
- * l'Unpackager, il ignore ce que la recette produit.
+ * <p>Without the Packager copy, AE2 does not know how to build the package. Without the
+ * Unpackager copy, it does not know what the recipe produces.
  *
- * <p>Le rôle se déduit du **nom de la classe**, jamais de la classe elle-même : le mod
- * fonctionne donc sans les addons. {@code IPackageProvidingMachine} ne permet pas de le
- * déduire : les deux machines exposent exactement les mêmes méthodes.
+ * <p>The role is derived from the **class name**, never from the class itself: the mod
+ * therefore runs without the addons. {@code IPackageProvidingMachine} does not allow the
+ * role to be derived: both machines expose exactly the same methods.
  */
 public enum ProviderRole {
 
-    /** Fabrique les colis. Il lui faut un Unpackager apparié. */
+    /** Builds the packages. It needs a paired Unpackager. */
     PACKAGER,
-    /** Défait les colis et déclare la recette finale. Il lui faut un Packager apparié. */
+    /** Unpacks the packages and declares the final recipe. It needs a paired Packager. */
     UNPACKAGER,
-    /** Assure les deux rôles à lui seul. Aucune paire n'est nécessaire. */
+    /** Fills both roles on its own. No pair is needed. */
     COMPLETE,
-    /** Machine d'un addon que nous ne connaissons pas. Aucun diagnostic n'est émis. */
+    /** Machine from an addon we do not know. No diagnostic is emitted. */
     UNKNOWN;
 
     private static final Map<String, ProviderRole> BY_CLASS = new HashMap<>();
@@ -38,8 +37,8 @@ public enum ProviderRole {
     static {
         BY_CLASS.put("thelm.packagedauto.tile.TilePackager", PACKAGER);
         BY_CLASS.put("thelm.packagedauto.tile.TileUnpackager", UNPACKAGER);
-        // Le Packaging Provider publie les deux familles de patterns, plus la sienne. Il se
-        // suffit donc à lui-même.
+        // The Packaging Provider publishes both pattern families, plus its own. It is
+        // therefore self-sufficient.
         BY_CLASS.put("thelm.packagingprovider.tile.TilePackagingProvider", COMPLETE);
     }
 
@@ -56,12 +55,12 @@ public enum ProviderRole {
         return ordinal < 0 || ordinal >= values.length ? UNKNOWN : values[ordinal];
     }
 
-    /** Ce rôle attend-il une machine du rôle complémentaire ? */
+    /** Does this role expect a machine of the complementary role? */
     public boolean needsPartner() {
         return this == PACKAGER || this == UNPACKAGER;
     }
 
-    /** Rôle attendu en face, ou {@code null} si ce rôle se suffit. */
+    /** Role expected on the other side, or {@code null} when this role is self-sufficient. */
     public ProviderRole partner() {
         if (this == PACKAGER) {
             return UNPACKAGER;

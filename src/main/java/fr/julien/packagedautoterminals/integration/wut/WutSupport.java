@@ -16,30 +16,29 @@ import net.minecraftforge.common.config.ConfigManager;
 import net.minecraftforge.fml.common.Loader;
 
 /**
- * Pont vers AE2 Wireless Universal Terminal, le mod qui fond plusieurs terminaux sans fil
- * en un seul objet.
+ * Bridge to AE2 Wireless Universal Terminal, the mod that merges several wireless terminals
+ * into a single item.
  *
- * <p>AE2WUT n'expose **aucune** interface d'extension. La preuve est dans son bytecode, et
- * la révision R4 de {@code docs/DECISIONS.md} la consigne :
+ * <p>AE2WUT exposes **no** extension interface. The proof is in its bytecode, and revision
+ * R4 of {@code docs/DECISIONS.md} records it:
  *
  * <ul>
- *   <li>{@code getAllMode()} construit une liste d'entiers écrite en dur, 0 à 9 ;
- *   <li>{@code getWirelessName(int)} est un {@code tableswitch} de 1 à 9 ;
- *   <li>{@code AllWUTRecipe.getIngredient()} remplit une table écrite en dur.
+ *   <li>{@code getAllMode()} builds a hard-coded list of integers, 0 to 9;
+ *   <li>{@code getWirelessName(int)} is a {@code tableswitch} from 1 to 9;
+ *   <li>{@code AllWUTRecipe.getIngredient()} fills a hard-coded table.
  * </ul>
  *
- * <p>Trois greffes suffisent pourtant, car les trois méthodes rendent une valeur que l'on
- * peut compléter. Le reste d'AE2WUT est déjà générique : la molette lit le tableau
- * {@code modes} de l'objet, et la recette d'assemblage se construit à partir de la table des
- * ingrédients.
+ * <p>Three injections are still enough, because all three methods return a value we can
+ * extend. The rest of AE2WUT is already generic: the wheel reads the {@code modes} array of
+ * the item, and the assembly recipe is built from the ingredient table.
  */
 public final class WutSupport {
 
-    /** Nom enregistré de l'objet d'AE2WUT. */
+    /** Registry name of the AE2WUT item. */
     private static final ResourceLocation ITEM =
             new ResourceLocation(Reference.AE2WUT, "wireless_universal_terminal");
 
-    /** Classe de l'objet d'AE2WUT, atteinte par réflexion seulement. */
+    /** Class of the AE2WUT item, reached through reflection only. */
     private static final String ITEM_CLASS =
             "com.circulation.ae2wut.item.ItemWirelessUniversalTerminal";
 
@@ -47,13 +46,13 @@ public final class WutSupport {
     private static final String KEY_MODES = "modes";
 
     /**
-     * Identifiant de notre mode, lu une seule fois.
+     * Id of our mode, read only once.
      *
-     * <p>PIÈGE : les greffes tournent pendant les événements de registre, qui précèdent le
-     * {@code preInit} de notre mod. Or Forge ne remplit {@link PatConfig} qu'au {@code
-     * preInit}. Lire le réglage sans précaution donnerait la valeur par défaut au moment de
-     * l'enregistrement, puis la valeur réglée plus tard : deux identifiants pour un seul
-     * terminal. On force donc la lecture du fichier, puis on retient le résultat.
+     * <p>PITFALL: the injections run during the registry events, which come before the
+     * {@code preInit} of our mod. Forge only fills {@link PatConfig} at {@code preInit}.
+     * Reading the setting without care would give the default value at registration time,
+     * then the configured value later: two ids for a single terminal. We therefore force the
+     * file to be read, then keep the result.
      */
     private static Integer mode;
 
@@ -68,24 +67,24 @@ public final class WutSupport {
             try {
                 ConfigManager.sync(Reference.MOD_ID, Config.Type.INSTANCE);
             } catch (Throwable ignored) {
-                // Le fichier n'existe pas encore : la valeur par défaut fera l'affaire.
+                // The file does not exist yet: the default value will do.
             }
             mode = PatConfig.wutModeId;
         }
         return mode;
     }
 
-    /** Un exemplaire de notre terminal sans fil, pour la recette d'assemblage. */
+    /** One copy of our wireless terminal, for the assembly recipe. */
     public static ItemStack terminal() {
         return new ItemStack(PatItems.WIRELESS_TERMINAL);
     }
 
     /**
-     * Nom affiché à la suite de celui de l'objet, dans le style d'AE2WUT.
+     * Name shown after the item name, in the AE2WUT style.
      *
-     * <p>La traduction passe par {@code util.text.translation.I18n}, et non par la classe
-     * du même nom dans {@code client.resources}. Cette dernière n'existe pas sur un serveur
-     * dédié : la charger là-bas arrêterait le jeu. Celle-ci vit des deux côtés.
+     * <p>Translation goes through {@code util.text.translation.I18n}, not through the class
+     * of the same name in {@code client.resources}. The latter does not exist on a dedicated
+     * server: loading it there would stop the game. This one lives on both sides.
      */
     @SuppressWarnings("deprecation")
     public static String modeName() {
@@ -99,11 +98,11 @@ public final class WutSupport {
     }
 
     /**
-     * Cet objet est-il un terminal universel réglé sur notre mode, et qui le porte vraiment ?
+     * Is this item a universal terminal set to our mode, and does it really carry it?
      *
-     * <p>Les deux questions comptent. {@code mode} dit ce que le joueur a choisi à la
-     * molette ; {@code modes} dit ce que l'objet a réellement absorbé. Sans la seconde, un
-     * terminal universel neuf ouvrirait notre fenêtre sans jamais avoir avalé notre terminal.
+     * <p>Both questions matter. {@code mode} says what the player picked with the wheel;
+     * {@code modes} says what the item actually absorbed. Without the second one, a brand new
+     * universal terminal would open our screen without ever having swallowed our terminal.
      */
     public static boolean isOurMode(ItemStack stack) {
         NBTTagCompound tag = stack.getTagCompound();
@@ -111,11 +110,11 @@ public final class WutSupport {
     }
 
     /**
-     * Ce terminal universel **affiche-t-il** notre mode ?
+     * Does this universal terminal **show** our mode?
      *
-     * <p>Le rendu ne regarde que le mode courant, et non le tableau {@code modes}. Un objet
-     * de création, réglé sur notre mode sans nous avoir absorbés, doit porter notre image
-     * plutôt qu'un modèle manquant.
+     * <p>Rendering only looks at the current mode, not at the {@code modes} array. A creative
+     * item, set to our mode without having absorbed us, must carry our icon rather than a
+     * missing model.
      */
     public static boolean showsOurMode(ItemStack stack) {
         if (!isUniversalTerminal(stack)) {
@@ -126,11 +125,10 @@ public final class WutSupport {
     }
 
     /**
-     * Ce terminal universel a-t-il **absorbé** notre terminal, quel que soit son mode courant ?
+     * Has this universal terminal **absorbed** our terminal, whatever its current mode?
      *
-     * <p>La touche d'ouverture s'appuie sur cette question, et non sur {@link #isOurMode}. Le
-     * joueur qui appuie sur notre touche veut notre terminal, sans avoir à tourner la
-     * molette d'abord.
+     * <p>The opening key relies on this question, not on {@link #isOurMode}. A player who
+     * presses our key wants our terminal, without having to turn the wheel first.
      */
     public static boolean hasOurMode(ItemStack stack) {
         if (!isUniversalTerminal(stack)) {
@@ -149,16 +147,16 @@ public final class WutSupport {
     }
 
     /**
-     * Bascule un terminal universel sur notre mode.
+     * Switches a universal terminal to our mode.
      *
-     * <p>Écrire {@code mode} dans le NBT ne suffit pas. AE2WUT range la grille de craft du
-     * mode quitté dans son cache, par {@code nbtChangeB}, puis restaure celle du mode
-     * demandé, par {@code nbtChange}. Sauter ces deux appels ferait perdre au joueur la
-     * grille du terminal de craft qu'il quitte.
+     * <p>Writing {@code mode} into the NBT is not enough. AE2WUT stores the crafting grid of
+     * the mode being left into its cache, through {@code nbtChangeB}, then restores the one
+     * of the requested mode, through {@code nbtChange}. Skipping those two calls would make
+     * the player lose the grid of the crafting terminal they leave.
      *
-     * <p>Les deux méthodes sont appelées par réflexion. AE2WUT n'est pas sur notre chemin de
-     * compilation, et ne doit pas y être : voir la décision D33. Si elles disparaissent, on
-     * se replie sur l'écriture simple, et le mod continue de fonctionner.
+     * <p>Both methods are called through reflection. AE2WUT is not on our compile path, and
+     * must not be: see decision D33. If they disappear, we fall back to the plain write, and
+     * the mod keeps working.
      */
     public static void switchToOurMode(ItemStack stack) {
         NBTTagCompound tag = stack.getTagCompound();
@@ -170,7 +168,7 @@ public final class WutSupport {
         }
     }
 
-    /** Vrai si les deux méthodes d'AE2WUT ont bien tourné. */
+    /** True when both AE2WUT methods ran successfully. */
     private static boolean callWut(ItemStack stack) {
         try {
             Class<?> type = Class.forName(ITEM_CLASS);
@@ -183,7 +181,7 @@ public final class WutSupport {
             return true;
         } catch (Throwable missing) {
             PackagedAutoTerminals.LOGGER.warn(
-                    "AE2WUT a change de forme : bascule de mode simplifiee.", missing);
+                    "AE2WUT changed shape: falling back to a plain mode switch.", missing);
             return false;
         }
     }

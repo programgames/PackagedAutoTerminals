@@ -8,15 +8,15 @@ import net.minecraft.world.storage.MapStorage;
 import net.minecraft.world.storage.WorldSavedData;
 
 /**
- * Noms donnés par le joueur aux groupes de machines.
+ * Names the player gives to machine groups.
  *
- * <p>Le nom est rangé **par machine**, et non par groupe : un groupe n'a pas d'identité
- * stable, il se recompose à chaque scan. Renommer un groupe écrit donc le même nom dans
- * toutes ses machines, et le groupe affiche le premier qu'il trouve. Le nom survit ainsi à
- * l'ajout ou au retrait d'une machine.
+ * <p>The name is stored **per machine**, not per group: a group has no stable identity, it
+ * is rebuilt on every scan. Renaming a group therefore writes the same name into all of its
+ * machines, and the group shows the first one it finds. The name thus survives a machine
+ * being added or removed.
  *
- * <p>Le stockage appartient à notre mod : PackagedAuto n'en sait rien, et rien ne se perd si
- * ce mod est retiré.
+ * <p>The storage belongs to our mod: PackagedAuto knows nothing about it, and nothing is
+ * lost when this mod is removed.
  */
 public class GroupNames extends WorldSavedData {
 
@@ -25,7 +25,7 @@ public class GroupNames extends WorldSavedData {
     private static final String KEY_POS = "Pos";
     private static final String KEY_NAME = "Name";
 
-    /** Longueur maximale d'un nom. Au-delà, il ne tiendrait pas sur une rangée. */
+    /** Maximum length of a name. Beyond that it would not fit on a row. */
     public static final int MAX_LENGTH = 32;
 
     private final java.util.Map<Long, String> names = new java.util.HashMap<>();
@@ -38,7 +38,7 @@ public class GroupNames extends WorldSavedData {
         super(name);
     }
 
-    /** Instance du monde demandé. Elle est créée à la première utilisation. */
+    /** Instance for the given world. It is created on first use. */
     public static GroupNames get(World world) {
         MapStorage storage = world.getMapStorage();
         if (storage == null) {

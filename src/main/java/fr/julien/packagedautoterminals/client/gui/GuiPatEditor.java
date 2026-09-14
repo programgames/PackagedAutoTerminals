@@ -25,16 +25,16 @@ import org.lwjgl.input.Keyboard;
 import thelm.packagedauto.api.IRecipeType;
 
 /**
- * Éditeur de recette : création et modification réunies.
+ * Recipe editor: creation and editing in one screen.
  *
- * <p>La disposition reprend celle du Package Recipe Encoder : rangée de recettes en haut,
- * grille 9 sur 9 à gauche, flèche, sorties et aperçu des colis à droite, inventaire en bas.
+ * <p>The layout follows the Package Recipe Encoder: recipe row on top, 9 by 9 grid on the
+ * left, arrow, outputs and package preview on the right, inventory at the bottom.
  *
- * <p>Une seule différence de fond : la rangée du haut ne montre pas les emplacements d'un
- * porte-recettes, mais **les recettes du groupe**. La dernière case, vide, en crée une.
- * Créer et modifier deviennent le même geste.
+ * <p>One substantive difference: the top row does not show the slots of a recipe holder, but
+ * **the recipes of the group**. The last slot, empty, creates one. Creating and editing
+ * become the same gesture.
  *
- * <p>La planche fait 512 sur 512 : la fenêtre dépasse 256 pixels dans les deux sens.
+ * <p>The sheet is 512 by 512: the screen exceeds 256 pixels in both directions.
  */
 public class GuiPatEditor extends AEBaseGui {
 
@@ -53,27 +53,27 @@ public class GuiPatEditor extends AEBaseGui {
     private static final int COLOR_DIM = 0x808080;
     private static final int COLOR_WARNING = 0x803030;
     private static final int COLOR_OK = 0x2E7D32;
-    /** Texte des champs de saisie, clair sur leur fond sombre. */
+    /** Text of the input fields, light on their dark background. */
     private static final int COLOR_FIELD_TEXT = 0xE0E0E0;
-    /** Voile posé sur les emplacements que le type de recette n'active pas. */
+    /** Veil drawn over the slots the recipe type does not enable. */
     private static final int COLOR_DISABLED = 0xA0303030;
-    /** Cadre de l'onglet ouvert. */
+    /** Frame of the open tab. */
     private static final int COLOR_SELECTED = 0xFF2E7D32;
-    /** Point posé sur l'onglet qui porte un travail non enregistré. */
+    /** Dot drawn on the tab that holds unsaved work. */
     private static final int COLOR_UNSAVED = 0xFFCC3030;
 
     private static final long MESSAGE_DURATION = 3_000L;
     private static final int MESSAGE_TOP = 20;
     private static final int MESSAGE_WIDTH = ContainerPatEditor.WIDTH - 16;
 
-    /** Centre de la colonne de droite, pour centrer le nom du type et son icône. */
+    /** Centre of the right column, to centre the type name and its icon. */
     private static final int RIGHT_CENTER = ContainerPatEditor.OUTPUT_LEFT + 27;
 
     /**
-     * Machine d'exécution, sous l'icône du type.
+     * Crafting machine, below the type icon.
      *
-     * <p>Elle occupe la bande libre entre l'icône du type, qui finit à 87, et la première
-     * rangée de sortie, qui commence à {@code OUTPUT_TOP}.
+     * <p>It sits in the free band between the type icon, which ends at 87, and the first
+     * output row, which starts at {@code OUTPUT_TOP}.
      */
     private static final int MACHINE_LEFT = RIGHT_CENTER - 8;
     private static final int MACHINE_TOP = 90;
@@ -82,7 +82,7 @@ public class GuiPatEditor extends AEBaseGui {
     private GuiButton saveButton;
     private GuiButton deleteButton;
     private GuiTextField nameField;
-    /** Petite boîte de saisie de quantité, ouverte au clic du milieu. */
+    /** Small amount input box, opened with the middle click. */
     private GuiTextField amountField;
     private int amountSlot = -1;
 
@@ -90,7 +90,7 @@ public class GuiPatEditor extends AEBaseGui {
     private String message = "";
     private long messageExpiry;
     private boolean messageRefused;
-    /** Vrai quand la ligne a dû être coupée : l'infobulle donne alors le texte entier. */
+    /** True when the line had to be trimmed: the tooltip then gives the whole text. */
     private boolean messageTrimmed;
 
     public GuiPatEditor(InventoryPlayer inventory, TerminalContext terminal,
@@ -106,7 +106,7 @@ public class GuiPatEditor extends AEBaseGui {
         super.initGui();
 
         String previous = nameField == null ? editorContainer.groupName : nameField.getText();
-        // Fond sombre, texte clair : même raison que le champ de recherche du terminal.
+        // Dark background, light text: same reason as the terminal search field.
         nameField = new GuiTextField(0, fontRenderer,
                 guiLeft + ContainerPatEditor.NAME_LEFT + 5,
                 guiTop + ContainerPatEditor.NAME_TOP + 4,
@@ -128,9 +128,9 @@ public class GuiPatEditor extends AEBaseGui {
         buttonList.add(new GuiButton(BUTTON_NEXT_TYPE,
                 guiLeft + ContainerPatEditor.OUTPUT_LEFT + 44, guiTop + 68, 10, 18, ">"));
 
-        // Les boutons commencent sous l'aperçu des colis, qui descend jusqu'à 226. Ils
-        // étaient restés à leur ancienne hauteur quand la fenêtre a grandi de vingt pixels,
-        // et Enregistrer mordait sur la dernière rangée de l'aperçu.
+        // The buttons start below the package preview, which reaches down to 226. They had
+        // stayed at their old height when the screen grew by twenty pixels, and Save
+        // overlapped the last preview row.
         int buttonTop = ContainerPatEditor.PREVIEW_TOP + 3 * 18 + 6;
         saveButton = new GuiButton(BUTTON_SAVE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
                 guiTop + buttonTop, 54, 16, I18n.format("gui.packagedautoterminals.save"));
@@ -158,7 +158,7 @@ public class GuiPatEditor extends AEBaseGui {
                 send(PacketRecipeAction.ACTION_SCROLL_TABS, 1);
                 break;
             case BUTTON_SAVE:
-                // Le nom part avec la recette : le joueur n'a pas à valider deux fois.
+                // The name goes with the recipe: the player does not confirm twice.
                 sendName();
                 send(PacketRecipeAction.ACTION_SAVE, 0);
                 break;
@@ -189,14 +189,14 @@ public class GuiPatEditor extends AEBaseGui {
     }
 
     /**
-     * Molette sur un emplacement : ajuste sa quantité.
+     * Wheel over a slot: adjusts its amount.
      *
-     * <p>La détection se fait ici, et non par {@code mouseWheelEvent} d'AE2 : cette méthode
-     * n'est appelée que sur une fenêtre pourvue d'un ascenseur, et l'éditeur n'en a pas. La
-     * molette ne faisait donc rien.
+     * <p>Detection happens here, not through the AE2 {@code mouseWheelEvent}: that method is
+     * only called on a screen with a scrollbar, and the editor has none. The wheel therefore
+     * did nothing.
      *
-     * <p>Maj multiplie le pas par dix, Ctrl par soixante-quatre. Les recettes de traitement
-     * demandent souvent des piles entières.
+     * <p>Shift multiplies the step by ten, Ctrl by sixty-four. Processing recipes often need
+     * whole stacks.
      */
     @Override
     public void handleMouseInput() throws IOException {
@@ -216,10 +216,10 @@ public class GuiPatEditor extends AEBaseGui {
     }
 
     /**
-     * Emplacement modifiable sous ces coordonnées d'écran, ou {@code null}.
+     * Editable slot under these screen coordinates, or {@code null}.
      *
-     * <p>Le calcul est fait ici plutôt que par {@code getSlot} d'AE2 : nous savons exactement
-     * quels emplacements acceptent une quantité.
+     * <p>The computation is done here rather than through the AE2 {@code getSlot}: we know
+     * exactly which slots accept an amount.
      */
     private Slot slotUnder(int mouseX, int mouseY) {
         for (Slot slot : inventorySlots.inventorySlots) {
@@ -244,8 +244,8 @@ public class GuiPatEditor extends AEBaseGui {
             amountField.updateCursorCounter();
         }
 
-        // Le nom vient du serveur. On ne l'écrase que si le joueur n'est pas en train de
-        // l'écrire, sans quoi chaque cycle effacerait sa saisie.
+        // The name comes from the server. We only overwrite it when the player is not
+        // typing, otherwise every cycle would erase their input.
         if (!nameField.isFocused() && !nameField.getText().equals(editorContainer.groupName)) {
             nameField.setText(editorContainer.groupName == null ? "" : editorContainer.groupName);
         }
@@ -253,8 +253,8 @@ public class GuiPatEditor extends AEBaseGui {
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
-        // Clic du milieu sur une case remplie : saisir la quantité au clavier. La molette
-        // reste là pour les ajustements rapides.
+        // Middle click on a filled slot: type the amount on the keyboard. The wheel stays
+        // available for quick adjustments.
         if (mouseButton == 2) {
             Slot slot = slotUnder(mouseX, mouseY);
             if (slot != null && !slot.getStack().isEmpty()) {
@@ -294,7 +294,7 @@ public class GuiPatEditor extends AEBaseGui {
             int amount = Integer.parseInt(amountField.getText().trim());
             PatNetwork.CHANNEL.sendToServer(new PacketEditorSlot(amountSlot, amount, true));
         } catch (NumberFormatException ignored) {
-            // Une saisie vide ou fautive ne change rien, et ne mérite pas d'erreur.
+            // Empty or malformed input changes nothing, and deserves no error.
         }
         closeAmountField();
     }
@@ -310,7 +310,7 @@ public class GuiPatEditor extends AEBaseGui {
                 closeAmountField();
                 return;
             }
-            // Seuls les chiffres et l'effacement ont un sens ici.
+            // Only digits and editing keys make sense here.
             if (Character.isDigit(typedChar) || keyCode == Keyboard.KEY_BACK
                     || keyCode == Keyboard.KEY_DELETE || keyCode == Keyboard.KEY_LEFT
                     || keyCode == Keyboard.KEY_RIGHT) {
@@ -324,15 +324,15 @@ public class GuiPatEditor extends AEBaseGui {
                 nameField.setFocused(false);
                 return;
             }
-            // Échap ferme la fenêtre, même depuis le champ : sans cette exception, le joueur
-            // resterait piégé dans l'éditeur.
+            // Escape closes the screen, even from the field: without this exception, the
+            // player would stay trapped in the editor.
             if (keyCode != Keyboard.KEY_ESCAPE && nameField.textboxKeyTyped(typedChar, keyCode)) {
                 return;
             }
         }
 
-        // E2 : Entrée enregistre. Le joueur n'a plus à viser un bouton après chaque
-        // modification. Le bouton reste la voie évidente ; la touche est le raccourci.
+        // E2: Enter saves. The player no longer has to aim at a button after every change.
+        // The button stays the obvious path; the key is the shortcut.
         if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
             if (saveButton != null && saveButton.enabled) {
                 actionPerformed(saveButton);
@@ -340,9 +340,9 @@ public class GuiPatEditor extends AEBaseGui {
             return;
         }
 
-        // E2 : Échap revient au terminal, au lieu de tout fermer. Un second Échap ferme
-        // alors le terminal. Le joueur qui édite plusieurs recettes ne repart plus du monde
-        // à chaque fois.
+        // E2: Escape goes back to the terminal, instead of closing everything. A second
+        // Escape then closes the terminal. A player editing several recipes no longer starts
+        // over from the world every time.
         if (keyCode == Keyboard.KEY_ESCAPE) {
             send(PacketRecipeAction.ACTION_BACK, 0);
             return;
@@ -351,8 +351,8 @@ public class GuiPatEditor extends AEBaseGui {
     }
 
     /**
-     * Le champ se dessine ici, hors du repère décalé de {@code drawFG}, car il porte des
-     * coordonnées absolues. Même piège que dans le terminal.
+     * The field is drawn here, outside the shifted frame of {@code drawFG}, because it
+     * carries absolute coordinates. Same pitfall as in the terminal.
      */
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
@@ -365,7 +365,7 @@ public class GuiPatEditor extends AEBaseGui {
         drawMachineTooltip(mouseX, mouseY);
         nameField.drawTextBox();
         if (amountField != null) {
-            // Un fond plein derrière la boîte : posée sur la grille, elle serait illisible.
+            // A solid background behind the box: over the grid it would be unreadable.
             drawRect(amountField.x - 2, amountField.y - 2,
                     amountField.x + amountField.width + 2, amountField.y + 12, 0xFF202020);
             amountField.drawTextBox();
@@ -404,14 +404,14 @@ public class GuiPatEditor extends AEBaseGui {
         }
     }
 
-    /** Message du serveur, ou état de la recette, sur la ligne sous le titre. */
+    /** Server message, or recipe state, on the line below the title. */
     private void drawMessage(EditorInventory editor) {
         if (editorContainer.feedbackCount != lastFeedbackCount) {
             lastFeedbackCount = editorContainer.feedbackCount;
             message = I18n.format(Feedback.key(editorContainer.feedback),
                     Feedback.arguments(editorContainer.feedback));
             messageExpiry = System.currentTimeMillis() + MESSAGE_DURATION;
-            // Un refus se reconnaît à sa clé : rien à traduire pour le savoir.
+            // A refusal is recognised by its key: no translation needed to tell.
             messageRefused = editorContainer.feedback.contains("no_")
                     || editorContainer.feedback.contains("unsaved")
                     || editorContainer.feedback.contains("failed")
@@ -431,11 +431,11 @@ public class GuiPatEditor extends AEBaseGui {
     }
 
     /**
-     * Coupe la ligne si elle dépasse du cadre.
+     * Trims the line when it overflows the frame.
      *
-     * <p>La ligne de message n'a qu'une seule rangée : la rangée d'onglets commence juste
-     * en dessous. Une traduction trop longue sortait donc de la fenêtre, en travers du
-     * décor. Le texte entier reste lisible dans l'infobulle.
+     * <p>The message line has a single row: the tab row starts right below. A translation
+     * that was too long therefore spilled out of the screen, across the background. The whole
+     * text stays readable in the tooltip.
      */
     private String fitMessage(String text) {
         if (fontRenderer.getStringWidth(text) <= MESSAGE_WIDTH) {
@@ -446,7 +446,7 @@ public class GuiPatEditor extends AEBaseGui {
         return fontRenderer.trimStringToWidth(text, MESSAGE_WIDTH - 6) + "...";
     }
 
-    /** Encadre l'onglet ouvert. L'onglet de création suit la dernière recette. */
+    /** Frames the open tab. The creation tab follows the last recipe. */
     private void drawSelectedTab() {
         int slot = editorContainer.currentTab < 0
                 ? editorContainer.recipeCount - editorContainer.tabOffset
@@ -461,14 +461,14 @@ public class GuiPatEditor extends AEBaseGui {
         drawRect(x - 1, y, x, y + 16, COLOR_SELECTED);
         drawRect(x + 16, y, x + 17, y + 16, COLOR_SELECTED);
 
-        // E5 : un point rouge dit « ce travail n'est pas enregistré ». Il se dessine dans
-        // l'angle, sur trois pixels, pour ne pas cacher l'objet produit.
+        // E5: a red dot says "this work is not saved". It is drawn in the corner, over three
+        // pixels, so it does not hide the produced item.
         if (editorContainer.dirty) {
             drawRect(x + 12, y + 1, x + 16, y + 5, COLOR_UNSAVED);
         }
     }
 
-    /** Nom du type, centré, et son icône, comme le fait l'Encoder. */
+    /** Type name, centred, and its icon, the way the Encoder does it. */
     private void drawRecipeType(IRecipeType type) {
         String name = type == null
                 ? I18n.format("gui.packagedautoterminals.no_type")
@@ -484,17 +484,17 @@ public class GuiPatEditor extends AEBaseGui {
             drawItem(RIGHT_CENTER - 8, 69, (ItemStack) representation);
         }
 
-        // La station d'origine, au-dessus, dit d'où vient la recette. Celle-ci dit qui
-        // l'exécutera sur le réseau. Les deux sont différentes, et le joueur a besoin des
-        // deux : une recette Elite se fabrique bien sur une table d'Extended Crafting, mais
-        // c'est l'Elite Package Crafter qui doit être posé.
+        // The source station above says where the recipe comes from. This one says who will
+        // run it on the network. They differ, and the player needs both: an Elite recipe is
+        // indeed made on an Extended Crafting table, but the Elite Package Crafter is the
+        // block that must be placed.
         ItemStack machine = CrafterTypes.iconFor(type);
         if (!machine.isEmpty()) {
             drawItem(MACHINE_LEFT, MACHINE_TOP, machine);
         }
     }
 
-    /** L'infobulle de la machine d'exécution. Coordonnées absolues. */
+    /** Tooltip of the crafting machine. Absolute coordinates. */
     private void drawMachineTooltip(int mouseX, int mouseY) {
         ItemStack machine = CrafterTypes.iconFor(editorContainer.editor.recipeType);
         if (machine.isEmpty()) {
@@ -512,8 +512,8 @@ public class GuiPatEditor extends AEBaseGui {
     }
 
     /**
-     * Voile sur tout emplacement que le type n'active pas. Le serveur les refuse déjà ; le
-     * voile évite au joueur d'essayer.
+     * Veil over every slot the type does not enable. The server already refuses them; the
+     * veil saves the player from trying.
      */
     private void drawDisabledSlots(EditorInventory editor) {
         for (int slot = 0; slot < EditorInventory.INPUT_SLOTS + EditorInventory.OUTPUT_SLOTS; slot++) {

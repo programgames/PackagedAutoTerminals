@@ -9,10 +9,10 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 /**
- * Renomme le groupe de machines ouvert dans l'éditeur.
+ * Renames the machine group open in the editor.
  *
- * <p>Le nom part vers **toutes** les machines du groupe : un groupe n'a pas d'identité
- * stable, il se recompose à chaque scan. Voir {@code GroupNames}.
+ * <p>The name goes to **every** machine of the group: a group has no stable identity, it is
+ * rebuilt on every scan. See {@code GroupNames}.
  */
 public class PacketRenameGroup implements IMessage {
 

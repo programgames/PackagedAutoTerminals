@@ -11,18 +11,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ForgeGradle 2.3 et Gradle 4.10.3 n'acceptent que le JDK 8.
+      # ForgeGradle 2.3 and Gradle 4.10.3 only accept JDK 8.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "8"
 
-      # Les dépendances vivent dans libs/maven, qui n'est pas versionné : les jars
-      # appartiennent à leurs auteurs. Sans eux, la compilation ne peut pas aboutir.
-      - name: Vérifier la présence des dépendances
+      # The dependencies live in libs/maven, which is not versioned: the jars belong to
+      # their authors. Without them, the build cannot complete.
+      - name: Check that the dependencies are present
         run: |
           if [ ! -f libs/maven/pat/ae2-uel/*/ae2-uel-*.jar ]; then
-            echo "::warning::libs/maven est vide, la compilation sera ignorée."
+            echo "::warning::libs/maven is empty, the build will be skipped."
             exit 0
           fi
 

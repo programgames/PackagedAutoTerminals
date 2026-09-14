@@ -1,26 +1,28 @@
-# Journal des changements
+# Changelog
 
-Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), et la numérotation
-suit [SemVer](https://semver.org/lang/fr/).
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
+numbering follows [SemVer](https://semver.org/).
 
-## [Non publié]
+## [Unreleased]
 
-### Ajouté
+### Added
 
-- Terminal câblé qui liste les machines PackagedAuto du réseau ME et leurs recettes.
-- Infobulle détaillée : entrées, sorties, position de la machine.
-- Suppression d'une recette depuis le terminal, par Maj et clic droit.
-- Éditeur de recette, ouvert par un clic droit, repris de la disposition du Package Recipe
-  Encoder.
-- Diagnostics de démarrage : types de recettes enregistrés, et contrôle des traductions.
-- Création d'une recette depuis le terminal, avec prise d'un porte-recettes vierge sur le
-  réseau ME.
-- Retrait d'un porte-recettes vers le réseau, par Maj et clic gauche.
-- Réglage des quantités à la molette, jusqu'à 4096.
-- Transfert d'une recette depuis JEI vers l'éditeur.
-- Champ de recherche : par machine, par type, par entrée ou par sortie.
-- Onglet Machines : crafters du réseau, état occupé, et **diagnostic des recettes
-  orphelines**.
-- Fichier de configuration : intervalle de rafraîchissement, identifiant de mode AE2WUT,
-  onglet Machines, taille des infobulles.
-- Recette de fabrication : un terminal ME et un Package Recipe Holder.
+- Wired terminal that lists the PackagedAuto machines of the ME network and their recipes.
+- Detailed tooltip: inputs, outputs, machine position.
+- Removal of a recipe from the terminal, with Shift and right click.
+- Recipe editor, opened with a right click, following the Package Recipe Encoder layout.
+- Startup diagnostics: registered recipe types, and translation check.
+- Creation of a recipe from the terminal, taking a blank recipe holder from the ME network.
+- Sending a recipe holder back to the network, with Shift and left click.
+- Amount adjustment with the wheel, up to 4096.
+- Recipe transfer from JEI into the editor.
+- Search field: by machine, by type, by input or by output.
+- Machines tab: crafters of the network, busy state, and **diagnostic of orphan recipes**.
+- Configuration file: refresh interval, AE2WUT mode id, Machines tab, tooltip size.
+- Crafting recipe: one ME terminal and one Package Recipe Holder.
+
+### Fixed
+
+- Disconnection on a dedicated server when the terminal opened. The network channel name was
+  21 characters long, over the 20 character limit of `CPacketCustomPayload`. See decision
+  D37.

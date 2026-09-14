@@ -6,20 +6,20 @@ import mezz.jei.api.JEIPlugin;
 import mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper;
 
 /**
- * Intégration JEI.
+ * JEI integration.
  *
- * <p>Un seul point d'entrée : le transfert d'une recette de JEI vers l'éditeur. Le
- * gestionnaire est déclaré **universel**, donc appelé pour toute catégorie. C'est le choix
- * le plus robuste : il évite d'énumérer les catégories au chargement, et capte donc les
- * addons qui enregistrent leurs types après nous.
+ * <p>A single entry point: transferring a recipe from JEI into the editor. The handler is
+ * declared **universal**, hence called for every category. That is the most robust choice: it
+ * avoids listing the categories at load time, and therefore catches the addons that register
+ * their types after us.
  *
- * <p>Cette classe n'est chargée que si JEI est présent. Forge ne suit pas les classes
- * absentes tant que rien ne les référence, et {@code @JEIPlugin} n'est lu que par JEI.
+ * <p>This class is only loaded when JEI is present. Forge does not follow absent classes as
+ * long as nothing references them, and {@code @JEIPlugin} is only read by JEI.
  */
 @JEIPlugin
 public class PatJeiPlugin implements IModPlugin {
 
-    /** Fabrique des messages d'erreur de JEI. Renseignée à l'enregistrement. */
+    /** JEI error message factory. Filled in at registration time. */
     public static IRecipeTransferHandlerHelper transferHelper;
 
     @Override

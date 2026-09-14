@@ -18,29 +18,29 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
- * Donne une image au terminal universel réglé sur notre mode.
+ * Gives an icon to the universal terminal when it is set to our mode.
  *
- * <h2>Le défaut</h2>
+ * <h2>The defect</h2>
  *
- * <p>Le modèle d'AE2WUT 1.0.5 est un {@code item/generated} muni de dix surcharges, de
- * {@code mode: 1} à {@code mode: 114514}. Or une surcharge de Minecraft s'applique dès que
- * la valeur est **supérieure ou égale** au seuil, et le jeu retient la **dernière** qui
- * correspond. Tout mode au-delà de 9 tombe donc sur la surcharge du mode 9, qui désigne
- * {@code ae2exttable:item/wireless_ultimate_crafting_terminal}. Sans cet addon, le jeu
- * affiche le damier violet et noir du modèle manquant.
+ * <p>The AE2WUT 1.0.5 model is an {@code item/generated} with ten overrides, from
+ * {@code mode: 1} to {@code mode: 114514}. A Minecraft override applies as soon as the value
+ * is **greater than or equal to** the threshold, and the game keeps the **last** one that
+ * matches. Every mode above 9 therefore lands on the mode 9 override, which points at
+ * {@code ae2exttable:item/wireless_ultimate_crafting_terminal}. Without that addon, the game
+ * shows the purple and black checkerboard of a missing model.
  *
- * <p>Le défaut ne vient pas de notre mode 41 : Cell Terminal, avec son mode 11, le subit
- * aussi. Les versions récentes d'AE2WUT ont d'ailleurs remplacé ces surcharges par un modèle
- * cuit et une méthode {@code regIcon}. La 1.0.5, celle du modpack, ne l'a pas.
+ * <p>The defect does not come from our mode 41: Cell Terminal, with its mode 11, hits it too.
+ * Recent AE2WUT versions have replaced those overrides with a baked model and a
+ * {@code regIcon} method. Version 1.0.5, the one in the modpack, does not have it.
  *
- * <h2>Le correctif</h2>
+ * <h2>The fix</h2>
  *
- * <p>On enveloppe le modèle cuit d'AE2WUT. L'enveloppe ne change rien, sauf une chose : sur
- * notre mode, elle rend le modèle de **notre** terminal sans fil. Tout autre mode retourne
- * à la liste de surcharges d'origine, intacte.
+ * <p>We wrap the baked AE2WUT model. The wrapper changes nothing, except one thing: on our
+ * mode it returns the model of **our** wireless terminal. Any other mode falls back to the
+ * original override list, untouched.
  *
- * <p>Rien n'est écrit dans les ressources d'AE2WUT. Sans AE2WUT, le modèle cherché est
- * absent et l'enveloppe ne se pose pas.
+ * <p>Nothing is written into the AE2WUT resources. Without AE2WUT, the model we look for is
+ * absent and the wrapper is never installed.
  */
 @SideOnly(Side.CLIENT)
 @Mod.EventBusSubscriber(value = Side.CLIENT, modid = Reference.MOD_ID)
@@ -63,7 +63,7 @@ public final class WutModelPatch {
         event.getModelRegistry().putObject(UNIVERSAL, new ModeAware(universal, ours));
     }
 
-    /** Le modèle d'AE2WUT, inchangé, sauf sa liste de surcharges. */
+    /** The AE2WUT model, unchanged, except for its override list. */
     private static final class ModeAware extends BakedModelWrapper<IBakedModel> {
 
         private final ItemOverrideList overrides;
@@ -79,7 +79,7 @@ public final class WutModelPatch {
         }
     }
 
-    /** Notre mode d'abord ; tout le reste part à la liste d'origine. */
+    /** Our mode first; everything else goes to the original list. */
     private static final class ModeOverrides extends ItemOverrideList {
 
         private final IBakedModel universal;
@@ -97,9 +97,8 @@ public final class WutModelPatch {
             if (WutSupport.showsOurMode(stack)) {
                 return ours;
             }
-            // PIÈGE : il faut passer `universal`, et non `model`. `model` est notre
-            // enveloppe : la lui donner ferait boucler la recherche de surcharge sur
-            // elle-même.
+            // PITFALL: pass `universal`, not `model`. `model` is our wrapper: handing it
+            // back would make the override lookup loop on itself.
             return universal.getOverrides().handleItemState(universal, stack, world, entity);
         }
     }

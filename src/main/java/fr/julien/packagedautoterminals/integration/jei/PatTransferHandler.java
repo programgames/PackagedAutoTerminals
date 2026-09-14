@@ -17,15 +17,15 @@ import thelm.packagedauto.api.IRecipeType;
 import thelm.packagedauto.api.RecipeTypeRegistry;
 
 /**
- * Transfère une recette de JEI vers l'éditeur.
+ * Transfers a recipe from JEI into the editor.
  *
- * <p>Aucune conversion n'est écrite ici. PackagedAuto fournit déjà
- * {@code IRecipeType.getRecipeTransferMap(IRecipeLayout, catégorie)}, qui rend la
- * correspondance « emplacement → objet » pour ses propres indices. C'est exactement la
- * raison de la contrainte D22 : nos indices d'emplacements sont restés ceux de l'Encoder.
+ * <p>No conversion is written here. PackagedAuto already provides
+ * {@code IRecipeType.getRecipeTransferMap(IRecipeLayout, category)}, which returns the
+ * "slot to item" mapping for its own indexes. That is exactly the reason for constraint D22:
+ * our slot indexes stayed the ones of the Encoder.
  *
- * <p>Le client n'applique rien lui-même : il envoie la correspondance au serveur, qui
- * reconstruit la recette (décision D05).
+ * <p>The client applies nothing itself: it sends the mapping to the server, which rebuilds
+ * the recipe (decision D05).
  */
 public class PatTransferHandler implements IRecipeTransferHandler<ContainerPatEditor> {
 
@@ -58,21 +58,21 @@ public class PatTransferHandler implements IRecipeTransferHandler<ContainerPatEd
     }
 
     /**
-     * Type de recette le plus **précis** pour cette catégorie JEI.
+     * The **most precise** recipe type for this JEI category.
      *
-     * <p>PIÈGE corrigé. Prendre le premier type qui déclare la catégorie donnait un résultat
-     * dépendant de l'ordre du registre. En décompilant `RecipeTypeProcessing`, on voit que
-     * sa méthode `getJEICategories` rend **toutes** les catégories de JEI dès que JEI est
-     * chargé : le type Processing, et les types Ordered et Positioned qui en héritent, sont
-     * des fourre-tout. Une recette de l'Ultimate Table basculait donc en « Positioned ».
+     * <p>PITFALL fixed. Taking the first type that declares the category gave a result that
+     * depended on the registry order. Decompiling `RecipeTypeProcessing` shows that its
+     * `getJEICategories` method returns **every** JEI category as soon as JEI is loaded: the
+     * Processing type, and the Ordered and Positioned types that inherit from it, are catch
+     * alls. An Ultimate Table recipe therefore fell into "Positioned".
      *
-     * <p>Le critère est donc la **largeur** de la liste déclarée : un type qui ne nomme que
-     * deux catégories sait ce qu'il fait ; un type qui les nomme toutes se contente
-     * d'accepter. Le plus étroit gagne, et le fourre-tout ne sert que de dernier recours.
-     * La règle ne cite aucun mod par son nom, donc un addon inconnu en profite aussi.
+     * <p>The criterion is therefore the **width** of the declared list: a type that names
+     * only two categories knows what it does; a type that names them all merely accepts. The
+     * narrowest wins, and the catch all only serves as a last resort. The rule names no mod,
+     * so an unknown addon benefits from it too.
      *
-     * <p>Le registre est relu à chaque transfert, et non mis en cache : un addon peut
-     * enregistrer ses types après le chargement de JEI.
+     * <p>The registry is read again on every transfer, and not cached: an addon can register
+     * its types after JEI is loaded.
      */
     private static IRecipeType findType(String category) {
         IRecipeType best = null;

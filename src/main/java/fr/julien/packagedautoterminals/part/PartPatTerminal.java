@@ -13,7 +13,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-/** Terminal câblé. Il se pose sur un câble ME, comme l'Interface Terminal d'AE2. */
+/** Wired terminal. It is placed on an ME cable, like the AE2 Interface Terminal. */
 public class PartPatTerminal extends AbstractPartDisplay {
 
     public static final ResourceLocation MODEL_OFF =

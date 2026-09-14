@@ -16,28 +16,28 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 /**
- * « La touche est tombée. Ouvre mon terminal. »
+ * "The key went down. Open my terminal."
  *
- * <p>Le paquet ne porte aucune donnée : le serveur cherche l'objet lui-même. Le client ne
- * saurait pas dire lequel des deux terminaux possibles est valide, car la portée, la clé de
- * liaison et l'énergie ne vivent que sur le serveur.
+ * <p>The packet carries no data: the server looks for the item itself. The client could not
+ * tell which of the two possible terminals is valid, because range, link key and energy only
+ * live on the server.
  *
- * <p>Ordre de recherche, repris de Cell Terminal :
+ * <p>Search order, taken from Cell Terminal:
  *
  * <ol>
- *   <li>l'inventaire principal, pour notre terminal sans fil ;
- *   <li>la main gauche, emplacement 40 ;
- *   <li>le terminal universel d'AE2WUT qui a absorbé notre mode, aux mêmes endroits.
+ *   <li>the main inventory, for our wireless terminal;
+ *   <li>the offhand, slot 40;
+ *   <li>the AE2WUT universal terminal that absorbed our mode, in the same places.
  * </ol>
  *
- * <p>Notre terminal passe en premier : il est le choix explicite du joueur. Le terminal
- * universel sert de secours.
+ * <p>Our terminal comes first: it is the explicit choice of the player. The universal
+ * terminal is the fallback.
  */
 public class PacketOpenTerminal implements IMessage {
 
-    /** Emplacement de la main gauche, dans l'indexation continue de l'inventaire. */
+    /** Offhand slot, in the flat inventory indexing. */
     private static final int OFFHAND = 40;
-    /** Derniers emplacements de l'inventaire principal, barre d'action comprise. */
+    /** Size of the main inventory, hotbar included. */
     private static final int MAIN_SIZE = 36;
 
     @Override
@@ -51,8 +51,8 @@ public class PacketOpenTerminal implements IMessage {
         @Override
         public IMessage onMessage(PacketOpenTerminal message, MessageContext context) {
             EntityPlayerMP player = context.getServerHandler().player;
-            // PIÈGE de Forge : le gestionnaire tourne sur le fil réseau. Ouvrir une fenêtre
-            // depuis ce fil produit des états incohérents. On repasse par le fil du serveur.
+            // Forge PITFALL: the handler runs on the network thread. Opening a screen from
+            // that thread produces inconsistent state. We go back to the server thread.
             player.getServerWorld().addScheduledTask(() -> open(player));
             return null;
         }
@@ -65,7 +65,7 @@ public class PacketOpenTerminal implements IMessage {
                     new TextComponentTranslation("gui.packagedautoterminals.no_terminal"), true);
         }
 
-        /** Notre propre terminal sans fil. */
+        /** Our own wireless terminal. */
         private boolean tryOurs(EntityPlayerMP player) {
             for (int slot = 0; slot < MAIN_SIZE; slot++) {
                 ItemStack stack = player.inventory.getStackInSlot(slot);
@@ -79,11 +79,11 @@ public class PacketOpenTerminal implements IMessage {
         }
 
         /**
-         * Le terminal universel d'AE2WUT, s'il a absorbé notre mode.
+         * The AE2WUT universal terminal, when it absorbed our mode.
          *
-         * <p>Le mode courant n'entre pas dans la recherche. Le joueur qui appuie sur notre
-         * touche veut notre terminal, quel que soit le réglage de sa molette. Le serveur
-         * bascule donc le mode avant d'ouvrir.
+         * <p>The current mode plays no part in the search. A player who presses our key
+         * wants our terminal, whatever their wheel is set to. The server therefore switches
+         * the mode before opening.
          */
         private boolean tryUniversal(EntityPlayerMP player) {
             for (int slot = 0; slot < MAIN_SIZE; slot++) {
@@ -102,11 +102,11 @@ public class PacketOpenTerminal implements IMessage {
         }
 
         /**
-         * Trois contrôles, puis l'ouverture. L'ordre suit celui de Cell Terminal et d'AE2.
+         * Three checks, then the opening. The order follows Cell Terminal and AE2.
          *
-         * @return vrai si l'objet est **le bon candidat**, même quand un contrôle échoue.
-         *     Sans cette nuance, la recherche continuerait après un terminal non lié, et le
-         *     joueur n'apprendrait jamais pourquoi rien ne s'ouvre.
+         * @return true when the item is **the right candidate**, even when a check fails.
+         *     Without that nuance, the search would continue past an unlinked terminal, and
+         *     the player would never learn why nothing opens.
          */
         private boolean check(EntityPlayerMP player, ItemStack stack, int slot) {
             IWirelessTermHandler handler =
@@ -121,8 +121,8 @@ public class PacketOpenTerminal implements IMessage {
                 return true;
             }
 
-            // PIÈGE : le constructeur de WirelessTerminalGuiObject appelle Long.parseLong sur
-            // cette clé. Une clé illisible y lèverait une exception.
+            // PITFALL: the WirelessTerminalGuiObject constructor calls Long.parseLong on
+            // this key. An unreadable key would throw there.
             ILocatable station;
             try {
                 station = AEApi.instance().registries().locatable()

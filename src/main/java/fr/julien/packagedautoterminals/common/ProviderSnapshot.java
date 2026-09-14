@@ -11,29 +11,28 @@ import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.MiscUtil;
 
 /**
- * Une machine fournisseuse de patterns, telle que le terminal l'affiche.
+ * A pattern-providing machine, as the terminal shows it.
  *
- * <p>La sérialisation des recettes réutilise {@link MiscUtil}, donc le format NBT de
- * PackagedAuto lui-même. Le terminal n'invente aucun format, et ne peut donc pas diverger
- * de l'amont.
+ * <p>Recipe serialisation reuses {@link MiscUtil}, hence the NBT format of PackagedAuto
+ * itself. The terminal invents no format, and therefore cannot drift from upstream.
  */
 public class ProviderSnapshot {
 
-    /** Identifiant stable pour cette session de GUI. Sert aux ordres du client. */
+    /** Stable id for this GUI session. Used by the client commands. */
     public int id;
-    /** Nom affiché de la machine. */
+    /** Display name of the machine. */
     public String name = "";
-    /** Icône de la machine, fournie par {@code IGridBlock.getMachineRepresentation()}. */
+    /** Machine icon, provided by {@code IGridBlock.getMachineRepresentation()}. */
     public ItemStack icon = ItemStack.EMPTY;
     public int dimension;
     public BlockPos pos = BlockPos.ORIGIN;
-    /** Le nœud de grille est actif : alimenté et doté d'un canal. */
+    /** The grid node is active: powered and given a channel. */
     public boolean active;
-    /** Un Package Recipe Holder occupe l'emplacement de la machine. */
+    /** A Package Recipe Holder sits in the machine slot. */
     public boolean holderPresent;
-    /** Packager, Unpackager, ou machine qui se suffit. Décide de l'appariement. */
+    /** Packager, Unpackager, or self-sufficient machine. Drives the pairing. */
     public ProviderRole role = ProviderRole.UNKNOWN;
-    /** Nom donné par le joueur, ou chaîne vide. Stocké par notre mod, pas par PackagedAuto. */
+    /** Name given by the player, or empty string. Stored by our mod, not by PackagedAuto. */
     public String customName = "";
     public List<IRecipeInfo> recipes = new ArrayList<>();
 

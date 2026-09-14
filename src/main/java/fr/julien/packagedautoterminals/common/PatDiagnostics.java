@@ -8,22 +8,22 @@ import thelm.packagedauto.api.IRecipeType;
 import thelm.packagedauto.api.RecipeTypeRegistry;
 
 /**
- * Diagnostics de démarrage.
+ * Startup diagnostics.
  *
- * <p>Ils répondent à deux questions sans obliger le joueur à fouiller le jeu : quels types
- * de recettes sont réellement enregistrés, et les traductions du mod sont-elles chargées.
+ * <p>They answer two questions without forcing the player to dig through the game: which
+ * recipe types are actually registered, and whether the mod translations are loaded.
  */
 public final class PatDiagnostics {
 
     private PatDiagnostics() {}
 
-    /** Liste les types de recettes vus par le registre de PackagedAuto. */
+    /** Lists the recipe types seen by the PackagedAuto registry. */
     public static void logRecipeTypes() {
         Map<ResourceLocation, IRecipeType> registry = RecipeTypeRegistry.getRegistry();
-        PackagedAutoTerminals.LOGGER.info("Types de recettes enregistres : {}", registry.size());
+        PackagedAutoTerminals.LOGGER.info("Registered recipe types: {}", registry.size());
         for (Map.Entry<ResourceLocation, IRecipeType> entry : registry.entrySet()) {
             IRecipeType type = entry.getValue();
-            PackagedAutoTerminals.LOGGER.info("  - {} | court={} | machine={} | slots={}",
+            PackagedAutoTerminals.LOGGER.info("  - {} | short={} | machine={} | slots={}",
                     entry.getKey(),
                     type.getLocalizedNameShort(),
                     type.hasMachine(),

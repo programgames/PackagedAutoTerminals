@@ -8,11 +8,11 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
- * Envoie l'intention d'ouverture au serveur.
+ * Sends the opening intent to the server.
  *
- * <p>Le client ne décide de rien : il dit seulement que la touche est tombée. Le serveur
- * cherche l'objet, vérifie la liaison, la station de sécurité et l'énergie, puis ouvre la
- * fenêtre. C'est la règle 2 du projet, et c'est aussi ce que fait Cell Terminal.
+ * <p>The client decides nothing: it only reports that the key went down. The server looks
+ * for the item, checks the binding, the security station and the energy, then opens the
+ * screen. This is rule 2 of the project, and it is what Cell Terminal does too.
  */
 @SideOnly(Side.CLIENT)
 public final class PatKeyHandler {
@@ -21,8 +21,8 @@ public final class PatKeyHandler {
 
     @SubscribeEvent
     public static void onKeyInput(InputEvent.KeyInputEvent event) {
-        // `isPressed` ne rend vrai qu'une fois par appui. `isKeyDown` enverrait un paquet
-        // par image tant que la touche reste enfoncée.
+        // `isPressed` returns true only once per press. `isKeyDown` would send one packet
+        // per frame for as long as the key stays held down.
         if (PatKeyBindings.OPEN_TERMINAL.isPressed()) {
             PatNetwork.CHANNEL.sendToServer(new PacketOpenTerminal());
         }

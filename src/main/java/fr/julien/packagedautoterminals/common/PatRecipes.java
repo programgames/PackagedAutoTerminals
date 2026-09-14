@@ -17,12 +17,11 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 /**
- * Recette de fabrication du terminal.
+ * Crafting recipe of the terminal.
  *
- * <p>Elle est enregistrée **par le code**, et non en JSON. Motif : les objets d'AE2 se
- * distinguent par leur métadonnée, pas par leur nom. Un JSON devrait écrire ce nombre en
- * dur, et casserait à la moindre renumérotation. L'API d'AE2 rend la bonne pile, quelle que
- * soit la version.
+ * <p>It is registered **in code**, not in JSON. Reason: AE2 items are told apart by their
+ * metadata, not by their name. A JSON file would have to hard code that number, and would
+ * break on the first renumbering. The AE2 API returns the right stack on every version.
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public final class PatRecipes {
@@ -36,7 +35,7 @@ public final class PatRecipes {
 
         if (!terminal.isPresent() || holder == null) {
             PackagedAutoTerminals.LOGGER.warn(
-                    "Recette du terminal non enregistree : terminal AE2 present={}, porte-recettes present={}",
+                    "Terminal recipe not registered: AE2 terminal present={}, recipe holder present={}",
                     terminal.isPresent(), holder != null);
             return;
         }
@@ -47,8 +46,8 @@ public final class PatRecipes {
 
         register(event, "pat_terminal", new ItemStack(PatItems.TERMINAL), ingredients);
 
-        // Terminal sans fil : le nôtre, plus le terminal sans fil d'AE2, qui apporte
-        // l'antenne et la batterie.
+        // Wireless terminal: ours, plus the AE2 wireless terminal, which brings the
+        // antenna and the battery.
         Optional<ItemStack> wireless =
                 AEApi.instance().definitions().items().wirelessTerminal().maybeStack(1);
         if (wireless.isPresent()) {

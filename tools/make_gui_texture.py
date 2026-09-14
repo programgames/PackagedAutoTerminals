@@ -1,17 +1,16 @@
-"""Génère les planches d'interface du mod.
+"""Generates the GUI sheets of the mod.
 
-Motif : nous avons d'abord réutilisé `newinterfaceterminal.png` d'AE2. Sa géométrie est
-faite pour l'Interface Terminal, et plaquée sur notre fenêtre elle produisait des
-rectangles gris en travers du texte. Nous dessinons donc les nôtres, dont nous connaissons
-chaque coordonnée.
+Reason: we first reused the AE2 `newinterfaceterminal.png`. Its geometry is made for the
+Interface Terminal, and pasted onto our screen it produced grey rectangles across the text.
+So we draw our own, whose every coordinate we know.
 
-La palette reprend celle d'AE2 et du jeu, pour que les fenêtres restent natives :
-  198 panneau | 224 zone de liste | 139 emplacements | 55 bordures | 255 lumières
+The palette follows AE2 and the game, so the screens stay native:
+  198 panel | 224 list area | 139 slots | 55 borders | 255 highlights
 
-PIÈGE corrigé : chaque planche a **sa propre** position d'inventaire. Une constante partagée
-avait décalé l'inventaire de l'éditeur le jour où celui du terminal a été recentré.
+PITFALL fixed: each sheet has **its own** inventory position. A shared constant had shifted
+the editor inventory the day the terminal one was re-centred.
 
-Usage :
+Usage:
     python tools/make_gui_texture.py
 """
 
@@ -29,8 +28,8 @@ SHADOW = (85, 85, 85, 255)
 ARROW = (120, 120, 120, 255)
 ICON = (170, 170, 170, 255)
 NONE = (0, 0, 0, 0)
-# Fond des champs de saisie. Sombre à dessein : le texte du jeu est toujours dessiné avec
-# une ombre portée, qui sur un fond clair se lit comme une seconde lettre décalée.
+# Background of the input fields. Dark on purpose: game text is always drawn with a drop
+# shadow, which on a light background reads as a second, offset letter.
 FIELD = (26, 26, 26, 255)
 
 SLOT_PITCH = 18
@@ -39,8 +38,8 @@ HOTBAR_GAP = 58
 # --- Terminal ---------------------------------------------------------------------
 SHEET = 512
 WIDTH = 320
-# La liste est dessinée pour le maximum de rangées. Le jeu n'en affiche que ce que la
-# hauteur d'écran permet, et reprend le bas de la planche juste en dessous.
+# The list is drawn for the maximum row count. The game only shows what the screen height
+# allows, and picks the bottom of the sheet up right below.
 MAX_ROWS = 16
 FOOTER = 100
 
@@ -62,18 +61,18 @@ SEARCH_HEIGHT = 12
 TERMINAL_INVENTORY_LEFT = 79
 TERMINAL_INVENTORY_TOP = LIST_TOP + LIST_HEIGHT + 16
 
-# Icône « œil », rangée sous la fenêtre, dans la zone libre de la planche.
+# "Eye" icon, stored below the screen, in the free area of the sheet.
 EYE_U = 330
 EYE_V = 4
 EYE_SIZE = 12
 
-# Chevrons de pliage, rangés sous l'œil. Deux dessins : groupe plié, groupe déplié.
+# Collapse chevrons, stored below the eye. Two drawings: collapsed group, expanded group.
 CHEVRON_U = 330
 CHEVRON_V = 20
 CHEVRON_SIZE = 8
 
-# --- Éditeur ----------------------------------------------------------------------
-# La planche fait 512 sur 512 : la fenêtre dépasse 256 pixels dans les deux sens.
+# --- Editor -----------------------------------------------------------------------
+# The sheet is 512 by 512: the screen exceeds 256 pixels in both directions.
 EDITOR_SHEET = 512
 EDITOR_WIDTH = 258
 EDITOR_HEIGHT = 338
@@ -115,7 +114,7 @@ def fill(px, x0, y0, w, h, color):
 
 
 def recess(px, x0, y0, w, h, color):
-    """Creuse une zone : bordure sombre en haut et à gauche, lumière en bas et à droite."""
+    """Recesses an area: dark border on top and left, highlight on bottom and right."""
     fill(px, x0, y0, w, h, color)
     fill(px, x0 - 1, y0 - 1, w + 1, 1, EDGE)
     fill(px, x0 - 1, y0 - 1, 1, h + 1, EDGE)
@@ -124,7 +123,7 @@ def recess(px, x0, y0, w, h, color):
 
 
 def frame(px, width, height):
-    """Panneau et biseau, comme les fenêtres du jeu."""
+    """Panel and bevel, like the game screens."""
     fill(px, 0, 0, width, height, PANEL)
     fill(px, 0, 0, width, 1, BLACK)
     fill(px, 0, 0, 1, height, BLACK)
@@ -145,7 +144,7 @@ def player_inventory(px, left, top):
 
 
 def draw_eye(px, x0, y0):
-    """Œil : une paupière en amande, et une pupille pleine."""
+    """Eye: an almond lid, and a solid pupil."""
     lid = [(2, 6), (3, 4), (4, 3), (5, 2), (6, 2), (7, 3), (8, 4), (9, 6),
            (8, 8), (7, 9), (6, 10), (5, 10), (4, 9), (3, 8)]
     for x, y in lid:
@@ -155,26 +154,26 @@ def draw_eye(px, x0, y0):
 
 
 def draw_chevron_right(px, x0, y0):
-    """Chevron vers la droite : le groupe est plié."""
+    """Chevron pointing right: the group is collapsed."""
     for step in range(4):
         fill(px, x0 + 2 + step, y0 + step, 1, 7 - 2 * step, EDGE)
 
 
 def draw_chevron_down(px, x0, y0):
-    """Chevron vers le bas : le groupe est déplié."""
+    """Chevron pointing down: the group is expanded."""
     for step in range(4):
         fill(px, x0 + step, y0 + 2 + step, 7 - 2 * step, 1, EDGE)
 
 
 def draw_arrow(px, x0, y0):
-    """Flèche vers la droite, comme celle de l'Encoder."""
+    """Arrow pointing right, like the Encoder one."""
     fill(px, x0, y0 + 4, 14, 6, ARROW)
     for step in range(7):
         fill(px, x0 + 14 + step, y0 + step, 1, 14 - 2 * step, ARROW)
 
 
 def draw_package(px, x0, y0):
-    """Contour de colis, dessiné au fond des emplacements d'aperçu."""
+    """Package outline, drawn at the bottom of the preview slots."""
     points = [(5, 2), (10, 2), (13, 6), (13, 10), (8, 14), (3, 10), (3, 6)]
     for index in range(len(points)):
         ax, ay = points[index]
@@ -188,7 +187,7 @@ def draw_package(px, x0, y0):
 def build_terminal():
     px = sheet(SHEET, SHEET)
     frame(px, WIDTH, HEIGHT)
-    # L'icône vit à droite de la fenêtre, dans la zone libre de la planche.
+    # The icon lives right of the screen, in the free area of the sheet.
     draw_eye(px, EYE_U, EYE_V)
     draw_chevron_right(px, CHEVRON_U, CHEVRON_V)
     draw_chevron_down(px, CHEVRON_U + 10, CHEVRON_V)
@@ -254,6 +253,6 @@ if __name__ == "__main__":
     base = os.path.join("src", "main", "resources", "assets", "packagedautoterminals",
                         "textures", "guis")
     write_png(os.path.join(base, "pat_terminal.png"), build_terminal())
-    print("Terminal", WIDTH, "x", HEIGHT, "| jusqu'a", MAX_ROWS, "rangees")
+    print("Terminal", WIDTH, "x", HEIGHT, "| up to", MAX_ROWS, "rows")
     write_png(os.path.join(base, "pat_editor.png"), build_editor())
-    print("Editeur", EDITOR_WIDTH, "x", EDITOR_HEIGHT, "sur une planche", EDITOR_SHEET)
+    print("Editor", EDITOR_WIDTH, "x", EDITOR_HEIGHT, "on a", EDITOR_SHEET, "sheet")

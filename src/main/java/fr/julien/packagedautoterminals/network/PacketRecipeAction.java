@@ -10,34 +10,34 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 /**
- * Ordre d'édition, du client vers le serveur.
+ * Edit command, from the client to the server.
  *
- * <p>Le client envoie une **intention**, jamais un NBT de recette (décision D05). Il désigne
- * la machine par sa position, et non par un identifiant de session : l'ordre d'un scan peut
- * changer entre deux rafraîchissements. Le serveur vérifie ensuite que cette machine est
- * bien sur la grille du terminal, et que le joueur a le droit d'y toucher.
+ * <p>The client sends an **intent**, never a recipe NBT (decision D05). It names the machine
+ * by its position, not by a session id: the order of a scan can change between two refreshes.
+ * The server then checks that this machine really is on the terminal grid, and that the
+ * player is allowed to touch it.
  */
 public class PacketRecipeAction implements IMessage {
 
-    /** Supprime la recette d'indice {@link #index}. */
+    /** Removes the recipe at index {@link #index}. */
     public static final byte ACTION_REMOVE = 0;
-    /** Ouvre l'éditeur sur la recette d'indice {@link #index}. */
+    /** Opens the editor on the recipe at index {@link #index}. */
     public static final byte ACTION_EDIT = 1;
-    /** Écrit la recette de l'éditeur, puis revient au terminal. */
+    /** Writes the editor recipe, then returns to the terminal. */
     public static final byte ACTION_SAVE = 2;
-    /** Change le type de recette dans l'éditeur. {@link #index} vaut 1 en avant, 0 en arrière. */
+    /** Changes the recipe type in the editor. {@link #index} is 1 forward, 0 backward. */
     public static final byte ACTION_CYCLE_TYPE = 3;
-    /** Ajoute une recette à cette machine, et ouvre l'éditeur dessus. */
+    /** Adds a recipe to this machine, and opens the editor on it. */
     public static final byte ACTION_NEW = 4;
-    /** Retire le porte-recettes de cette machine, et le range dans le réseau. */
+    /** Takes the recipe holder out of this machine, and stores it in the network. */
     public static final byte ACTION_REMOVE_HOLDER = 5;
-    /** Referme l'éditeur et rouvre le terminal. */
+    /** Closes the editor and reopens the terminal. */
     public static final byte ACTION_BACK = 6;
-    /** Supprime la recette en cours d'édition. */
+    /** Deletes the recipe being edited. */
     public static final byte ACTION_DELETE = 7;
-    /** Vide la grille de l'éditeur, sans rien écrire. */
+    /** Clears the editor grid, without writing anything. */
     public static final byte ACTION_CLEAR = 8;
-    /** Déplace la rangée d'onglets. {@link #index} vaut 1 en avant, 0 en arrière. */
+    /** Scrolls the tab row. {@link #index} is 1 forward, 0 backward. */
     public static final byte ACTION_SCROLL_TABS = 9;
 
     public int dimension;
@@ -91,8 +91,8 @@ public class PacketRecipeAction implements IMessage {
                 if (player.openContainer instanceof ContainerPatEditor) {
                     ContainerPatEditor editor = (ContainerPatEditor) player.openContainer;
                     if (message.action == ACTION_SAVE) {
-                        // On reste dans l'éditeur : le joueur doit voir le message, et
-                        // pouvoir enchaîner une seconde modification.
+                        // We stay in the editor: the player must see the message, and be
+                        // able to chain a second edit.
                         editor.save();
                     } else if (message.action == ACTION_BACK) {
                         editor.backToTerminal();

@@ -8,17 +8,16 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 /**
- * Change la quantité d'un emplacement de l'éditeur.
+ * Changes the amount in one editor slot.
  *
- * <p>Les recettes de type {@code Processing} demandent des quantités précises. PackagedAuto
- * ouvre pour cela une fenêtre dédiée. Le terminal fait plus simple : la molette au-dessus
- * d'un emplacement ajuste sa quantité.
+ * <p>{@code Processing} recipes need exact amounts. PackagedAuto opens a dedicated screen
+ * for that. The terminal keeps it simpler: the wheel over a slot adjusts its amount.
  */
 public class PacketEditorSlot implements IMessage {
 
     public int slot;
     public int delta;
-    /** Vrai : {@link #delta} est la quantité voulue. Faux : c'est un pas à ajouter. */
+    /** True: {@link #delta} is the wanted amount. False: it is a step to add. */
     public boolean absolute;
 
     public PacketEditorSlot() {}

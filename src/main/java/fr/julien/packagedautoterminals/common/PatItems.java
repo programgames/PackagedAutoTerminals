@@ -24,7 +24,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public final class PatItems {
 
     public static final CreativeTabs TAB = new CreativeTabs(Reference.MOD_ID) {
-        // Mappings snapshot_20171003 : la méthode s'appelle getTabIconItem, et non createIcon.
+        // Mappings snapshot_20171003: the method is named getTabIconItem, not createIcon.
         @Override
         public ItemStack getTabIconItem() {
             return new ItemStack(TERMINAL);
@@ -59,13 +59,14 @@ public final class PatItems {
     }
 
     /**
-     * Donne sa couleur à l'item du terminal.
+     * Gives the terminal item its colour.
      *
-     * <p>Le modèle hérite de {@code item/part/display} d'AE2. Ce modèle ne peint rien : il
-     * empile trois calques blancs, et demande au jeu la couleur des index de teinte 1 à 4.
-     * Sans ce gestionnaire, le jeu répond « pas de teinte », et l'item sort **tout blanc**.
+     * <p>The model inherits from the AE2 {@code item/part/display}. That model paints
+     * nothing: it stacks three white layers and asks the game for the colour of tint indexes
+     * 1 to 4. Without this handler the game answers "no tint", and the item comes out
+     * **all white**.
      *
-     * <p>{@code AEColor.TRANSPARENT} est la teinte des parts non peintes : le violet fluix.
+     * <p>{@code AEColor.TRANSPARENT} is the tint of unpainted parts: fluix purple.
      */
     @SubscribeEvent
     @SideOnly(Side.CLIENT)
@@ -75,18 +76,18 @@ public final class PatItems {
     }
 
     /**
-     * Déclare le terminal sans fil au registre d'AE2.
+     * Registers the wireless terminal with the AE2 registry.
      *
-     * <p>Cet enregistrement sert à la liaison, à l'énergie et à la portée. Il ne sert **pas**
-     * à ouvrir la fenêtre : voir l'explication dans {@link ItemWirelessPatTerminal}.
+     * <p>This registration drives the binding, the energy and the range. It does **not**
+     * open the screen: see the explanation in {@link ItemWirelessPatTerminal}.
      */
     public static void registerWirelessHandler() {
         AEApi.instance().registries().wireless().registerWirelessHandler(WIRELESS_TERMINAL);
     }
 
     /**
-     * AE2 ne cuit que les modèles de part qu'on lui déclare. Sans cet appel, la part est
-     * invisible dans le monde, sans aucune erreur dans le journal.
+     * AE2 only bakes the part models that are declared to it. Without this call the part is
+     * invisible in the world, with no error at all in the log.
      */
     public static void registerPartModels() {
         AEApi.instance().registries().partModels()

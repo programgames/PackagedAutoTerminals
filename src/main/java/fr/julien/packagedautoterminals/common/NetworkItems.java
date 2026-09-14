@@ -15,7 +15,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import thelm.packagedauto.api.IRecipeListItem;
 
-/** Accès au stockage du réseau ME, pour prendre un porte-recettes vierge. */
+/** Access to the ME network storage, to take a blank recipe holder. */
 public final class NetworkItems {
 
     private static Item recipeHolder;
@@ -24,15 +24,15 @@ public final class NetworkItems {
     private NetworkItems() {}
 
     /**
-     * Trouve l'item porte-recettes.
+     * Finds the recipe holder item.
      *
-     * <p>La recherche parcourt le registre et retient le premier item qui implémente
-     * {@link IRecipeListItem}. Aucun nom n'est écrit en dur : un addon qui fournirait son
-     * propre porte-recettes serait donc accepté.
+     * <p>The search walks the registry and keeps the first item that implements
+     * {@link IRecipeListItem}. No name is hard coded: an addon shipping its own recipe
+     * holder would therefore be accepted.
      */
     public static Item findRecipeHolder() {
-        // PIÈGE évité : ne jamais mémoriser un résultat nul. Un appel trop tôt, avant
-        // l'enregistrement des items, figerait l'absence pour toute la partie.
+        // PITFALL avoided: never cache a null result. A call made too early, before item
+        // registration, would freeze the absence for the whole game.
         if (searched && recipeHolder != null) {
             return recipeHolder;
         }
@@ -47,9 +47,9 @@ public final class NetworkItems {
     }
 
     /**
-     * Range un objet dans le réseau.
+     * Stores an item into the network.
      *
-     * @return ce qui n'a pas pu être rangé.
+     * @return what could not be stored.
      */
     public static ItemStack insert(IGrid grid, ItemStack stack, IActionSource source) {
         if (grid == null || stack.isEmpty()) {
@@ -75,12 +75,12 @@ public final class NetworkItems {
     }
 
     /**
-     * Retire un exemplaire de cet objet du réseau.
+     * Takes one copy of this item out of the network.
      *
-     * <p>L'extraction passe par {@code poweredExtraction} : elle consomme donc l'énergie du
-     * réseau, et respecte la source d'action, donc la sécurité d'AE2.
+     * <p>Extraction goes through {@code poweredExtraction}: it therefore draws network
+     * energy, and honours the action source, hence the AE2 security.
      *
-     * @return la pile extraite, ou une pile vide si le réseau n'en a pas.
+     * @return the extracted stack, or an empty stack when the network has none.
      */
     public static ItemStack extractOne(IGrid grid, ItemStack prototype, IActionSource source) {
         if (grid == null || prototype.isEmpty()) {

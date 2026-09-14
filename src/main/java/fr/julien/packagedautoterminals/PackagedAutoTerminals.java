@@ -18,19 +18,19 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Terminaux AE2 pour consulter et modifier les recettes de PackagedAuto à distance.
+ * AE2 terminals to browse and edit PackagedAuto recipes remotely.
  *
- * <p>Le mod cible les machines qui implémentent {@code IPackageProvidingMachine} :
- * Packager, Unpackager et Packaging Provider. Ce sont les seuls blocs qui portent un
- * Package Recipe Holder, donc des recettes modifiables. Voir docs/PACKAGEDAUTO-MODEL.md.
+ * <p>The mod targets machines that implement {@code IPackageProvidingMachine}:
+ * Packager, Unpackager and Packaging Provider. These are the only blocks that hold a
+ * Package Recipe Holder, hence editable recipes. See docs/PACKAGEDAUTO-MODEL.md.
  */
 @Mod(
         modid = Reference.MOD_ID,
         name = Reference.MOD_NAME,
         version = Reference.VERSION,
         acceptedMinecraftVersions = "[1.12.2]",
-        // `after` sans `required` : AE2WUT reste facultatif, mais il doit se charger avant
-        // nous. Ses classes de recette lisent notre objet dès l'enregistrement.
+        // `after` without `required`: AE2WUT stays optional, but it must load before us.
+        // Its recipe classes read our item as soon as registration happens.
         dependencies = "required-after:" + Reference.AE2
                 + ";required-after:" + Reference.PACKAGED_AUTO
                 + ";after:" + Reference.AE2WUT
@@ -44,7 +44,7 @@ public class PackagedAutoTerminals {
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
-        LOGGER.info("{} {} : pre-init", Reference.MOD_NAME, Reference.VERSION);
+        LOGGER.info("{} {}: pre-init", Reference.MOD_NAME, Reference.VERSION);
         PatItems.registerPartModels();
         PatItems.registerWirelessHandler();
         PatNetwork.init();
@@ -58,20 +58,20 @@ public class PackagedAutoTerminals {
         }
         if (WutSupport.isLoaded()) {
             MinecraftForge.EVENT_BUS.register(WutEventHandler.class);
-            LOGGER.info("{} : AE2WUT detecte, mode {}", Reference.MOD_NAME, WutSupport.mode());
+            LOGGER.info("{}: AE2WUT detected, mode {}", Reference.MOD_NAME, WutSupport.mode());
         }
-        LOGGER.info("{} : init", Reference.MOD_NAME);
+        LOGGER.info("{}: init", Reference.MOD_NAME);
     }
 
     /**
-     * Déclare la touche d'ouverture, côté client seulement.
+     * Registers the opening key, on the client side only.
      *
-     * <p>La méthode est isolée pour que la machine virtuelle ne charge jamais les classes
-     * clientes sur un serveur dédié. Le test de côté dans {@code init} suffit à l'éviter,
-     * car Java ne résout une classe qu'au moment où le code qui l'utilise s'exécute.
+     * <p>The method is isolated so that the virtual machine never loads client classes on a
+     * dedicated server. The side check in {@code init} is enough to avoid that, because Java
+     * only resolves a class when the code that uses it actually runs.
      *
-     * <p>Elle ne porte **pas** {@code @SideOnly} : FML retire ces méthodes du serveur, et
-     * l'appel resté dans {@code init} pointerait alors vers rien. Le test de côté suffit.
+     * <p>It does **not** carry {@code @SideOnly}: FML strips such methods from the server,
+     * and the call left in {@code init} would then point at nothing. The side check suffices.
      */
     private static void registerKeys() {
         PatKeyBindings.register();

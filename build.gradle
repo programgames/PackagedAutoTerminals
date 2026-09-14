@@ -4,8 +4,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // ForgeGradle 2.3 est la dernière lignée qui gère Minecraft 1.12.2.
-        // Version publiée et épinglée, plutôt que 2.3-SNAPSHOT, pour un build reproductible.
+        // ForgeGradle 2.3 is the last line that supports Minecraft 1.12.2.
+        // A published, pinned version rather than 2.3-SNAPSHOT, for a reproducible build.
         classpath 'net.minecraftforge.gradle:ForgeGradle:2.3.10'
     }
 }
@@ -21,28 +21,29 @@ version = "${mcVersion}-${modVersion}"
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-// Sans cela, Gradle compile avec l'encodage par défaut de la plateforme (windows-1252 ici),
-// ce qui transforme tout caractère accentué des sources en mojibake.
+// Without this, Gradle compiles with the platform default encoding (windows-1252 here),
+// which turns every accented character in the sources into mojibake.
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 
-    // PIÈGE : le jar de MixinBooter porte le processeur d'annotations de Mixin, que javac
-    // découvre tout seul par `META-INF/services`. Ce processeur exige que chaque classe
-    // visée soit sur le chemin de compilation, et s'arrête sur
-    // « Mixin target ... could not be found ».
+    // PITFALL: the MixinBooter jar carries the Mixin annotation processor, which javac
+    // discovers on its own through `META-INF/services`. That processor requires every target
+    // class to be on the compile path, and stops on
+    // "Mixin target ... could not be found".
     //
-    // Nos mixins visent AE2WUT **par son nom**, et non par sa classe, pour ne pas traîner
-    // MekEng, AE2FC et ae2exttable sur le chemin de compilation (règle 7). Le processeur ne
-    // sert donc à rien ici : sa seule autre tâche est d'écrire une table de remappage, dont
-    // nos greffes se passent, faute du moindre type de Minecraft dans les signatures visées.
+    // Our mixins target AE2WUT **by name**, not by class, so we do not drag MekEng, AE2FC and
+    // ae2exttable onto the compile path (rule 7). The processor is therefore useless here:
+    // its only other job is to write a remapping table, which our injections do without,
+    // since no Minecraft type appears in the target signatures.
     //
-    // Si un jour un mixin touche une méthode de Minecraft, il faudra retirer cette ligne,
-    // ajouter le processeur et déclarer la table dans le fichier de configuration.
+    // If a mixin ever touches a Minecraft method, this line must go, the processor must be
+    // added, and the table must be declared in the configuration file.
     options.compilerArgs << '-proc:none'
 }
 
-// PIÈGE : dans le bloc `minecraft { }`, le délégué Groovy est l'extension ForgeGradle, qui
-// possède ses PROPRES propriétés `mcVersion` et `forgeVersion`. Les résoudre ici, dehors.
+// PITFALL: inside the `minecraft { }` block, the Groovy delegate is the ForgeGradle
+// extension, which has its OWN `mcVersion` and `forgeVersion` properties. Resolve them here,
+// outside.
 def targetMinecraft = "${project.mcVersion}-${project.forgeVersion}".toString()
 def targetMappings = project.mcpMappings.toString()
 
@@ -51,21 +52,21 @@ minecraft {
     runDir = 'run'
     mappings = targetMappings
 
-    // Injecte la version dans Reference.VERSION au build. Elle ne vit que dans
+    // Injects the version into Reference.VERSION at build time. It lives only in
     // gradle.properties.
     replace '@MOD_VERSION@', project.version.toString()
 }
 
 repositories {
-    // Dépôt Maven LOCAL, pas un `flatDir`.
+    // LOCAL Maven repository, not a `flatDir`.
     //
-    // PIÈGE : avec `flatDir`, ForgeGradle saute ses tâches de déobfuscation
-    // (`deobfProvidedDeobfDepTask0 SKIPPED`). On compile alors contre les noms SRG
-    // d'AE2 (`func_146976_a`), et tout héritage d'une classe AE2 échoue sur
-    // « is not abstract and does not override abstract method ».
-    // Un vrai dépôt Maven fait de ces jars des modules, et le remappage s'exécute.
+    // PITFALL: with `flatDir`, ForgeGradle skips its deobfuscation tasks
+    // (`deobfProvidedDeobfDepTask0 SKIPPED`). We then compile against the AE2 SRG names
+    // (`func_146976_a`), and every class that extends an AE2 class fails with
+    // "is not abstract and does not override abstract method".
+    // A real Maven repository turns those jars into modules, and the remapping runs.
     //
-    // Motif du dépôt local : aucun Maven officiel ne publie AE2UEL (voir docs/PLAN.md, lot 0).
+    // Why a local repository: no official Maven publishes AE2UEL (see docs/PLAN.md, batch 0).
     maven {
         name = 'LocalLibs'
         url = uri("${projectDir}/libs/maven")
@@ -77,35 +78,35 @@ repositories {
 }
 
 dependencies {
-    // `deobfProvided` : nécessaire à la compilation, jamais embarqué dans notre jar.
-    // ForgeGradle remappe ces jars publiés (noms SRG) vers les noms MCP du poste de dev.
+    // `deobfProvided`: required to compile, never bundled into our jar.
+    // ForgeGradle remaps these published jars (SRG names) to the MCP names of the workspace.
     deobfProvided "pat:ae2-uel:${project.ae2uelVersion}@jar"
     deobfProvided "pat:packagedauto:${project.packagedAutoVersion}@jar"
-    // JEI, via HadEnoughItems : même API `mezz.jei.api`, même modid `jei`.
+    // JEI, through HadEnoughItems: same `mezz.jei.api` API, same `jei` modid.
     deobfProvided "pat:hadenoughitems:${project.jeiVersion}@jar"
 
-    // MixinBooter porte la bibliothèque Mixin. `compileOnly`, et hors de `libs/maven`, pour
-    // deux raisons : ForgeGradle ne met pas les `compileOnly` sur le chemin d'exécution,
-    // donc aucun doublon avec `run/mods/mixinbooter-10.7.jar` ; et la tâche `checkDevMods`
-    // ne parcourt que `libs/maven`.
+    // MixinBooter carries the Mixin library. `compileOnly`, and outside `libs/maven`, for
+    // two reasons: ForgeGradle does not put `compileOnly` entries on the runtime path, so
+    // there is no duplicate with `run/mods/mixinbooter-10.7.jar`; and the `checkDevMods` task
+    // only walks `libs/maven`.
     compileOnly files('libs/mixinbooter-10.7.jar')
 }
 
-// PIÈGE, suite. ForgeGradle ajoute bien les jars déobfusqués au chemin de compilation, mais
-// il y laisse AUSSI les jars bruts, et les bruts passent en premier. javac prend donc la
-// première correspondance, donc les noms SRG, et tout héritage d'une classe AE2 échoue.
-// On retire ici les artefacts bruts du dépôt local. Les versions déobfusquées restent.
+// PITFALL, continued. ForgeGradle does add the deobfuscated jars to the compile path, but it
+// ALSO leaves the raw jars there, and the raw ones come first. javac therefore takes the
+// first match, hence the SRG names, and every class that extends an AE2 class fails.
+// We remove the raw artifacts of the local repository here. The deobfuscated ones stay.
 afterEvaluate {
     sourceSets.main.compileClasspath = sourceSets.main.compileClasspath.filter { file ->
         !file.absolutePath.startsWith(new File(projectDir, 'libs/maven').absolutePath)
     }
 }
 
-// En environnement de dev, FML construit le pack de ressources du mod à partir du dossier
-// où il a trouvé la classe du mod, donc `build/classes/java/main`. Gradle 4 écrit les
-// ressources ailleurs, dans `build/resources/main`. Les fichiers de langue et les textures
-// deviennent alors invisibles, sans la moindre erreur dans le journal.
-// On remet donc les ressources à côté des classes.
+// In a development workspace, FML builds the mod resource pack from the folder where it
+// found the mod class, hence `build/classes/java/main`. Gradle 4 writes the resources
+// elsewhere, into `build/resources/main`. The language files and the textures then become
+// invisible, with no error at all in the log.
+// So we put the resources back next to the classes.
 sourceSets.main.output.resourcesDir = file("${buildDir}/classes/java/main")
 
 processResources {
@@ -123,9 +124,9 @@ processResources {
 }
 
 jar {
-    // Conséquence du `resourcesDir` ci-dessus : classes et ressources partagent un dossier,
-    // que Gradle ajoute deux fois. Sans cette ligne, `reobfJar` échoue sur
-    // « duplicate entry: assets/.../en_us.lang ».
+    // Consequence of the `resourcesDir` above: classes and resources share a folder, which
+    // Gradle adds twice. Without this line, `reobfJar` fails with
+    // "duplicate entry: assets/.../en_us.lang".
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     manifest {
@@ -139,38 +140,38 @@ jar {
     }
 }
 
-// Le pseudo de développement est aléatoire par défaut (`Player640`, `Player123`, ...).
-// Un pseudo fixe garde les sessions de test comparables d'un lancement à l'autre.
+// The development user name is random by default (`Player640`, `Player123`, ...).
+// A fixed name keeps test sessions comparable from one run to the next.
 afterEvaluate {
     tasks.matching { it.name == 'runClient' }.all {
         args '--username', 'PAT_Dev'
     }
 
-    // En dev, FML charge le mod depuis le JAR de `build/libs`, et non depuis les classes :
-    // le journal affiche « Source du mod : …\build\libs\packagedautoterminals-….jar ».
-    // Sans cette dépendance, `runClient` peut donc lancer du CODE PÉRIMÉ, sans rien signaler.
+    // In dev, FML loads the mod from the JAR in `build/libs`, not from the classes: the log
+    // shows "Mod source: ...\build\libs\packagedautoterminals-....jar".
+    // Without this dependency, `runClient` can therefore run STALE CODE, without a word.
     tasks.matching { it.name == 'runClient' || it.name == 'runServer' }.all {
         dependsOn 'reobfJar'
         dependsOn 'checkDevMods'
     }
 }
 
-// Garde-fou : ForgeGradle 2.3 et Gradle 4.x ne tournent que sous JDK 8. Échouer ici avec un
-// message clair vaut mieux qu'une trace illisible au milieu de setupDecompWorkspace.
+// Guard rail: ForgeGradle 2.3 and Gradle 4.x only run on JDK 8. Failing here with a clear
+// message beats an unreadable stack trace in the middle of setupDecompWorkspace.
 def javaVersion = System.getProperty('java.version')
 if (!javaVersion.startsWith('1.8')) {
     throw new GradleException(
-        "JDK 8 requis pour ForgeGradle 2.3, mais Gradle tourne sous Java ${javaVersion}.\n" +
-        "  Corrigez JAVA_HOME, par exemple :\n" +
+        "JDK 8 is required for ForgeGradle 2.3, but Gradle runs on Java ${javaVersion}.\n" +
+        "  Fix JAVA_HOME, for example:\n" +
         "    \$env:JAVA_HOME = 'C:/Program Files/Eclipse Adoptium/jdk-8.0.472.8-hotspot'"
     )
 }
 
-// Garde-fou : les deux fichiers de langue doivent porter exactement les mêmes clés.
-// Minecraft retombe en anglais pour une clé absente, sans rien signaler. Une divergence
-// passerait donc inaperçue jusqu'à ce qu'un joueur la voie.
+// Guard rail: both language files must carry exactly the same keys.
+// Minecraft falls back to English for a missing key, without a word. A divergence would
+// therefore go unnoticed until a player saw it.
 task checkLang {
-    description = 'Echoue si en_us.lang et fr_fr.lang divergent.'
+    description = 'Fails when en_us.lang and fr_fr.lang diverge.'
     group = 'verification'
 
     def langDir = file('src/main/resources/assets/packagedautoterminals/lang')
@@ -186,7 +187,7 @@ task checkLang {
                 }
                 def separator = line.indexOf('=')
                 if (separator < 0) {
-                    throw new GradleException("${file.name}:${index + 1} ligne sans '=' : ${trimmed}")
+                    throw new GradleException("${file.name}:${index + 1} line without '=': ${trimmed}")
                 }
                 entries[line.substring(0, separator).trim()] = line.substring(separator + 1)
             }
@@ -202,38 +203,38 @@ task checkLang {
             }
             def entries = parse(file)
             (reference.keySet() - entries.keySet()).each {
-                problems << "${file.name} : clé absente, ${it}"
+                problems << "${file.name}: missing key, ${it}"
             }
             (entries.keySet() - reference.keySet()).each {
-                problems << "${file.name} : clé inconnue d'en_us.lang, ${it}"
+                problems << "${file.name}: key unknown to en_us.lang, ${it}"
             }
             entries.each { key, value ->
                 if (reference.containsKey(key)) {
                     def expected = reference[key].count('%s') + reference[key].count('%d')
                     def found = value.count('%s') + value.count('%d')
                     if (expected != found) {
-                        problems << "${file.name} : ${key} porte ${found} paramètres, contre ${expected} dans en_us.lang"
+                        problems << "${file.name}: ${key} carries ${found} arguments, against ${expected} in en_us.lang"
                     }
                 }
             }
         }
 
         if (!problems.isEmpty()) {
-            throw new GradleException('Les traductions divergent :' + System.lineSeparator()
+            throw new GradleException('The translations diverge:' + System.lineSeparator()
                     + problems.collect { "  ${it}" }.join(System.lineSeparator()))
         }
-        logger.lifecycle("Traductions : ${reference.size()} clés, en accord.")
+        logger.lifecycle("Translations: ${reference.size()} keys, in agreement.")
     }
 }
 
 check.dependsOn checkLang
 
-// Garde-fou : un jar présent dans `libs/maven` ne doit JAMAIS se retrouver dans `run/mods`.
-// ForgeGradle met les dépendances sur le chemin d'exécution, FML les charge comme des mods,
-// et le doublon arrête le jeu sur `DuplicateModsFoundException`. Ce piège est tombé deux
-// fois : avec AE2UEL, puis avec JEI. Il s'arrête ici.
+// Guard rail: a jar present in `libs/maven` must NEVER end up in `run/mods`.
+// ForgeGradle puts the dependencies on the runtime path, FML loads them as mods, and the
+// duplicate stops the game with `DuplicateModsFoundException`. This trap was hit twice: with
+// AE2UEL, then with JEI. It stops here.
 task checkDevMods {
-    description = 'Echoue si un jar de libs/maven est aussi dans run/mods.'
+    description = 'Fails when a jar from libs/maven is also in run/mods.'
     group = 'verification'
 
     doLast {
@@ -249,17 +250,17 @@ task checkDevMods {
             def artifact = normalise(jar.parentFile.parentFile.name)
             runMods.listFiles({ file -> file.name.endsWith('.jar') } as FileFilter).each { mod ->
                 if (normalise(mod.name).contains(artifact)) {
-                    problems << "  run/mods/${mod.name} fait doublon avec la dépendance ${jar.parentFile.parentFile.name}"
+                    problems << "  run/mods/${mod.name} duplicates the dependency ${jar.parentFile.parentFile.name}"
                 }
             }
         }
 
         if (!problems.isEmpty()) {
             throw new GradleException(
-                    'Des mods sont présents deux fois. FML refusera de démarrer.'
+                    'Some mods are present twice. FML will refuse to start.'
                     + System.lineSeparator() + problems.join(System.lineSeparator())
                     + System.lineSeparator()
-                    + '  Supprime ces fichiers de run/mods : la dépendance suffit.')
+                    + '  Delete these files from run/mods: the dependency is enough.')
         }
     }
 }

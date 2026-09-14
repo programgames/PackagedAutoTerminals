@@ -9,15 +9,15 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
- * Touche d'ouverture du terminal sans fil.
+ * Opening key for the wireless terminal.
  *
- * <p>Elle part **non liée**, code {@code 0}, comme les quatre touches d'ae2exttable. Une
- * touche liée d'office entrerait en conflit avec les quatre d'AE2, avec le Maj + P de Cell
- * Terminal, ou avec n'importe quel autre mod du pack. Le joueur la règle lui-même.
+ * <p>It ships **unbound**, code {@code 0}, like the four keys of ae2exttable. A key bound by
+ * default would clash with the four AE2 keys, with the Shift + P of Cell Terminal, or with
+ * any other mod in the pack. The player binds it themselves.
  *
- * <p>Le contexte est {@code IN_GAME}, et non {@code UNIVERSAL} : l'événement
- * {@code InputEvent.KeyInputEvent} ne se déclenche que sans fenêtre ouverte. Annoncer un
- * contexte plus large ferait signaler des conflits qui ne peuvent pas se produire.
+ * <p>The context is {@code IN_GAME}, not {@code UNIVERSAL}: the
+ * {@code InputEvent.KeyInputEvent} event only fires when no screen is open. Declaring a
+ * wider context would report conflicts that cannot happen.
  */
 @SideOnly(Side.CLIENT)
 public final class PatKeyBindings {

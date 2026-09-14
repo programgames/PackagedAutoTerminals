@@ -9,28 +9,28 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Ajoute notre terminal à la liste des modes d'AE2WUT.
+ * Adds our terminal to the AE2WUT mode list.
  *
- * <p>La classe visée est désignée par son **nom**, et non par {@code ItemWirelessUniversal
- * Terminal.class}. Motif : cette classe porte dans ses signatures des types de MekEng,
- * d'AE2FC et d'ae2exttable. La citer par sa classe obligerait à mettre ces quatre mods sur
- * le chemin de compilation, contre la règle 7. Par son nom, rien n'est nécessaire.
+ * <p>The target class is named by its **name**, not by {@code ItemWirelessUniversal
+ * Terminal.class}. Reason: that class carries MekEng, AE2FC and ae2exttable types in its
+ * signatures. Naming it by class would force those four mods onto the compile path, against
+ * rule 7. By name, nothing is needed.
  *
- * <p>Les deux méthodes visées n'ont **aucun** type de Minecraft dans leur signature :
- * {@code ()[I} et {@code (I)Ljava/lang/String;}. Aucune table de remappage n'est donc
- * requise, et le mixin s'applique de la même façon en développement et en jeu.
+ * <p>The two target methods carry **no** Minecraft type in their signature: {@code ()[I} and
+ * {@code (I)Ljava/lang/String;}. No remapping table is therefore required, and the mixin
+ * applies the same way in development and in game.
  *
- * <p>{@code require = 1} fait échouer le démarrage si AE2WUT change de forme. C'est
- * voulu : mieux vaut un arrêt net qu'un terminal qui disparaît sans un mot.
+ * <p>{@code require = 1} makes startup fail when AE2WUT changes shape. That is deliberate: a
+ * clean stop beats a terminal that disappears without a word.
  */
 @Mixin(targets = "com.circulation.ae2wut.item.ItemWirelessUniversalTerminal", remap = false)
 public abstract class MixinWutTerminal {
 
     /**
-     * Notre mode rejoint la liste que le terminal universel sait porter.
+     * Our mode joins the list the universal terminal can carry.
      *
-     * <p>Le reste suit tout seul : {@code allMode} alimente la recette « tout en un » et la
-     * molette, qui calcule sa borne à partir du plus grand mode présent.
+     * <p>The rest follows on its own: {@code allMode} feeds the "all in one" recipe and the
+     * wheel, which computes its bound from the highest mode present.
      */
     @Inject(method = "getAllMode", at = @At("RETURN"), cancellable = true, require = 1)
     private static void packagedautoterminals$addMode(CallbackInfoReturnable<int[]> callback) {
@@ -46,10 +46,10 @@ public abstract class MixinWutTerminal {
     }
 
     /**
-     * Nom de notre mode, affiché à la suite de celui de l'objet et dans son infobulle.
+     * Name of our mode, shown after the item name and in its tooltip.
      *
-     * <p>AE2WUT rend une chaîne vide pour un mode inconnu : sans cette greffe, le joueur
-     * verrait « Wireless Universal Terminal » sans savoir sur quoi il est réglé.
+     * <p>AE2WUT returns an empty string for an unknown mode: without this injection, the
+     * player would see "Wireless Universal Terminal" without knowing what it is set to.
      */
     @Inject(method = "getWirelessName", at = @At("HEAD"), cancellable = true, require = 1)
     private static void packagedautoterminals$name(int value,

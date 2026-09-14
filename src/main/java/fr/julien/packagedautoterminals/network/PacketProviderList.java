@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
-/** Instantané complet des machines fournisseuses. Serveur vers client. */
+/** Full snapshot of the providing machines. Server to client. */
 public class PacketProviderList implements IMessage {
 
     public NBTTagCompound payload = new NBTTagCompound();

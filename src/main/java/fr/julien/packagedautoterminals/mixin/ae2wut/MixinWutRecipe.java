@@ -10,19 +10,19 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Fait absorber notre terminal sans fil par le terminal universel.
+ * Makes the universal terminal absorb our wireless terminal.
  *
- * <p>Une seule greffe suffit. {@code AllWUTRecipe.getIngredient()} rend la table
- * « mode → objet à consommer ». Deux choses la lisent, et toutes deux sont génériques :
+ * <p>A single injection is enough. {@code AllWUTRecipe.getIngredient()} returns the
+ * "mode to consumed item" table. Two things read it, and both are generic:
  *
  * <ol>
- *   <li>{@code DynamicUniversalRecipe.registerRecipes()} crée une recette sans forme par
- *       entrée, qui ajoute le mode au tableau {@code modes} du terminal universel ;
- *   <li>{@code AllWUTRecipe.reciperRegister()} bâtit la recette « tout en un ».
+ *   <li>{@code DynamicUniversalRecipe.registerRecipes()} creates one shapeless recipe per
+ *       entry, which adds the mode to the {@code modes} array of the universal terminal;
+ *   <li>{@code AllWUTRecipe.reciperRegister()} builds the "all in one" recipe.
  * </ol>
  *
- * <p>La table rendue est une {@code HashMap} modifiable : on y écrit directement, plutôt que
- * d'en rendre une copie, pour que les deux lecteurs voient la même chose.
+ * <p>The returned table is a mutable {@code HashMap}: we write into it directly, rather than
+ * returning a copy, so that both readers see the same thing.
  */
 @Mixin(targets = "com.circulation.ae2wut.recipes.AllWUTRecipe", remap = false)
 public abstract class MixinWutRecipe {

@@ -13,11 +13,12 @@ import net.minecraft.util.math.BlockPos;
 import thelm.packagedauto.api.IPackageCraftingMachine;
 
 /**
- * Une machine qui **exécute** les colis : Package Crafter, Basic à Ultimate, Extreme…
+ * A machine that **runs** the packages: Package Crafter, Basic to Ultimate, Extreme, and so
+ * on.
  *
- * <p>Ces machines ne portent aucune recette. Elles ne figurent donc pas dans l'onglet des
- * patterns (décision D02). L'onglet Machines les liste pour une seule raison : dire quelles
- * recettes encodées n'ont personne pour les exécuter.
+ * <p>These machines carry no recipe. They therefore do not appear in the patterns tab
+ * (decision D02). The Machines tab lists them for one reason only: to tell which encoded
+ * recipes have nobody to run them.
  */
 public class MachineSnapshot {
 
@@ -27,7 +28,7 @@ public class MachineSnapshot {
     public BlockPos pos = BlockPos.ORIGIN;
     public boolean active;
     public boolean busy;
-    /** Nom de la classe de la tuile. Sert à la correspondance avec les types de recettes. */
+    /** Name of the tile class. Used to match against the recipe types. */
     public String machineClass = "";
 
     public NBTTagCompound writeToNBT() {
@@ -54,7 +55,7 @@ public class MachineSnapshot {
         return snapshot;
     }
 
-    /** Parcourt la grille et décrit chaque machine d'exécution. */
+    /** Walks the grid and describes every crafting machine. */
     public static List<MachineSnapshot> scan(IGrid grid) {
         List<MachineSnapshot> found = new ArrayList<>();
         if (grid == null) {
@@ -84,8 +85,8 @@ public class MachineSnapshot {
                 ? machine.getClass().getSimpleName()
                 : snapshot.icon.getDisplayName();
 
-        // isBusy() interroge la machine, sans rien exécuter. C'est la seule information
-        // d'état que l'API expose.
+        // isBusy() queries the machine without running anything. It is the only state
+        // information the API exposes.
         snapshot.busy = machine.isBusy();
 
         if (machine instanceof TileEntity) {

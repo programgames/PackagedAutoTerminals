@@ -10,27 +10,27 @@ import java.util.Set;
 import thelm.packagedauto.api.IRecipeInfo;
 
 /**
- * Regroupe les machines qui travaillent ensemble.
+ * Groups the machines that work together.
  *
- * <p>Le joueur crée une paire de porte-recettes, puis leur ajoute les mêmes recettes au fil
- * du temps. Le terminal doit donc présenter une recette **une seule fois**, et appliquer
- * toute modification aux deux côtés.
+ * <p>The player creates a pair of recipe holders, then adds the same recipes to both over
+ * time. The terminal must therefore show a recipe **only once**, and apply every edit to
+ * both sides.
  *
- * <p>Le critère de regroupement est le **partage d'au moins une recette**. Il résiste au cas
- * qui nous intéresse le plus : si une recette manque d'un côté, les autres suffisent à
- * maintenir le groupe, et le manque devient visible au lieu de casser l'appariement.
+ * <p>The grouping criterion is **sharing at least one recipe**. It survives the case we care
+ * about most: when a recipe is missing on one side, the others still hold the group
+ * together, and the gap becomes visible instead of breaking the pairing.
  */
 public final class ProviderPairing {
 
     private ProviderPairing() {}
 
-    /** Un groupe : les machines appariées, et l'union de leurs recettes. */
+    /** A group: the paired machines, and the union of their recipes. */
     public static final class Group {
 
         public final List<ProviderSnapshot> machines = new ArrayList<>();
         public final List<IRecipeInfo> recipes = new ArrayList<>();
 
-        /** Machines qui portent cette recette. */
+        /** Machines that carry this recipe. */
         public List<ProviderSnapshot> carriers(IRecipeInfo recipe) {
             List<ProviderSnapshot> carriers = new ArrayList<>();
             for (ProviderSnapshot machine : machines) {
@@ -42,10 +42,10 @@ public final class ProviderPairing {
         }
 
         /**
-         * Cette recette est-elle complète, donc exécutable par AE2 ?
+         * Is this recipe complete, hence runnable by AE2?
          *
-         * <p>Elle l'est si le groupe porte un rôle qui se suffit, ou si la recette figure à
-         * la fois dans un Packager et dans un Unpackager.
+         * <p>It is, when the group carries a self-sufficient role, or when the recipe sits
+         * in both a Packager and an Unpackager.
          */
         public boolean isComplete(IRecipeInfo recipe) {
             boolean packager = false;
@@ -60,7 +60,7 @@ public final class ProviderPairing {
             return packager && unpackager;
         }
 
-        /** Rôle manquant pour cette recette, ou {@code null} si elle est complète. */
+        /** Role missing for this recipe, or {@code null} when it is complete. */
         public ProviderRole missingRole(IRecipeInfo recipe) {
             if (isComplete(recipe)) {
                 return null;
@@ -73,7 +73,7 @@ public final class ProviderPairing {
             return null;
         }
 
-        /** Nom donné par le joueur, ou {@code null}. Le premier trouvé fait foi. */
+        /** Name given by the player, or {@code null}. The first one found wins. */
         public String customName() {
             for (ProviderSnapshot machine : machines) {
                 if (machine.customName != null && !machine.customName.isEmpty()) {
@@ -83,7 +83,7 @@ public final class ProviderPairing {
             return null;
         }
 
-        /** Le groupe est-il exactement une paire Packager et Unpackager ? */
+        /** Is the group exactly one Packager and Unpackager pair? */
         public boolean isPair() {
             if (machines.size() != 2) {
                 return false;
@@ -93,7 +93,7 @@ public final class ProviderPairing {
             return first.needsPartner() && second == first.partner();
         }
 
-        /** Nom de la seule machine du groupe. */
+        /** Name of the single machine in the group. */
         public String singleName() {
             Set<String> names = new LinkedHashSet<>();
             for (ProviderSnapshot machine : machines) {
@@ -102,18 +102,18 @@ public final class ProviderPairing {
             return names.iterator().next();
         }
 
-        /** Machines distinctes, pour l'infobulle. */
+        /** Distinct machines, for the tooltip. */
         public int size() {
             return machines.size();
         }
     }
 
     /**
-     * Forme les groupes.
+     * Builds the groups.
      *
-     * <p>L'algorithme est une fusion par proche en proche : chaque machine part seule, puis
-     * rejoint le premier groupe avec lequel elle partage une recette. Les groupes ainsi
-     * rejoints fusionnent entre eux, car une machine peut faire le pont.
+     * <p>The algorithm merges step by step: every machine starts alone, then joins the first
+     * group it shares a recipe with. Groups joined that way merge together, because one
+     * machine can bridge them.
      */
     public static List<Group> group(List<ProviderSnapshot> providers) {
         List<Group> groups = new ArrayList<>();
@@ -131,7 +131,7 @@ public final class ProviderPairing {
                 target = new Group();
                 groups.add(target);
             } else {
-                // La machine fait le pont entre plusieurs groupes : ils n'en font plus qu'un.
+                // The machine bridges several groups: they become a single one.
                 target = shared.get(0);
                 for (int i = 1; i < shared.size(); i++) {
                     Group merged = shared.get(i);
@@ -149,7 +149,7 @@ public final class ProviderPairing {
             }
         }
 
-        // Le nom passe avant tout : c'est le seul lien que le joueur a posé lui-même.
+        // The name comes first: it is the only link the player set themselves.
         mergeNamed(groups);
         mergeLonePartners(groups);
         mergeEmptyPair(groups);
@@ -157,16 +157,16 @@ public final class ProviderPairing {
     }
 
     /**
-     * Réunit les machines que le joueur a nommées ensemble.
+     * Joins the machines the player has named together.
      *
-     * <p>Le nom est écrit sur **chaque** machine du groupe au moment du baptême. Deux
-     * machines qui portent le même nom sont donc appariées par décision du joueur, jamais
-     * par déduction.
+     * <p>The name is written on **every** machine of the group at naming time. Two machines
+     * that carry the same name are therefore paired by the player's decision, never by
+     * deduction.
      *
-     * <p>Ce lien survit là où le partage de recette ne survit pas. Sans lui, une paire dont
-     * on supprime la dernière recette se scinde en deux lignes, et le réseau qui compte une
-     * troisième machine du même rôle interdit toute réunion automatique : le choix serait
-     * ambigu. Le nom lève l'ambiguïté.
+     * <p>This link survives where recipe sharing does not. Without it, a pair whose last
+     * recipe is removed splits into two rows, and a network holding a third machine of the
+     * same role forbids any automatic reunion: the choice would be ambiguous. The name
+     * removes the ambiguity.
      */
     private static void mergeNamed(List<Group> groups) {
         Map<String, Group> byName = new LinkedHashMap<>();
@@ -189,19 +189,19 @@ public final class ProviderPairing {
     }
 
     /**
-     * Rattache une machine vide au groupe qui attend justement son rôle.
+     * Attaches an empty machine to the group that is waiting for exactly its role.
      *
-     * <p>Cas courant, et déroutant sans cette règle : le joueur a encodé une recette dans
-     * l'Unpackager, mais pas encore dans le Packager. Les deux ne partagent donc aucune
-     * recette, forment deux groupes, et chacun se plaint de l'absence de l'autre alors
-     * qu'ils sont posés côte à côte.
+     * <p>A common case, and a confusing one without this rule: the player encoded a recipe
+     * in the Unpackager, but not yet in the Packager. The two share no recipe, form two
+     * groups, and each one complains about the other being absent while they sit side by
+     * side.
      *
-     * <p>Après rattachement, l'en-tête cesse de crier au rôle manquant, car le groupe porte
-     * bien les deux machines. Seule la **recette** reste signalée en rouge, car elle n'est
-     * encore que d'un côté. C'est exactement l'information utile.
+     * <p>After attaching, the header stops reporting a missing role, because the group does
+     * carry both machines. Only the **recipe** stays flagged in red, because it is still on
+     * one side only. That is exactly the useful piece of information.
      *
-     * <p>La fusion n'a lieu que si le choix est certain : une seule machine vide de ce rôle,
-     * et un seul groupe qui l'attend.
+     * <p>The merge only happens when the choice is certain: a single empty machine of that
+     * role, and a single group waiting for it.
      */
     private static void mergeLonePartners(List<Group> groups) {
         for (ProviderRole role : new ProviderRole[] {ProviderRole.PACKAGER, ProviderRole.UNPACKAGER}) {
@@ -229,12 +229,12 @@ public final class ProviderPairing {
     }
 
     /**
-     * Réunit une paire toute neuve, dont les deux porte-recettes sont encore vides.
+     * Joins a brand new pair, whose two recipe holders are still empty.
      *
-     * <p>Sans recette, aucune ne peut être partagée : les deux machines formeraient deux
-     * groupes, et le terminal afficherait deux lignes pour ce qui est déjà une paire. La
-     * fusion n'a lieu que si le choix est certain : exactement un groupe vide de chaque
-     * rôle. Au-delà, nous ne devinons pas.
+     * <p>With no recipe, none can be shared: the two machines would form two groups, and the
+     * terminal would show two rows for what is already a pair. The merge only happens when
+     * the choice is certain: exactly one empty group of each role. Beyond that, we do not
+     * guess.
      */
     private static void mergeEmptyPair(List<Group> groups) {
         Group packager = null;
@@ -264,7 +264,7 @@ public final class ProviderPairing {
         }
     }
 
-    /** Groupe qui contient cette machine, ou {@code null}. */
+    /** Group that contains this machine, or {@code null}. */
     public static Group groupOf(List<Group> groups, int dimension, net.minecraft.util.math.BlockPos pos) {
         for (Group group : groups) {
             for (ProviderSnapshot machine : group.machines) {
@@ -277,13 +277,13 @@ public final class ProviderPairing {
     }
 
     /**
-     * Machine isolée du rôle manquant, quand le groupe n'a pas encore de partenaire.
+     * Lone machine of the missing role, when the group has no partner yet.
      *
-     * <p>Cas courant : le joueur vient de poser une paire, encode sa première recette, et
-     * les deux porte-recettes ne partagent donc encore rien. Si le réseau ne compte qu'une
-     * seule machine du rôle manquant, il n'y a pas d'ambiguïté : c'est elle.
+     * <p>A common case: the player has just placed a pair, encodes the first recipe, and the
+     * two recipe holders share nothing yet. When the network holds a single machine of the
+     * missing role, there is no ambiguity: that is the one.
      *
-     * @return la machine, ou {@code null} si le choix serait ambigu.
+     * @return the machine, or {@code null} when the choice would be ambiguous.
      */
     public static ProviderSnapshot findLonePartner(List<ProviderSnapshot> all, Group group,
                                                    ProviderRole missing) {
@@ -296,7 +296,7 @@ public final class ProviderPairing {
                 continue;
             }
             if (found != null) {
-                // Plusieurs candidats : nous ne devinons pas.
+                // Several candidates: we do not guess.
                 return null;
             }
             found = candidate;
@@ -305,11 +305,11 @@ public final class ProviderPairing {
     }
 
     /**
-     * Rôle absent du groupe, alors qu'une de ses machines l'attend.
+     * Role absent from the group, while one of its machines expects it.
      *
-     * <p>Un groupe **sans aucune recette** ne manque de rien : le joueur vient de poser ses
-     * machines, et n'a encore rien encodé. Reprocher une absence à ce stade n'aurait aucun
-     * sens.
+     * <p>A group **with no recipe at all** misses nothing: the player has just placed the
+     * machines and encoded nothing yet. Reporting an absence at that point would make no
+     * sense.
      */
     public static ProviderRole missingRoleOf(Group group) {
         if (group.recipes.isEmpty()) {
