@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import appeng.api.AEApi;
+import appeng.api.features.IWirelessTermHandler;
 import appeng.api.parts.IPart;
 import appeng.api.parts.IPartHost;
 import appeng.api.util.AEPartLocation;
@@ -14,6 +16,7 @@ import fr.julien.packagedautoterminals.common.EditorInventory;
 import fr.julien.packagedautoterminals.common.TerminalContext;
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
+import fr.julien.packagedautoterminals.integration.wut.WutSupport;
 import fr.julien.packagedautoterminals.item.ItemWirelessPatTerminal;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
 import net.minecraft.entity.player.EntityPlayer;
@@ -129,17 +132,24 @@ public class PatGuiHandler implements IGuiHandler {
      * <p>PIÈGE : son constructeur lit la clé de liaison et appelle {@code Long.parseLong}.
      * Sur un terminal jamais lié, la clé est vide et l'appel lève une exception. AE2 vérifie
      * ce point avant de construire l'objet ; nous devons faire de même.
+     *
+     * <p>Deux objets peuvent ouvrir cette fenêtre : le nôtre, et le Wireless Universal
+     * Terminal réglé sur notre mode. Le gestionnaire vient donc du registre d'AE2, et non
+     * d'un transtypage vers notre classe. Tout le reste — portée, énergie, clé — passe par
+     * {@code WirelessTerminalGuiObject}, qui ne connaît que l'interface.
      */
     private static TerminalContext wireless(EntityPlayer player, World world, int slot) {
         if (slot < 0 || slot >= player.inventory.getSizeInventory()) {
             return null;
         }
         ItemStack stack = player.inventory.getStackInSlot(slot);
-        if (!(stack.getItem() instanceof ItemWirelessPatTerminal)) {
+        boolean ours = stack.getItem() instanceof ItemWirelessPatTerminal;
+        if (!ours && !WutSupport.isOurMode(stack)) {
             return null;
         }
-        ItemWirelessPatTerminal handler = (ItemWirelessPatTerminal) stack.getItem();
-        if (handler.getEncryptionKey(stack).isEmpty()) {
+        IWirelessTermHandler handler =
+                AEApi.instance().registries().wireless().getWirelessTerminalHandler(stack);
+        if (handler == null || handler.getEncryptionKey(stack).isEmpty()) {
             return null;
         }
         return TerminalContext.ofWireless(

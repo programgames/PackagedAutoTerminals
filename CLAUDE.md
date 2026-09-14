@@ -61,8 +61,26 @@ absents de `libs/`, sans quoi FML refuse de démarrer (voir section 4.1) :
 
 ```
 Avaritia, Baubles, CodeChickenLib, Cucumber, ExtendedCrafting-Nomifactory-Edition,
-HadEnoughItems, PackagedAvaritia, PackagedExCrafting, PackagingProvider, mixinbooter
+HadEnoughItems, PackagedAvaritia, PackagedExCrafting, PackagingProvider, mixinbooter,
+ae2wut, cell-terminal
 ```
+
+> ⚠️ **`cell-terminal` plante avec `ae2wut-1.0.5`.** Cell Terminal 1.6.7 appelle
+> `AE2UELWirelessUniversalTerminal.registryContainer`, une API absente de la version 1.0.5.
+> Le jeu s'arrête sur `NoClassDefFoundError: com/circulation/ae2wut/AE2UELWirelessUniversalTerminal$GetGui`.
+> Correctif : `B:enableAE2WUT=false` dans `run/config/cellterminal_server.cfg`. L'instance
+> réelle du joueur porte déjà ce réglage.
+
+> `cell-terminal` sert de **modèle**, et non de dépendance. Il montre comment un addon AE2UEL
+> déclare une touche : voir la décision **D34**.
+
+> `ae2wut-1.0.5.jar` sert à l'intégration du Wireless Universal Terminal. Il n'est **pas**
+> une dépendance de compilation : nos mixins visent ses classes par leur nom. Voir la
+> décision **D33**.
+
+> `libs/mixinbooter-10.7.jar` porte la bibliothèque Mixin, en `compileOnly`. Il vit hors de
+> `libs/maven`, exprès : ForgeGradle ne met pas les `compileOnly` sur le chemin d'exécution,
+> donc aucun doublon avec `run/mods`, et `checkDevMods` ne parcourt que `libs/maven`.
 
 > `PackagingProvider` exige `mixinbooter`. Sans lui, FML s'arrête sur
 > `MissingModsException`.

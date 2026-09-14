@@ -22,3 +22,10 @@ libs/*.jar
 *.launch
 bin/
 out/
+
+# Reglages Claude Code propres au poste
+.claude/settings.local.json
+.tools/
+
+# Caches Python des outils
+tools/__pycache__/

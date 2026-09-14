@@ -25,6 +25,7 @@ import fr.julien.packagedautoterminals.network.PacketRecipeAction;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.common.TerminalContext;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -57,16 +58,45 @@ public class GuiPatTerminal extends AEBaseGui {
 
     /** Décalage du texte pour centrer une ligne de 8 pixels dans une rangée de 18. */
     private static final int TEXT_OFFSET = 5;
-    /** Retrait d'une rangée de recette. */
-    private static final int INDENT = 14;
+    /**
+     * Retrait d'une rangée de recette.
+     *
+     * <p>Il vaut vingt pixels depuis l'arrivée du chevron de pliage : l'icône du groupe a
+     * reculé de dix pixels, et une recette doit rester en retrait derrière elle.
+     */
+    private static final int INDENT = 20;
+
+    /** Chevron de pliage : bord gauche, et largeur. */
+    private static final int CHEVRON_LEFT = LIST_LEFT + 2;
+    private static final int CHEVRON_SIZE = 8;
+    private static final int CHEVRON_U = 330;
+    private static final int CHEVRON_V = 20;
+    /** Le second chevron, celui du groupe déplié, suit le premier sur la planche. */
+    private static final int CHEVRON_OPEN_U = CHEVRON_U + 10;
+
+    /** Icône du groupe, et début de son nom, après le chevron. */
+    private static final int GROUP_ICON = LIST_LEFT + 12;
+    private static final int GROUP_TEXT = LIST_LEFT + 32;
 
     private static final int COLOR_TEXT = 0x404040;
     private static final int COLOR_DIM = 0x808080;
     private static final int COLOR_WARNING = 0x803030;
+    /** Voile posé sur la machine absente du réseau. */
+    private static final int COLOR_ABSENT = 0x80404040;
+    /** E4 : une rangée sur deux, très légèrement assombrie. */
+    private static final int COLOR_STRIPE = 0x14000000;
+    /** E1 : rangée survolée. */
+    private static final int COLOR_HOVER = 0x4066A0D0;
+
+    /** E3 : croix qui vide la recherche, à l'intérieur du champ. */
+    private static final int CLEAR_LEFT =
+            ContainerPatTerminal.SEARCH_LEFT + ContainerPatTerminal.SEARCH_WIDTH - 12;
+    private static final int CLEAR_TOP = ContainerPatTerminal.SEARCH_TOP + 2;
+    private static final int CLEAR_SIZE = 9;
 
     /** Icône « œil » : position dans la planche, et taille. */
-    private static final int LOCATE_U = 0;
-    private static final int LOCATE_V = 232;
+    private static final int LOCATE_U = 330;
+    private static final int LOCATE_V = 4;
     private static final int LOCATE_SIZE = 12;
     /** Durée d'affichage d'un message, en millisecondes. */
     private static final long MESSAGE_DURATION = 3_000L;
@@ -76,7 +106,11 @@ public class GuiPatTerminal extends AEBaseGui {
     /** Texte des champs de saisie, clair sur leur fond sombre. */
     private static final int COLOR_FIELD_TEXT = 0xE0E0E0;
     /** Bord gauche du bouton, dans la rangée d'un groupe. */
-    private static final int LOCATE_LEFT = LIST_LEFT + LIST_WIDTH - LOCATE_SIZE - 2;
+    /**
+     * L'œil, le nom du type et l'icône de la machine partagent le **même** bord droit.
+     * Sans cela, la colonne de droite ondulait de deux pixels d'une rangée à l'autre.
+     */
+    private static final int LOCATE_LEFT = LIST_LEFT + LIST_WIDTH - LOCATE_SIZE - 4;
 
     private static final int BUTTON_VIEW = 0;
 
@@ -85,6 +119,15 @@ public class GuiPatTerminal extends AEBaseGui {
     private GuiButton viewButton;
     /** Faux : onglet des patterns. Vrai : onglet des machines. */
     private boolean machinesView;
+    /**
+     * Groupes dépliés à la main, par leur clé.
+     *
+     * <p>La liste s'ouvre toujours pliée : cet ensemble part donc vide, et il ne quitte
+     * jamais le client. Un groupe n'a pas d'identité stable — il se recompose à chaque
+     * scan — donc la clé est la **plus petite** position de ses machines, qui ne dépend pas
+     * de l'ordre du scan.
+     */
+    private final Set<Long> expanded = new HashSet<>();
     private int lastFeedbackCount;
     private String message = "";
     private long messageExpiry;
@@ -110,7 +153,9 @@ public class GuiPatTerminal extends AEBaseGui {
         search = new GuiTextField(0, fontRenderer,
                 guiLeft + ContainerPatTerminal.SEARCH_LEFT + 3,
                 guiTop + ContainerPatTerminal.SEARCH_TOP + 3,
-                ContainerPatTerminal.SEARCH_WIDTH - 6, 8);
+                // E3 : la largeur laisse dix pixels à la croix, toujours, pour que le
+                // texte saisi ne passe jamais dessous.
+                ContainerPatTerminal.SEARCH_WIDTH - 16, 8);
         search.setEnableBackgroundDrawing(false);
         search.setMaxStringLength(64);
         search.setTextColor(COLOR_FIELD_TEXT);
@@ -153,8 +198,11 @@ public class GuiPatTerminal extends AEBaseGui {
     public void drawFG(int offsetX, int offsetY, int mouseX, int mouseY) {
         // Sans l'onglet Machines, le bouton n'existe pas : le titre reprend sa place.
         if (!PatConfig.machinesTab) {
+            // La place va jusqu'au champ de recherche, et non jusqu'à la largeur de
+            // l'ancien bouton : celui-ci n'existe plus dans ce mode.
             fontRenderer.drawString(
-                    trim(I18n.format("gui.packagedautoterminals.pat_terminal"), 84),
+                    trim(I18n.format("gui.packagedautoterminals.pat_terminal"),
+                            ContainerPatTerminal.SEARCH_LEFT - 6 - LIST_LEFT),
                     LIST_LEFT, 6, COLOR_TEXT);
         }
 
@@ -164,7 +212,10 @@ public class GuiPatTerminal extends AEBaseGui {
         // Le résumé occupe toute la ligne. Le libellé « Inventaire » a disparu : il tenait
         // la moitié de la place, et n'apprenait rien à personne.
         int summaryY = ContainerPatTerminal.PLAYER_INVENTORY_TOP - 11;
-        String summary = networkSummary();
+
+        // Les rangées se construisent avant le résumé : le compteur de résultats en dépend.
+        List<Line> lines = buildLines();
+        getScrollBar().setRange(0, Math.max(0, lines.size() - ROWS), 2);
 
         // Le message prend la place du résumé pendant trois secondes. La ligne de titre est
         // déjà prise par l'onglet et la recherche, et la barre d'action du jeu se dessine
@@ -174,13 +225,14 @@ public class GuiPatTerminal extends AEBaseGui {
             fontRenderer.drawString(trim(message, LIST_WIDTH), LIST_LEFT, summaryY,
                     messageRefused ? COLOR_WARNING : COLOR_OK);
         } else {
-            fontRenderer.drawString(summary, LIST_LEFT, summaryY, COLOR_TEXT);
+            fontRenderer.drawString(networkSummary(), LIST_LEFT, summaryY, COLOR_TEXT);
+            drawResultCount(lines, summaryY);
         }
 
-
-
-        List<Line> lines = buildLines();
-        getScrollBar().setRange(0, Math.max(0, lines.size() - ROWS), 2);
+        // E3 : la croix ne se montre que s'il y a quelque chose à effacer.
+        if (hasQuery()) {
+            fontRenderer.drawString("×", CLEAR_LEFT + 2, CLEAR_TOP, COLOR_FIELD_TEXT);
+        }
 
         if (lines.isEmpty()) {
             // Le message est découpé à la largeur du cadre : sinon il déborde sur
@@ -203,6 +255,19 @@ public class GuiPatTerminal extends AEBaseGui {
         // Les coordonnées de la souris sont absolues, le dessin est relatif à la fenêtre.
         int hoverRow = rowUnder(mouseX - offsetX, mouseY - offsetY);
 
+        // E4 puis E1. Les deux bandes passent **avant** le texte, sans quoi elles le
+        // recouvriraient. Le zébrage suit l'indice absolu de la rangée, et non sa place à
+        // l'écran : sans cela, le motif sauterait à chaque cran de l'ascenseur.
+        for (int row = 0; row < ROWS && first + row < lines.size(); row++) {
+            int top = LIST_TOP + row * ROW_HEIGHT;
+            if ((first + row) % 2 == 1) {
+                drawRect(LIST_LEFT, top, LIST_LEFT + LIST_WIDTH, top + ROW_HEIGHT, COLOR_STRIPE);
+            }
+            if (row == hoverRow) {
+                drawRect(LIST_LEFT, top, LIST_LEFT + LIST_WIDTH, top + ROW_HEIGHT, COLOR_HOVER);
+            }
+        }
+
         for (int row = 0; row < ROWS && first + row < lines.size(); row++) {
             drawLine(lines.get(first + row), LIST_TOP + row * ROW_HEIGHT);
         }
@@ -222,31 +287,43 @@ public class GuiPatTerminal extends AEBaseGui {
 
         if (line.crafter != null) {
             drawItem(LIST_LEFT + 2, y + 1, line.crafter.icon);
-            fontRenderer.drawString(trim(line.crafter.name, 86), LIST_LEFT + 22,
-                    y + TEXT_OFFSET, COLOR_TEXT);
             String state = I18n.format(!line.crafter.active
                     ? "gui.packagedautoterminals.inactive"
                     : (line.crafter.busy
                             ? "gui.packagedautoterminals.busy"
                             : "gui.packagedautoterminals.idle"));
             drawRight(state, y, COLOR_DIM);
+            fontRenderer.drawString(
+                    trim(line.crafter.name, budget(LIST_LEFT + 22, state, LIST_LEFT + LIST_WIDTH - 4)),
+                    LIST_LEFT + 22, y + TEXT_OFFSET, COLOR_TEXT);
             return;
         }
 
         if (line.isGroupHeader()) {
-            drawItem(LIST_LEFT + 2, y + 1, line.anchor().icon);
-            fontRenderer.drawString(trim(groupTitle(line.group), 96), LIST_LEFT + 22,
-                    y + TEXT_OFFSET, COLOR_TEXT);
-
+            // Un groupe sans recette n'a rien à déplier : il ne porte pas de chevron, pour
+            // qu'aucun clic ne reste sans effet.
+            if (!line.group.recipes.isEmpty()) {
+                bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
+                // PIÈGE : `drawTexturedModalRect` suppose une planche de 256 sur 256. La
+                // nôtre en fait 512 : toute coordonnée au-delà de 256 sortait de la plage,
+                // et le jeu dessinait un morceau du cadre à la place de l'icône.
+                drawModalRectWithCustomSizedTexture(CHEVRON_LEFT, y + 5,
+                        isExpanded(line.group) ? CHEVRON_OPEN_U : CHEVRON_U, CHEVRON_V,
+                        CHEVRON_SIZE, CHEVRON_SIZE, SHEET, SHEET);
+            }
+            drawItem(GROUP_ICON, y + 1, line.anchor().icon);
             String state = groupState(line.group);
+            fontRenderer.drawString(
+                    trim(groupTitle(line.group), budget(GROUP_TEXT, state, LOCATE_LEFT - 4)),
+                    GROUP_TEXT, y + TEXT_OFFSET, COLOR_TEXT);
             fontRenderer.drawString(state,
                     LOCATE_LEFT - 4 - fontRenderer.getStringWidth(state), y + TEXT_OFFSET,
                     COLOR_DIM);
 
             // La planche est reliée pour l'icône, puis le rendu du texte reprend la main.
             bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
-            drawTexturedModalRect(LOCATE_LEFT, y + 3, LOCATE_U, LOCATE_V,
-                    LOCATE_SIZE, LOCATE_SIZE);
+            drawModalRectWithCustomSizedTexture(LOCATE_LEFT, y + 3, LOCATE_U, LOCATE_V,
+                    LOCATE_SIZE, LOCATE_SIZE, SHEET, SHEET);
             return;
         }
 
@@ -261,10 +338,112 @@ public class GuiPatTerminal extends AEBaseGui {
         // Une recette présente d'un seul côté de la paire s'affiche en rouge : AE2 ne peut
         // pas l'exécuter.
         boolean complete = line.group.isComplete(line.recipe);
-        fontRenderer.drawString(trim(output, 82), LIST_LEFT + INDENT + 20, y + TEXT_OFFSET,
+        IRecipeType type = line.recipe.getRecipeType();
+        int textLeft = LIST_LEFT + INDENT + 20;
+        int rightEdge = LIST_LEFT + LIST_WIDTH - 4;
+
+        // La machine d'exécution prend la place du nom du type : elle dit la même chose,
+        // en seize pixels, et elle se reconnaît d'un coup d'œil.
+        ItemStack machine = CrafterTypes.iconFor(type);
+        int textWidth;
+        if (machine.isEmpty()) {
+            String name = type.getLocalizedNameShort();
+            drawRight(name, y, complete ? COLOR_DIM : COLOR_WARNING);
+            textWidth = budget(textLeft, name, rightEdge);
+        } else {
+            drawItem(rightEdge - 16, y + 1, machine);
+            if (!onNetwork(type)) {
+                dim(rightEdge - 16, y + 1);
+            }
+            textWidth = rightEdge - 16 - 6 - textLeft;
+        }
+
+        fontRenderer.drawString(trim(output, textWidth), textLeft, y + TEXT_OFFSET,
                 complete ? COLOR_TEXT : COLOR_WARNING);
-        drawRight(line.recipe.getRecipeType().getLocalizedNameShort(), y,
-                complete ? COLOR_DIM : COLOR_WARNING);
+    }
+
+    /**
+     * Clé d'un groupe, pour l'état de pliage.
+     *
+     * <p>La plus petite position de ses machines. Elle ne change ni avec l'ordre du scan,
+     * ni avec l'ajout d'une machine dont la position est plus grande.
+     */
+    private static long keyOf(ProviderPairing.Group group) {
+        long key = Long.MAX_VALUE;
+        for (ProviderSnapshot machine : group.machines) {
+            key = Math.min(key, machine.pos.toLong());
+        }
+        return key;
+    }
+
+    private boolean isExpanded(ProviderPairing.Group group) {
+        return expanded.contains(keyOf(group));
+    }
+
+    /** Une machine capable d'exécuter ce type est-elle posée sur le réseau ? */
+    private boolean onNetwork(IRecipeType type) {
+        String machineClass = CrafterTypes.machineClassFor(type);
+        if (machineClass == null) {
+            return false;
+        }
+        for (MachineSnapshot machine : terminalContainer.machines) {
+            if (machineClass.equals(machine.machineClass)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Assombrit une icône de seize pixels : la machine n'est pas sur le réseau.
+     *
+     * <p>Le voile est repoussé en avant. Sans ce décalage, il passerait **sous** l'objet,
+     * que le jeu dessine déjà à une centaine d'unités de profondeur.
+     */
+    private void dim(int x, int y) {
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(0.0F, 0.0F, 400.0F);
+        drawRect(x, y, x + 16, y + 16, COLOR_ABSENT);
+        GlStateManager.popMatrix();
+    }
+
+    /**
+     * Place laissée au nom, entre sa marge gauche et le texte aligné à droite.
+     *
+     * <p>Ces largeurs étaient écrites en dur, et venaient de la fenêtre de 256 pixels. Depuis
+     * l'agrandissement à 320, un nom se coupait au milieu d'une zone restée vide. Le calcul
+     * suit désormais la largeur réelle du texte de droite, quelle que soit la traduction.
+     */
+    private int budget(int left, String right, int rightEdge) {
+        return rightEdge - fontRenderer.getStringWidth(right) - 6 - left;
+    }
+
+    /**
+     * E3 : nombre de recettes trouvées, aligné à droite du résumé.
+     *
+     * <p>Il ne s'affiche que pendant une recherche. Hors recherche, le résumé du réseau dit
+     * déjà tout, et un second compte ferait doublon.
+     */
+    private void drawResultCount(List<Line> lines, int y) {
+        if (!hasQuery()) {
+            return;
+        }
+        int found = 0;
+        for (Line line : lines) {
+            if (line.recipe != null) {
+                found++;
+            }
+        }
+        String text = I18n.format(found == 1
+                ? "gui.packagedautoterminals.result"
+                : "gui.packagedautoterminals.results", found);
+        fontRenderer.drawString(text,
+                LIST_LEFT + LIST_WIDTH - fontRenderer.getStringWidth(text), y, COLOR_DIM);
+    }
+
+    /** La recherche porte-t-elle un texte ? */
+    private boolean hasQuery() {
+        return search != null && !search.getText().isEmpty();
     }
 
     /** Texte aligné à droite de la zone de liste. */
@@ -388,6 +567,12 @@ public class GuiPatTerminal extends AEBaseGui {
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        // E3 : la croix passe avant le champ, sinon le clic ne ferait que placer le curseur.
+        if (hasQuery() && overClear(mouseX - guiLeft, mouseY - guiTop)) {
+            search.setText("");
+            search.setFocused(true);
+            return;
+        }
         search.mouseClicked(mouseX, mouseY, mouseButton);
         // Clic gauche sur une machine : nouvelle recette.
         // Clic droit sur une recette : l'éditer. Maj + clic droit : la supprimer.
@@ -395,6 +580,17 @@ public class GuiPatTerminal extends AEBaseGui {
         if (clicked != null && clicked.isGroupHeader()
                 && overLocate(mouseX - guiLeft, mouseY - guiTop)) {
             locate(clicked.group);
+            return;
+        }
+        // Le chevron passe avant tout : sans cette sortie, le même clic créerait aussi une
+        // recette, car la ligne d'un groupe répond déjà au clic gauche.
+        if (clicked != null && clicked.isGroupHeader() && mouseButton == 0
+                && !clicked.group.recipes.isEmpty()
+                && overChevron(mouseX - guiLeft, mouseY - guiTop)) {
+            long key = keyOf(clicked.group);
+            if (!expanded.remove(key)) {
+                expanded.add(key);
+            }
             return;
         }
         if (clicked != null && clicked.group != null) {
@@ -413,6 +609,25 @@ public class GuiPatTerminal extends AEBaseGui {
             }
         }
         super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    /** La souris est-elle sur la croix de la recherche ? Coordonnées relatives. */
+    private boolean overClear(int x, int y) {
+        return x >= CLEAR_LEFT && x < CLEAR_LEFT + CLEAR_SIZE
+                && y >= CLEAR_TOP && y < CLEAR_TOP + CLEAR_SIZE;
+    }
+
+    /** La souris est-elle sur le chevron de la rangée survolée ? Coordonnées relatives. */
+    private boolean overChevron(int x, int y) {
+        int row = rowUnder(x, y);
+        if (row < 0) {
+            return false;
+        }
+        // La zone cliquable fait toute la hauteur de la rangée : un chevron de huit pixels
+        // se rate une fois sur deux.
+        int top = LIST_TOP + row * ROW_HEIGHT;
+        return x >= CHEVRON_LEFT - 2 && x < CHEVRON_LEFT + CHEVRON_SIZE + 2
+                && y >= top && y < top + ROW_HEIGHT;
     }
 
     /** La souris est-elle sur le bouton de repérage de la rangée survolée ? */
@@ -507,12 +722,17 @@ public class GuiPatTerminal extends AEBaseGui {
                     + I18n.format("gui.packagedautoterminals.remove_holder_hint"));
             lines.add(TextFormatting.DARK_GRAY
                     + I18n.format("gui.packagedautoterminals.locate_hint"));
+            if (!line.group.recipes.isEmpty()) {
+                lines.add(TextFormatting.DARK_GRAY
+                        + I18n.format("gui.packagedautoterminals.expand_hint"));
+            }
             return lines;
         }
 
         // Les entrées et les sorties ne figurent plus ici : la liste sert à retrouver une
         // recette, l'éditeur à la lire en détail.
         lines.add(line.recipe.getRecipeType().getLocalizedName());
+        lines.add(machineHint(line.recipe.getRecipeType()));
         if (!line.group.isComplete(line.recipe)) {
             ProviderRole missing = line.group.missingRole(line.recipe);
             lines.add(TextFormatting.RED + I18n.format("gui.packagedautoterminals.missing_help",
@@ -525,11 +745,36 @@ public class GuiPatTerminal extends AEBaseGui {
         return lines;
     }
 
+    /**
+     * Ligne d'infobulle sur la machine d'exécution.
+     *
+     * <p>Trois cas, trois phrases : la machine est là, la machine manque au réseau, ou le
+     * type n'exige aucune machine. Le troisième cas concerne {@code processing}, qui envoie
+     * son colis vers un inventaire quelconque.
+     */
+    private String machineHint(IRecipeType type) {
+        ItemStack machine = CrafterTypes.iconFor(type);
+        if (machine.isEmpty()) {
+            return TextFormatting.GRAY
+                    + I18n.format("gui.packagedautoterminals.machine_none");
+        }
+        if (onNetwork(type)) {
+            return TextFormatting.GRAY + I18n.format(
+                    "gui.packagedautoterminals.machine_used", machine.getDisplayName());
+        }
+        return TextFormatting.RED + I18n.format(
+                "gui.packagedautoterminals.machine_absent", machine.getDisplayName());
+    }
+
     /** Résumé lisible du réseau : machines porteuses et recettes encodées. */
     private String networkSummary() {
+        // Les recettes sont comptées **par groupe**, et non par machine. Une paire porte la
+        // même recette des deux côtés : la compter deux fois annonçait quatre recettes là
+        // où la liste en montrait deux.
         int recipes = 0;
-        for (ProviderSnapshot provider : terminalContainer.providers) {
-            recipes += provider.recipes.size();
+        for (ProviderPairing.Group group
+                : ProviderPairing.group(terminalContainer.providers)) {
+            recipes += group.recipes.size();
         }
         int machines = terminalContainer.providers.size();
         return I18n.format(machines == 1
@@ -673,6 +918,7 @@ public class GuiPatTerminal extends AEBaseGui {
      */
     private List<Line> buildPatternLines(Query query) {
         List<Line> lines = new ArrayList<>();
+        boolean searching = !query.isEmpty();
 
         for (ProviderPairing.Group group : ProviderPairing.group(terminalContainer.providers)) {
             boolean titleMatches = query.isEmpty()
@@ -687,8 +933,16 @@ public class GuiPatTerminal extends AEBaseGui {
                 }
             }
 
-            if (titleMatches || !recipes.isEmpty()) {
-                lines.add(Line.group(group));
+            if (!titleMatches && recipes.isEmpty()) {
+                continue;
+            }
+            lines.add(Line.group(group));
+
+            // Deux règles, et une seule ligne pour les dire : hors recherche, le groupe
+            // s'ouvre au chevron ; en recherche, il s'ouvre sur le résultat trouvé. Le
+            // dépliage par la recherche ne touche pas `expanded` : vider le champ rend donc
+            // la liste à son état plié, et le joueur retrouve ce qu'il avait ouvert.
+            if (searching || isExpanded(group)) {
                 lines.addAll(recipes);
             }
         }

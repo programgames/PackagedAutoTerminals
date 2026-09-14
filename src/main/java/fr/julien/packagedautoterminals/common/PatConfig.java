@@ -29,6 +29,15 @@ public final class PatConfig {
     @Config.LangKey("config.packagedautoterminals.wut_mode_id")
     public static int wutModeId = 41;
 
+    @Config.Comment({
+            "Energie consommee par le terminal sans fil, en AE par tick.",
+            "Le terminal cable ne consomme rien de plus : la grille paie deja son noeud.",
+            "A zero, le terminal sans fil devient gratuit."
+    })
+    @Config.RangeDouble(min = 0.0, max = 1000.0)
+    @Config.LangKey("config.packagedautoterminals.wireless_power")
+    public static double wirelessPowerPerTick = 1.0;
+
     @Config.Comment("Affiche l'onglet Machines et le diagnostic des recettes orphelines.")
     @Config.LangKey("config.packagedautoterminals.machines_tab")
     public static boolean machinesTab = true;

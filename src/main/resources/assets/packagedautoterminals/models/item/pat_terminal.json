@@ -1,6 +1,9 @@
 {
-    "parent": "item/generated",
+    "parent": "appliedenergistics2:item/part/display",
     "textures": {
-        "layer0": "packagedautoterminals:items/pat_terminal"
+        "front": "packagedautoterminals:items/part/pat_terminal",
+        "front_bright": "packagedautoterminals:parts/pat_terminal_bright",
+        "front_medium": "packagedautoterminals:parts/pat_terminal_medium",
+        "front_dark": "packagedautoterminals:parts/pat_terminal_dark"
     }
 }

@@ -68,6 +68,27 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
         return new ActionResult<>(EnumActionResult.SUCCESS, stack);
     }
 
+    /**
+     * Le terminal ne rejoue pas son animation d'équipement à chaque décharge.
+     *
+     * <p>Vanilla compare l'ancienne et la nouvelle pile, **NBT compris**, pour décider de
+     * rejouer l'animation. Or l'énergie vit dans le NBT : le terminal ouvert se déchargeant
+     * une fois par seconde, la main du joueur sursautait à chaque prélèvement.
+     *
+     * <p>Seul un vrai changement d'objet, ou un changement d'emplacement, mérite l'animation.
+     */
+    @Override
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack,
+                                               boolean slotChanged) {
+        return slotChanged || oldStack.getItem() != newStack.getItem();
+    }
+
+    /** Même motif : une décharge ne doit pas interrompre le minage en cours. */
+    @Override
+    public boolean shouldCauseBlockBreakReset(ItemStack oldStack, ItemStack newStack) {
+        return oldStack.getItem() != newStack.getItem();
+    }
+
     // --- IWirelessTermHandler ------------------------------------------------------
 
     @Override

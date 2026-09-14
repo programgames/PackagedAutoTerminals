@@ -1,5 +1,6 @@
 package fr.julien.packagedautoterminals.integration.jei;
 
+import java.util.List;
 import java.util.Map;
 
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
@@ -57,20 +58,38 @@ public class PatTransferHandler implements IRecipeTransferHandler<ContainerPatEd
     }
 
     /**
-     * Premier type de recette qui déclare cette catégorie JEI.
+     * Type de recette le plus **précis** pour cette catégorie JEI.
+     *
+     * <p>PIÈGE corrigé. Prendre le premier type qui déclare la catégorie donnait un résultat
+     * dépendant de l'ordre du registre. En décompilant `RecipeTypeProcessing`, on voit que
+     * sa méthode `getJEICategories` rend **toutes** les catégories de JEI dès que JEI est
+     * chargé : le type Processing, et les types Ordered et Positioned qui en héritent, sont
+     * des fourre-tout. Une recette de l'Ultimate Table basculait donc en « Positioned ».
+     *
+     * <p>Le critère est donc la **largeur** de la liste déclarée : un type qui ne nomme que
+     * deux catégories sait ce qu'il fait ; un type qui les nomme toutes se contente
+     * d'accepter. Le plus étroit gagne, et le fourre-tout ne sert que de dernier recours.
+     * La règle ne cite aucun mod par son nom, donc un addon inconnu en profite aussi.
      *
      * <p>Le registre est relu à chaque transfert, et non mis en cache : un addon peut
      * enregistrer ses types après le chargement de JEI.
      */
     private static IRecipeType findType(String category) {
+        IRecipeType best = null;
+        int narrowest = Integer.MAX_VALUE;
         for (Map.Entry<ResourceLocation, IRecipeType> entry
                 : RecipeTypeRegistry.getRegistry().entrySet()) {
             IRecipeType type = entry.getValue();
-            if (type.getJEICategories() != null && type.getJEICategories().contains(category)) {
-                return type;
+            List<String> categories = type.getJEICategories();
+            if (categories == null || !categories.contains(category)) {
+                continue;
+            }
+            if (categories.size() < narrowest) {
+                narrowest = categories.size();
+                best = type;
             }
         }
-        return null;
+        return best;
     }
 
     private static IRecipeTransferError error(String key) {

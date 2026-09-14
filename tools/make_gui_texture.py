@@ -67,16 +67,21 @@ EYE_U = 330
 EYE_V = 4
 EYE_SIZE = 12
 
+# Chevrons de pliage, rangés sous l'œil. Deux dessins : groupe plié, groupe déplié.
+CHEVRON_U = 330
+CHEVRON_V = 20
+CHEVRON_SIZE = 8
+
 # --- Éditeur ----------------------------------------------------------------------
 # La planche fait 512 sur 512 : la fenêtre dépasse 256 pixels dans les deux sens.
 EDITOR_SHEET = 512
 EDITOR_WIDTH = 258
-EDITOR_HEIGHT = 332
+EDITOR_HEIGHT = 338
 
 NAME_LEFT = 8
 NAME_TOP = 4
 NAME_WIDTH = 162
-NAME_HEIGHT = 14
+NAME_HEIGHT = 16
 
 TAB_LEFT = 8
 TAB_TOP = 32
@@ -95,7 +100,7 @@ EDITOR_ARROW_LEFT = 172
 EDITOR_ARROW_TOP = 144
 
 EDITOR_INVENTORY_LEFT = 20
-EDITOR_INVENTORY_TOP = 250
+EDITOR_INVENTORY_TOP = 256
 
 
 def sheet(width, height):
@@ -149,6 +154,18 @@ def draw_eye(px, x0, y0):
     fill(px, x0 + 5, y0 + 4, 2, 5, EDGE)
 
 
+def draw_chevron_right(px, x0, y0):
+    """Chevron vers la droite : le groupe est plié."""
+    for step in range(4):
+        fill(px, x0 + 2 + step, y0 + step, 1, 7 - 2 * step, EDGE)
+
+
+def draw_chevron_down(px, x0, y0):
+    """Chevron vers le bas : le groupe est déplié."""
+    for step in range(4):
+        fill(px, x0 + step, y0 + 2 + step, 7 - 2 * step, 1, EDGE)
+
+
 def draw_arrow(px, x0, y0):
     """Flèche vers la droite, comme celle de l'Encoder."""
     fill(px, x0, y0 + 4, 14, 6, ARROW)
@@ -173,6 +190,8 @@ def build_terminal():
     frame(px, WIDTH, HEIGHT)
     # L'icône vit à droite de la fenêtre, dans la zone libre de la planche.
     draw_eye(px, EYE_U, EYE_V)
+    draw_chevron_right(px, CHEVRON_U, CHEVRON_V)
+    draw_chevron_down(px, CHEVRON_U + 10, CHEVRON_V)
     recess(px, SEARCH_LEFT, SEARCH_TOP, SEARCH_WIDTH, SEARCH_HEIGHT, FIELD)
     recess(px, LIST_LEFT, LIST_TOP, LIST_WIDTH, LIST_HEIGHT, LIST)
     recess(px, SCROLL_LEFT, LIST_TOP, SCROLL_WIDTH, LIST_HEIGHT, SLOT)

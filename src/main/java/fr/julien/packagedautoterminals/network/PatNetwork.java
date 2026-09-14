@@ -8,7 +8,7 @@ import net.minecraftforge.fml.relauncher.Side;
 public final class PatNetwork {
 
     public static final SimpleNetworkWrapper CHANNEL =
-            NetworkRegistry.INSTANCE.newSimpleChannel(Reference.MOD_ID);
+            NetworkRegistry.INSTANCE.newSimpleChannel(Reference.CHANNEL);
 
     private PatNetwork() {}
 
@@ -18,5 +18,6 @@ public final class PatNetwork {
         CHANNEL.registerMessage(PacketEditorSlot.Handler.class, PacketEditorSlot.class, 2, Side.SERVER);
         CHANNEL.registerMessage(PacketEditorFill.Handler.class, PacketEditorFill.class, 3, Side.SERVER);
         CHANNEL.registerMessage(PacketRenameGroup.Handler.class, PacketRenameGroup.class, 4, Side.SERVER);
+        CHANNEL.registerMessage(PacketOpenTerminal.Handler.class, PacketOpenTerminal.class, 5, Side.SERVER);
     }
 }

@@ -64,17 +64,47 @@ public final class TerminalContext {
     }
 
     /**
-     * Le terminal est-il toujours utilisable ?
+     * Raison de fermer la fenêtre, ou {@code null} si tout va bien.
      *
-     * <p>Pour le sans-fil, la portée peut être perdue à tout moment : le joueur marche. Le
-     * conteneur le vérifie à chaque rafraîchissement.
+     * <p>PIÈGE corrigé, premier temps : les contrôles de portée et d'énergie existaient,
+     * mais aucun conteneur ne les appelait. Sorti de portée, le terminal sans fil restait
+     * ouvert et vide, et il ne consommait jamais d'énergie.
+     *
+     * <p>PIÈGE corrigé, second temps : **l'ordre des trois questions compte**. Le bytecode
+     * d'AE2UEL montre que {@code WirelessTerminalGuiObject.getActionableNode} appelle
+     * {@code rangeCheck} puis rend {@code null} quand aucun point d'accès n'est à portée.
+     * Interroger la grille en premier faisait donc annoncer une absence de liaison à chaque
+     * fois que le joueur s'éloignait. La portée passe devant.
+     *
+     * <p>L'énergie vient en dernier, donc elle n'est prélevée que si le reste est bon.
+     * Facturer un terminal hors de portée n'aurait aucun sens.
+     *
+     * @param ticks nombre de ticks écoulés depuis le dernier appel.
      */
-    public boolean stillValid() {
-        if (grid() == null) {
-            return false;
+    public String refusal(int ticks) {
+        if (host instanceof WirelessTerminalGuiObject
+                && !((WirelessTerminalGuiObject) host).rangeCheck()) {
+            return "gui.packagedautoterminals.out_of_range";
         }
-        return !(host instanceof WirelessTerminalGuiObject)
-                || ((WirelessTerminalGuiObject) host).rangeCheck();
+        if (grid() == null) {
+            return "gui.packagedautoterminals.not_linked";
+        }
+        if (!drainPower(PatConfig.wirelessPowerPerTick * Math.max(1, ticks))) {
+            return "gui.packagedautoterminals.no_power";
+        }
+        return null;
+    }
+
+    /**
+     * Prévient le joueur, puis laisse AE2 refermer la fenêtre.
+     *
+     * <p>Nous n'appelons pas {@code closeScreen} nous-mêmes, en pleine mise à jour du
+     * conteneur. `AEBaseContainer.canInteractWith` rend faux dès que le conteneur est
+     * déclaré invalide, et le serveur referme alors la fenêtre à son propre rythme.
+     */
+    public static void refuse(net.minecraft.entity.player.EntityPlayerMP player, String key) {
+        player.sendStatusMessage(
+                new net.minecraft.util.text.TextComponentTranslation(key), false);
     }
 
     /**

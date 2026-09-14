@@ -57,7 +57,10 @@ public final class ClientDiagnostics {
 
         for (String path : new String[] {"lang/en_us.lang", "lang/fr_fr.lang",
                                          "models/item/pat_terminal.json",
-                                         "textures/items/pat_terminal.png"}) {
+                                         "textures/items/part/pat_terminal.png",
+                "textures/parts/pat_terminal_bright.png",
+                "textures/parts/pat_terminal_medium.png",
+                "textures/parts/pat_terminal_dark.png"}) {
             ResourceLocation location = new ResourceLocation(Reference.MOD_ID, path);
             try {
                 Minecraft.getMinecraft().getResourceManager().getResource(location);

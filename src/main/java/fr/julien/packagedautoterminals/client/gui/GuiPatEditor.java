@@ -5,6 +5,7 @@ import java.io.IOException;
 import appeng.client.gui.AEBaseGui;
 import appeng.container.slot.SlotFake;
 import fr.julien.packagedautoterminals.Reference;
+import fr.julien.packagedautoterminals.common.CrafterTypes;
 import fr.julien.packagedautoterminals.common.EditorInventory;
 import fr.julien.packagedautoterminals.common.Feedback;
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
@@ -58,11 +59,24 @@ public class GuiPatEditor extends AEBaseGui {
     private static final int COLOR_DISABLED = 0xA0303030;
     /** Cadre de l'onglet ouvert. */
     private static final int COLOR_SELECTED = 0xFF2E7D32;
+    /** Point posé sur l'onglet qui porte un travail non enregistré. */
+    private static final int COLOR_UNSAVED = 0xFFCC3030;
 
     private static final long MESSAGE_DURATION = 3_000L;
+    private static final int MESSAGE_TOP = 20;
+    private static final int MESSAGE_WIDTH = ContainerPatEditor.WIDTH - 16;
 
     /** Centre de la colonne de droite, pour centrer le nom du type et son icône. */
     private static final int RIGHT_CENTER = ContainerPatEditor.OUTPUT_LEFT + 27;
+
+    /**
+     * Machine d'exécution, sous l'icône du type.
+     *
+     * <p>Elle occupe la bande libre entre l'icône du type, qui finit à 87, et la première
+     * rangée de sortie, qui commence à {@code OUTPUT_TOP}.
+     */
+    private static final int MACHINE_LEFT = RIGHT_CENTER - 8;
+    private static final int MACHINE_TOP = 90;
 
     private final ContainerPatEditor editorContainer;
     private GuiButton saveButton;
@@ -76,6 +90,8 @@ public class GuiPatEditor extends AEBaseGui {
     private String message = "";
     private long messageExpiry;
     private boolean messageRefused;
+    /** Vrai quand la ligne a dû être coupée : l'infobulle donne alors le texte entier. */
+    private boolean messageTrimmed;
 
     public GuiPatEditor(InventoryPlayer inventory, TerminalContext terminal,
                         EditorInventory editor, int dimension, BlockPos pos, int index) {
@@ -93,7 +109,7 @@ public class GuiPatEditor extends AEBaseGui {
         // Fond sombre, texte clair : même raison que le champ de recherche du terminal.
         nameField = new GuiTextField(0, fontRenderer,
                 guiLeft + ContainerPatEditor.NAME_LEFT + 5,
-                guiTop + ContainerPatEditor.NAME_TOP + 5,
+                guiTop + ContainerPatEditor.NAME_TOP + 4,
                 ContainerPatEditor.NAME_WIDTH - 10, 8);
         nameField.setEnableBackgroundDrawing(false);
         nameField.setMaxStringLength(32);
@@ -112,14 +128,18 @@ public class GuiPatEditor extends AEBaseGui {
         buttonList.add(new GuiButton(BUTTON_NEXT_TYPE,
                 guiLeft + ContainerPatEditor.OUTPUT_LEFT + 44, guiTop + 68, 10, 18, ">"));
 
+        // Les boutons commencent sous l'aperçu des colis, qui descend jusqu'à 226. Ils
+        // étaient restés à leur ancienne hauteur quand la fenêtre a grandi de vingt pixels,
+        // et Enregistrer mordait sur la dernière rangée de l'aperçu.
+        int buttonTop = ContainerPatEditor.PREVIEW_TOP + 3 * 18 + 6;
         saveButton = new GuiButton(BUTTON_SAVE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
-                guiTop + 208, 54, 16, I18n.format("gui.packagedautoterminals.save"));
+                guiTop + buttonTop, 54, 16, I18n.format("gui.packagedautoterminals.save"));
         deleteButton = new GuiButton(BUTTON_DELETE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
-                guiTop + 226, 54, 16, I18n.format("gui.packagedautoterminals.delete"));
+                guiTop + buttonTop + 18, 54, 16, I18n.format("gui.packagedautoterminals.delete"));
         buttonList.add(saveButton);
         buttonList.add(deleteButton);
         buttonList.add(new GuiButton(BUTTON_CLEAR, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
-                guiTop + 244, 54, 16, I18n.format("gui.packagedautoterminals.clear")));
+                guiTop + buttonTop + 36, 54, 16, I18n.format("gui.packagedautoterminals.clear")));
     }
 
     @Override
@@ -310,6 +330,23 @@ public class GuiPatEditor extends AEBaseGui {
                 return;
             }
         }
+
+        // E2 : Entrée enregistre. Le joueur n'a plus à viser un bouton après chaque
+        // modification. Le bouton reste la voie évidente ; la touche est le raccourci.
+        if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
+            if (saveButton != null && saveButton.enabled) {
+                actionPerformed(saveButton);
+            }
+            return;
+        }
+
+        // E2 : Échap revient au terminal, au lieu de tout fermer. Un second Échap ferme
+        // alors le terminal. Le joueur qui édite plusieurs recettes ne repart plus du monde
+        // à chaque fois.
+        if (keyCode == Keyboard.KEY_ESCAPE) {
+            send(PacketRecipeAction.ACTION_BACK, 0);
+            return;
+        }
         super.keyTyped(typedChar, keyCode);
     }
 
@@ -320,6 +357,12 @@ public class GuiPatEditor extends AEBaseGui {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         super.drawScreen(mouseX, mouseY, partialTicks);
+        if (messageTrimmed && System.currentTimeMillis() <= messageExpiry
+                && mouseX >= guiLeft + 8 && mouseX <= guiLeft + 8 + MESSAGE_WIDTH
+                && mouseY >= guiTop + MESSAGE_TOP && mouseY <= guiTop + MESSAGE_TOP + 8) {
+            drawHoveringText(java.util.Collections.singletonList(message), mouseX, mouseY);
+        }
+        drawMachineTooltip(mouseX, mouseY);
         nameField.drawTextBox();
         if (amountField != null) {
             // Un fond plein derrière la boîte : posée sur la grille, elle serait illisible.
@@ -341,7 +384,7 @@ public class GuiPatEditor extends AEBaseGui {
 
         if (nameField != null && nameField.getText().isEmpty() && !nameField.isFocused()) {
             fontRenderer.drawString(I18n.format("gui.packagedautoterminals.name_hint"),
-                    ContainerPatEditor.NAME_LEFT + 5, ContainerPatEditor.NAME_TOP + 5, 0x707070);
+                    ContainerPatEditor.NAME_LEFT + 5, ContainerPatEditor.NAME_TOP + 4, 0x707070);
         }
 
         drawMessage(editor);
@@ -376,13 +419,31 @@ public class GuiPatEditor extends AEBaseGui {
         }
 
         if (!message.isEmpty() && System.currentTimeMillis() <= messageExpiry) {
-            fontRenderer.drawString(message, 8, 20, messageRefused ? COLOR_WARNING : COLOR_OK);
+            fontRenderer.drawString(fitMessage(message), 8, MESSAGE_TOP,
+                    messageRefused ? COLOR_WARNING : COLOR_OK);
             return;
         }
+        messageTrimmed = false;
         if (editor.recipeInfo == null) {
             fontRenderer.drawString(I18n.format("gui.packagedautoterminals.invalid"),
                     8, 20, COLOR_WARNING);
         }
+    }
+
+    /**
+     * Coupe la ligne si elle dépasse du cadre.
+     *
+     * <p>La ligne de message n'a qu'une seule rangée : la rangée d'onglets commence juste
+     * en dessous. Une traduction trop longue sortait donc de la fenêtre, en travers du
+     * décor. Le texte entier reste lisible dans l'infobulle.
+     */
+    private String fitMessage(String text) {
+        if (fontRenderer.getStringWidth(text) <= MESSAGE_WIDTH) {
+            messageTrimmed = false;
+            return text;
+        }
+        messageTrimmed = true;
+        return fontRenderer.trimStringToWidth(text, MESSAGE_WIDTH - 6) + "...";
     }
 
     /** Encadre l'onglet ouvert. L'onglet de création suit la dernière recette. */
@@ -399,6 +460,12 @@ public class GuiPatEditor extends AEBaseGui {
         drawRect(x - 1, y + 16, x + 17, y + 17, COLOR_SELECTED);
         drawRect(x - 1, y, x, y + 16, COLOR_SELECTED);
         drawRect(x + 16, y, x + 17, y + 16, COLOR_SELECTED);
+
+        // E5 : un point rouge dit « ce travail n'est pas enregistré ». Il se dessine dans
+        // l'angle, sur trois pixels, pour ne pas cacher l'objet produit.
+        if (editorContainer.dirty) {
+            drawRect(x + 12, y + 1, x + 16, y + 5, COLOR_UNSAVED);
+        }
     }
 
     /** Nom du type, centré, et son icône, comme le fait l'Encoder. */
@@ -416,6 +483,32 @@ public class GuiPatEditor extends AEBaseGui {
         if (representation instanceof ItemStack) {
             drawItem(RIGHT_CENTER - 8, 69, (ItemStack) representation);
         }
+
+        // La station d'origine, au-dessus, dit d'où vient la recette. Celle-ci dit qui
+        // l'exécutera sur le réseau. Les deux sont différentes, et le joueur a besoin des
+        // deux : une recette Elite se fabrique bien sur une table d'Extended Crafting, mais
+        // c'est l'Elite Package Crafter qui doit être posé.
+        ItemStack machine = CrafterTypes.iconFor(type);
+        if (!machine.isEmpty()) {
+            drawItem(MACHINE_LEFT, MACHINE_TOP, machine);
+        }
+    }
+
+    /** L'infobulle de la machine d'exécution. Coordonnées absolues. */
+    private void drawMachineTooltip(int mouseX, int mouseY) {
+        ItemStack machine = CrafterTypes.iconFor(editorContainer.editor.recipeType);
+        if (machine.isEmpty()) {
+            return;
+        }
+        if (mouseX < guiLeft + MACHINE_LEFT || mouseX >= guiLeft + MACHINE_LEFT + 16
+                || mouseY < guiTop + MACHINE_TOP || mouseY >= guiTop + MACHINE_TOP + 16) {
+            return;
+        }
+        drawHoveringText(java.util.Arrays.asList(
+                machine.getDisplayName(),
+                net.minecraft.util.text.TextFormatting.GRAY
+                        + I18n.format("gui.packagedautoterminals.machine_needed")),
+                mouseX, mouseY);
     }
 
     /**

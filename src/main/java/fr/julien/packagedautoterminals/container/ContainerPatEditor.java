@@ -13,6 +13,7 @@ import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.common.EditorInventory;
 import fr.julien.packagedautoterminals.common.Feedback;
 import fr.julien.packagedautoterminals.common.GroupNames;
+import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.common.ProviderPairing;
 import fr.julien.packagedautoterminals.common.ProviderRole;
 import fr.julien.packagedautoterminals.common.ProviderScanner;
@@ -56,12 +57,12 @@ public class ContainerPatEditor extends AEBaseContainer {
     // Géométrie de la fenêtre. Ces valeurs doivent rester identiques à celles de
     // tools/make_gui_texture.py. La disposition reprend celle du Package Recipe Encoder.
     public static final int WIDTH = 258;
-    public static final int HEIGHT = 332;
+    public static final int HEIGHT = 338;
     /** Champ de nom du groupe, sur la ligne de titre. */
     public static final int NAME_LEFT = 8;
     public static final int NAME_TOP = 4;
     public static final int NAME_WIDTH = 162;
-    public static final int NAME_HEIGHT = 14;
+    public static final int NAME_HEIGHT = 16;
     /** Rangée d'onglets : une case par recette du groupe. */
     public static final int TAB_LEFT = 8;
     public static final int TAB_TOP = 32;
@@ -78,7 +79,7 @@ public class ContainerPatEditor extends AEBaseContainer {
     /** Coin haut-gauche de l'aperçu des colis, 3 sur 3. */
     public static final int PREVIEW_LEFT = 190;
     public static final int PREVIEW_TOP = 172;
-    public static final int PLAYER_INVENTORY_TOP = 250;
+    public static final int PLAYER_INVENTORY_TOP = 256;
     /** Décalage horizontal de l'inventaire. AE2 pose ses cases à 8 + colonne * 18 + décalage. */
     public static final int PLAYER_INVENTORY_OFFSET_X = 12;
     /** Quantité maximale d'un emplacement de recette. */
@@ -254,12 +255,29 @@ public class ContainerPatEditor extends AEBaseContainer {
     @GuiSync(0)
     public int recipeTypeId = -1;
 
+    /** Ticks écoulés, pour n'interroger la portée qu'à la cadence de rafraîchissement. */
+    private int ticks;
+
     @Override
     public void detectAndSendChanges() {
         recipeTypeId = editor.recipeType == null ? -1 : RecipeTypeRegistry.getId(editor.recipeType);
 
         World world = getPlayerInv().player.world;
         if (!world.isRemote) {
+            // L'éditeur suit la même règle que le terminal : sorti de portée ou à court
+            // d'énergie, il se referme au lieu de montrer une recette qu'il ne peut plus
+            // écrire.
+            if (ticks++ % Math.max(1, PatConfig.refreshTicks) == 0) {
+                String refusal = terminal.refusal(PatConfig.refreshTicks);
+                if (refusal != null) {
+                    setValidContainer(false);
+                    TerminalContext.refuse(
+                            (net.minecraft.entity.player.EntityPlayerMP) getPlayerInv().player,
+                            refusal);
+                    super.detectAndSendChanges();
+                    return;
+                }
+            }
             // Le nom est relu à chaque cycle : une autre fenêtre a pu le changer.
             groupName = GroupNames.get(world).get(pos);
             refreshTabs();
@@ -384,15 +402,19 @@ public class ContainerPatEditor extends AEBaseContainer {
             return false;
         }
 
-        // Le joueur reçoit toujours un retour. Le silence laissait croire à un échec.
-        tell(result.changed == 1
-                        ? "gui.packagedautoterminals.applied_to_one"
-                        : "gui.packagedautoterminals.applied_to",
-                result.changed);
+        // Le joueur reçoit toujours un retour, et **un seul**. Deux appels successifs à
+        // `tell` s'écrasaient : le joueur voyait l'avertissement, jamais la confirmation,
+        // et ne savait plus si l'écriture avait abouti.
         if (result.withoutHolder > 0) {
-            tell("gui.packagedautoterminals.skipped_no_holder", result.withoutHolder);
+            tell("gui.packagedautoterminals.applied_partial",
+                    result.changed, result.withoutHolder);
         } else if (result.changed == 1 && missing != null) {
-            tell("gui.packagedautoterminals.no_partner");
+            tell("gui.packagedautoterminals.applied_no_partner", result.changed);
+        } else {
+            tell(result.changed == 1
+                            ? "gui.packagedautoterminals.applied_to_one"
+                            : "gui.packagedautoterminals.applied_to",
+                    result.changed);
         }
 
         // L'éditeur suit la recette qu'il vient d'écrire : le prochain enregistrement la
@@ -468,8 +490,15 @@ public class ContainerPatEditor extends AEBaseContainer {
     @GuiSync(11)
     public int feedbackCount;
 
-    /** L'éditeur porte-t-il une modification non enregistrée ? */
-    private boolean dirty;
+    /**
+     * L'éditeur porte-t-il une modification non enregistrée ?
+     *
+     * <p>Le champ est **synchronisé** : le client en a besoin pour marquer l'onglet ouvert
+     * d'un point. Sans ce point, le joueur n'apprenait qu'il avait du travail en cours
+     * qu'après avoir cliqué un autre onglet, et reçu un refus.
+     */
+    @GuiSync(5)
+    public boolean dirty;
     /** Onglet demandé alors qu'un travail non enregistré était en cours. */
     private int pendingTab = Integer.MIN_VALUE;
 

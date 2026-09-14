@@ -1,8 +1,10 @@
 package fr.julien.packagedautoterminals.common;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import thelm.packagedauto.api.IRecipeInfo;
@@ -147,9 +149,43 @@ public final class ProviderPairing {
             }
         }
 
+        // Le nom passe avant tout : c'est le seul lien que le joueur a posé lui-même.
+        mergeNamed(groups);
         mergeLonePartners(groups);
         mergeEmptyPair(groups);
         return groups;
+    }
+
+    /**
+     * Réunit les machines que le joueur a nommées ensemble.
+     *
+     * <p>Le nom est écrit sur **chaque** machine du groupe au moment du baptême. Deux
+     * machines qui portent le même nom sont donc appariées par décision du joueur, jamais
+     * par déduction.
+     *
+     * <p>Ce lien survit là où le partage de recette ne survit pas. Sans lui, une paire dont
+     * on supprime la dernière recette se scinde en deux lignes, et le réseau qui compte une
+     * troisième machine du même rôle interdit toute réunion automatique : le choix serait
+     * ambigu. Le nom lève l'ambiguïté.
+     */
+    private static void mergeNamed(List<Group> groups) {
+        Map<String, Group> byName = new LinkedHashMap<>();
+        for (Group group : new ArrayList<>(groups)) {
+            String name = group.customName();
+            if (name == null) {
+                continue;
+            }
+            Group first = byName.get(name);
+            if (first == null) {
+                byName.put(name, group);
+                continue;
+            }
+            first.machines.addAll(group.machines);
+            for (IRecipeInfo recipe : group.recipes) {
+                addDistinct(first.recipes, recipe);
+            }
+            groups.remove(group);
+        }
     }
 
     /**

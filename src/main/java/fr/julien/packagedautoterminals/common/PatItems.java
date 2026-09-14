@@ -1,6 +1,8 @@
 package fr.julien.packagedautoterminals.common;
 
 import appeng.api.AEApi;
+import appeng.api.util.AEColor;
+import appeng.client.render.StaticItemColor;
 import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.item.ItemPatTerminal;
 import fr.julien.packagedautoterminals.item.ItemWirelessPatTerminal;
@@ -9,6 +11,7 @@ import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.client.event.ColorHandlerEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.event.RegistryEvent;
@@ -53,6 +56,22 @@ public final class PatItems {
                 new ModelResourceLocation(TERMINAL.getRegistryName(), "inventory"));
         ModelLoader.setCustomModelResourceLocation(WIRELESS_TERMINAL, 0,
                 new ModelResourceLocation(WIRELESS_TERMINAL.getRegistryName(), "inventory"));
+    }
+
+    /**
+     * Donne sa couleur à l'item du terminal.
+     *
+     * <p>Le modèle hérite de {@code item/part/display} d'AE2. Ce modèle ne peint rien : il
+     * empile trois calques blancs, et demande au jeu la couleur des index de teinte 1 à 4.
+     * Sans ce gestionnaire, le jeu répond « pas de teinte », et l'item sort **tout blanc**.
+     *
+     * <p>{@code AEColor.TRANSPARENT} est la teinte des parts non peintes : le violet fluix.
+     */
+    @SubscribeEvent
+    @SideOnly(Side.CLIENT)
+    public static void registerItemColors(ColorHandlerEvent.Item event) {
+        event.getItemColors().registerItemColorHandler(
+                new StaticItemColor(AEColor.TRANSPARENT), TERMINAL);
     }
 
     /**

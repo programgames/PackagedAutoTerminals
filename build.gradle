@@ -25,6 +25,20 @@ targetCompatibility = 1.8
 // ce qui transforme tout caractère accentué des sources en mojibake.
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
+
+    // PIÈGE : le jar de MixinBooter porte le processeur d'annotations de Mixin, que javac
+    // découvre tout seul par `META-INF/services`. Ce processeur exige que chaque classe
+    // visée soit sur le chemin de compilation, et s'arrête sur
+    // « Mixin target ... could not be found ».
+    //
+    // Nos mixins visent AE2WUT **par son nom**, et non par sa classe, pour ne pas traîner
+    // MekEng, AE2FC et ae2exttable sur le chemin de compilation (règle 7). Le processeur ne
+    // sert donc à rien ici : sa seule autre tâche est d'écrire une table de remappage, dont
+    // nos greffes se passent, faute du moindre type de Minecraft dans les signatures visées.
+    //
+    // Si un jour un mixin touche une méthode de Minecraft, il faudra retirer cette ligne,
+    // ajouter le processeur et déclarer la table dans le fichier de configuration.
+    options.compilerArgs << '-proc:none'
 }
 
 // PIÈGE : dans le bloc `minecraft { }`, le délégué Groovy est l'extension ForgeGradle, qui
@@ -69,6 +83,12 @@ dependencies {
     deobfProvided "pat:packagedauto:${project.packagedAutoVersion}@jar"
     // JEI, via HadEnoughItems : même API `mezz.jei.api`, même modid `jei`.
     deobfProvided "pat:hadenoughitems:${project.jeiVersion}@jar"
+
+    // MixinBooter porte la bibliothèque Mixin. `compileOnly`, et hors de `libs/maven`, pour
+    // deux raisons : ForgeGradle ne met pas les `compileOnly` sur le chemin d'exécution,
+    // donc aucun doublon avec `run/mods/mixinbooter-10.7.jar` ; et la tâche `checkDevMods`
+    // ne parcourt que `libs/maven`.
+    compileOnly files('libs/mixinbooter-10.7.jar')
 }
 
 // PIÈGE, suite. ForgeGradle ajoute bien les jars déobfusqués au chemin de compilation, mais

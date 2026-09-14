@@ -116,6 +116,14 @@ public class ContainerPatTerminal extends AEBaseContainer {
         if (ticks++ % Math.max(1, PatConfig.refreshTicks) != 0) {
             return;
         }
+
+        // Portée, liaison et énergie. Un refus ferme la fenêtre au tick suivant.
+        String refusal = terminal.refusal(PatConfig.refreshTicks);
+        if (refusal != null) {
+            setValidContainer(false);
+            TerminalContext.refuse((EntityPlayerMP) getPlayerInv().player, refusal);
+            return;
+        }
         // PIÈGE évité : la comparaison doit porter sur l'ENSEMBLE du message. Comparer les
         // seuls fournisseurs laisserait passer un changement d'état des machines, qui ne
         // serait alors jamais envoyé.
