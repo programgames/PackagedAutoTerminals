@@ -322,3 +322,46 @@ versions of the mod no longer talk to each other. Every update must go to both s
 
 **Rule.** Every new network channel must fit in 20 characters. The other direction, server to
 client, also allows 20 characters in `SPacketCustomPayload`.
+
+---
+
+## D38 — Machines group only when they carry exactly the same recipes
+
+**Symptom.** On the player's real server, the terminal showed "Group of 6 machines" and
+"Group of 4 machines", for 20 machines and 110 recipes. Pairs that were physically separate
+appeared on one line.
+
+**Verified cause.** The old criterion merged two machines as soon as they **shared one**
+recipe, and the merge cascaded. One package common to three pairs was enough to solder the
+six machines together:
+
+| Machine | Recipes | Effect |
+|---|---|---|
+| Packager A | iron, gold | group 1 |
+| Unpackager A | iron, gold | joins group 1 |
+| Packager B | copper, **gold** | joins group 1, through "gold" |
+| Unpackager B | copper, gold | joins group 1 |
+| Packager C | tin, **copper** | joins group 1, through "copper" |
+| Unpackager C | tin, copper | joins group 1 |
+
+The test bench never showed the defect: two pairs there never share a recipe.
+
+**Decision.** A machine joins a group only when it carries **exactly** the recipes of that
+group, no more and no fewer. No cascade is then possible: two groups never hold the same set,
+because the second machine would already have joined the first one.
+
+An empty machine never matches by recipe. Otherwise every empty machine of the network would
+land in the same group. Empty machines keep going through `mergeLonePartners` and
+`mergeEmptyPair`, which only merge when the choice is certain.
+
+**Consequence, accepted on purpose.** A pair whose two sides no longer carry the same recipes
+splits into two rows. Two cases must be told apart:
+
+1. One side becomes **empty**. `mergeLonePartners` joins it again, so the pair stays on one
+   line and the recipe is still flagged in red. This is the common case, and test E1 is
+   unchanged.
+2. One side keeps **other** recipes. The two rows separate. The player joins them again by
+   naming them, which is the explicit link of `mergeNamed`.
+
+**Rejected option.** Merging when one set contains the other. It keeps case 2 together, but it
+brings back a cascade as soon as a machine carries the union of two others.

@@ -200,6 +200,16 @@ same role.
 **Shift + left click** on the pair line.
 → Both recipe holders come back into the ME terminal, with their recipes.
 
+### E7 — Two pairs that share one recipe 🆕
+Encode the same recipe into two different pairs, then give each pair one recipe of its own.
+→ **Two** lines, one per pair. Before decision D38, the shared recipe soldered the four
+machines into a single "Group of 4 machines".
+
+### E8 — Diverging pair 🆕
+On a pair carrying two recipes, remove **one** of them from the Packager only.
+→ The two sides no longer carry the same recipes, so they split into two lines. Name them with
+the same name in the editor: they join again, and the missing recipe is flagged in red.
+
 ---
 
 ## F — The Machines tab 🆕

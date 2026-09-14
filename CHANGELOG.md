@@ -21,8 +21,16 @@ numbering follows [SemVer](https://semver.org/).
 - Configuration file: refresh interval, AE2WUT mode id, Machines tab, tooltip size.
 - Crafting recipe: one ME terminal and one Package Recipe Holder.
 
+### Changed
+
+- Machines now group only when they carry **exactly** the same recipes. Sharing one recipe
+  used to be enough, and soldered separate pairs into a single line of six machines or more.
+  See decision D38.
+
 ### Fixed
 
 - Disconnection on a dedicated server when the terminal opened. The network channel name was
   21 characters long, over the 20 character limit of `CPacketCustomPayload`. See decision
   D37.
+- Missing chevron on the first row of the terminal. The row striping left the colour
+  multiplier on an alpha of 0.078, and the alpha test discarded the whole icon.

@@ -278,6 +278,20 @@ public class GuiPatTerminal extends AEBaseGui {
         }
     }
 
+    /**
+     * Binds the sheet, and resets the colour multiplier to opaque white.
+     *
+     * <p>PITFALL: `Gui.drawRect` leaves `GlStateManager.color` set to the colour it was given.
+     * The striping uses COLOR_STRIPE, whose alpha is 0x14, hence 0.078. The alpha test of the
+     * game discards every fragment below 0.1, so the next textured draw disappeared entirely.
+     * The defect only hit the **first** icon of the frame: the first `drawItem` resets the
+     * colour to white, and every later icon then drew correctly.
+     */
+    private void bindSheet() {
+        bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
     private void drawLine(Line line, int y) {
         if (line.warning != null) {
             fontRenderer.drawString(trim(line.warning, LIST_WIDTH - 8), LIST_LEFT + 4,
@@ -303,7 +317,7 @@ public class GuiPatTerminal extends AEBaseGui {
             // A group with no recipe has nothing to expand: it carries no chevron, so no
             // click stays without effect.
             if (!line.group.recipes.isEmpty()) {
-                bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
+                bindSheet();
                 // PITFALL: `drawTexturedModalRect` assumes a 256 by 256 sheet. Ours is 512:
                 // any coordinate beyond 256 fell out of range, and the game drew a piece of
                 // the frame instead of the icon.
@@ -321,7 +335,7 @@ public class GuiPatTerminal extends AEBaseGui {
                     COLOR_DIM);
 
             // The sheet is bound for the icon, then text rendering takes over again.
-            bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
+            bindSheet();
             drawModalRectWithCustomSizedTexture(LOCATE_LEFT, y + 3, LOCATE_U, LOCATE_V,
                     LOCATE_SIZE, LOCATE_SIZE, SHEET, SHEET);
             return;

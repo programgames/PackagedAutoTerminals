@@ -16,9 +16,13 @@ import thelm.packagedauto.api.IRecipeInfo;
  * time. The terminal must therefore show a recipe **only once**, and apply every edit to
  * both sides.
  *
- * <p>The grouping criterion is **sharing at least one recipe**. It survives the case we care
- * about most: when a recipe is missing on one side, the others still hold the group
- * together, and the gap becomes visible instead of breaking the pairing.
+ * <p>The grouping criterion is **carrying exactly the same recipes**. Sharing one recipe is
+ * not enough: on a real network a common package soldered several pairs into a single blob of
+ * six machines or more.
+ *
+ * <p>Consequence, accepted on purpose: a pair whose two sides no longer carry the same
+ * recipes splits into two rows. The player joins them again by naming them, which is the
+ * explicit link of {@link #mergeNamed}.
  */
 public final class ProviderPairing {
 
@@ -111,36 +115,24 @@ public final class ProviderPairing {
     /**
      * Builds the groups.
      *
-     * <p>The algorithm merges step by step: every machine starts alone, then joins the first
-     * group it shares a recipe with. Groups joined that way merge together, because one
-     * machine can bridge them.
+     * <p>Every machine starts alone, then joins the group that carries **exactly** its
+     * recipes. No cascade is possible: two groups never hold the same set, because the second
+     * machine would already have joined the first one.
      */
     public static List<Group> group(List<ProviderSnapshot> providers) {
         List<Group> groups = new ArrayList<>();
 
         for (ProviderSnapshot provider : providers) {
-            List<Group> shared = new ArrayList<>();
+            Group target = null;
             for (Group group : groups) {
-                if (sharesRecipe(group, provider)) {
-                    shared.add(group);
+                if (sameRecipes(group, provider)) {
+                    target = group;
+                    break;
                 }
             }
-
-            Group target;
-            if (shared.isEmpty()) {
+            if (target == null) {
                 target = new Group();
                 groups.add(target);
-            } else {
-                // The machine bridges several groups: they become a single one.
-                target = shared.get(0);
-                for (int i = 1; i < shared.size(); i++) {
-                    Group merged = shared.get(i);
-                    target.machines.addAll(merged.machines);
-                    for (IRecipeInfo recipe : merged.recipes) {
-                        addDistinct(target.recipes, recipe);
-                    }
-                    groups.remove(merged);
-                }
             }
 
             target.machines.add(provider);
@@ -330,15 +322,46 @@ public final class ProviderPairing {
         return unpackager && !packager ? ProviderRole.PACKAGER : null;
     }
 
-    private static boolean sharesRecipe(Group group, ProviderSnapshot provider) {
+    /**
+     * Does the machine carry exactly the recipes of the group?
+     *
+     * <p>An empty machine never matches. Otherwise every empty machine of the network would
+     * land in the same group. Empty machines are handled by {@link #mergeLonePartners} and
+     * {@link #mergeEmptyPair}, which only merge when the choice is certain.
+     *
+     * <p>A holder can list the same recipe twice. The comparison therefore counts the
+     * **distinct** recipes on both sides.
+     */
+    private static boolean sameRecipes(Group group, ProviderSnapshot provider) {
+        if (provider.recipes.isEmpty() || group.recipes.isEmpty()) {
+            return false;
+        }
+        if (distinctCount(provider.recipes) != group.recipes.size()) {
+            return false;
+        }
         for (IRecipeInfo recipe : provider.recipes) {
-            for (IRecipeInfo known : group.recipes) {
-                if (known.equals(recipe)) {
-                    return true;
-                }
+            if (!knows(group.recipes, recipe)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean knows(List<IRecipeInfo> recipes, IRecipeInfo recipe) {
+        for (IRecipeInfo known : recipes) {
+            if (known.equals(recipe)) {
+                return true;
             }
         }
         return false;
+    }
+
+    private static int distinctCount(List<IRecipeInfo> recipes) {
+        List<IRecipeInfo> distinct = new ArrayList<>();
+        for (IRecipeInfo recipe : recipes) {
+            addDistinct(distinct, recipe);
+        }
+        return distinct.size();
     }
 
     private static boolean contains(ProviderSnapshot machine, IRecipeInfo recipe) {
