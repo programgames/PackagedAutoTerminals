@@ -112,6 +112,13 @@ public class GuiPatTerminal extends AEBaseGui {
      */
     private static final int LOCATE_LEFT = LIST_LEFT + LIST_WIDTH - LOCATE_SIZE - 4;
 
+    /**
+     * Crafting machine of a group, left of the eye.
+     *
+     * <p>Sixteen pixels for the icon, and four of gap before the eye.
+     */
+    private static final int GROUP_MACHINE_LEFT = LOCATE_LEFT - 20;
+
     private static final int BUTTON_VIEW = 0;
 
     private final ContainerPatTerminal terminalContainer;
@@ -165,7 +172,9 @@ public class GuiPatTerminal extends AEBaseGui {
 
         buttonList.clear();
         if (PatConfig.machinesTab) {
-            viewButton = new GuiButton(BUTTON_VIEW, guiLeft + LIST_LEFT, guiTop + 2, 84, 14, "");
+            // The button starts at 4, and not at 2: the panel bevel takes the first three
+            // pixels of the screen, and the top edge of the button was cut by it.
+            viewButton = new GuiButton(BUTTON_VIEW, guiLeft + LIST_LEFT, guiTop + 4, 84, 14, "");
             buttonList.add(viewButton);
             updateViewButton();
         }
@@ -326,13 +335,27 @@ public class GuiPatTerminal extends AEBaseGui {
                         CHEVRON_SIZE, CHEVRON_SIZE, SHEET, SHEET);
             }
             drawItem(GROUP_ICON, y + 1, line.anchor().icon);
+
+            // The crafting machine sits on the group row, and no longer on each recipe: on
+            // the network it is always placed next to the Unpackager of the group.
+            IRecipeType machineType = groupMachineType(line.group);
+            ItemStack machine = CrafterTypes.iconFor(machineType);
+            int stateRight = machine.isEmpty() ? LOCATE_LEFT - 4 : GROUP_MACHINE_LEFT - 4;
+
             String state = groupState(line.group);
             fontRenderer.drawString(
-                    trim(groupTitle(line.group), budget(GROUP_TEXT, state, LOCATE_LEFT - 4)),
+                    trim(groupTitle(line.group), budget(GROUP_TEXT, state, stateRight)),
                     GROUP_TEXT, y + TEXT_OFFSET, COLOR_TEXT);
             fontRenderer.drawString(state,
-                    LOCATE_LEFT - 4 - fontRenderer.getStringWidth(state), y + TEXT_OFFSET,
+                    stateRight - fontRenderer.getStringWidth(state), y + TEXT_OFFSET,
                     COLOR_DIM);
+
+            if (!machine.isEmpty()) {
+                drawItem(GROUP_MACHINE_LEFT, y + 1, machine);
+                if (!onNetwork(machineType)) {
+                    dim(GROUP_MACHINE_LEFT, y + 1);
+                }
+            }
 
             // The sheet is bound for the icon, then text rendering takes over again.
             bindSheet();
@@ -356,21 +379,10 @@ public class GuiPatTerminal extends AEBaseGui {
         int textLeft = LIST_LEFT + INDENT + 20;
         int rightEdge = LIST_LEFT + LIST_WIDTH - 4;
 
-        // The crafting machine takes the place of the type name: it says the same thing, in
-        // sixteen pixels, and it is recognised at a glance.
-        ItemStack machine = CrafterTypes.iconFor(type);
-        int textWidth;
-        if (machine.isEmpty()) {
-            String name = type.getLocalizedNameShort();
-            drawRight(name, y, complete ? COLOR_DIM : COLOR_WARNING);
-            textWidth = budget(textLeft, name, rightEdge);
-        } else {
-            drawItem(rightEdge - 16, y + 1, machine);
-            if (!onNetwork(type)) {
-                dim(rightEdge - 16, y + 1);
-            }
-            textWidth = rightEdge - 16 - 6 - textLeft;
-        }
+        // The type name, and not the machine icon: the machine now sits on the group row.
+        String typeName = type.getLocalizedNameShort();
+        drawRight(typeName, y, complete ? COLOR_DIM : COLOR_WARNING);
+        int textWidth = budget(textLeft, typeName, rightEdge);
 
         fontRenderer.drawString(trim(output, textWidth), textLeft, y + TEXT_OFFSET,
                 complete ? COLOR_TEXT : COLOR_WARNING);
@@ -392,6 +404,35 @@ public class GuiPatTerminal extends AEBaseGui {
 
     private boolean isExpanded(ProviderPairing.Group group) {
         return expanded.contains(keyOf(group));
+    }
+
+    /**
+     * The single crafting machine of a group, or {@code null}.
+     *
+     * <p>The icon only appears when every recipe that **needs** a machine names the same one.
+     * Two different machines in one group show nothing: the row would otherwise state
+     * something false.
+     *
+     * <p>The recipes whose type needs no machine, such as {@code processing}, are left out of
+     * the comparison. They target no machine, so they cannot disagree with one.
+     */
+    private IRecipeType groupMachineType(ProviderPairing.Group group) {
+        IRecipeType found = null;
+        String foundClass = null;
+        for (IRecipeInfo recipe : group.recipes) {
+            IRecipeType type = recipe.getRecipeType();
+            String machineClass = CrafterTypes.machineClassFor(type);
+            if (machineClass == null) {
+                continue;
+            }
+            if (foundClass == null) {
+                found = type;
+                foundClass = machineClass;
+            } else if (!foundClass.equals(machineClass)) {
+                return null;
+            }
+        }
+        return found;
     }
 
     /** Is a machine able to run this type placed on the network? */
@@ -731,6 +772,10 @@ public class GuiPatTerminal extends AEBaseGui {
                         I18n.format("gui.packagedautoterminals.role_"
                                 + missing.name().toLowerCase(Locale.ROOT))));
             }
+            IRecipeType machineType = groupMachineType(line.group);
+            if (machineType != null) {
+                lines.add(machineHint(machineType));
+            }
             lines.add("");
             lines.add(TextFormatting.DARK_GRAY + I18n.format("gui.packagedautoterminals.new_hint"));
             lines.add(TextFormatting.DARK_GRAY
@@ -840,6 +885,9 @@ public class GuiPatTerminal extends AEBaseGui {
      * <p>Three prefixes, taken from the AE2 and JEI terminals: {@code @} targets the source
      * mod, {@code #} targets the recipe type, and the rest is searched in the names. All
      * criteria must be satisfied at once.
+     *
+     * <p>{@code @} and the plain text both read the **produced** items only, never the
+     * ingredients. See {@link GuiPatTerminal#outputStacks}.
      */
     private static final class Query {
         final List<String> text = new ArrayList<>();
@@ -992,9 +1040,9 @@ public class GuiPatTerminal extends AEBaseGui {
         return true;
     }
 
-    /** Does one of the recipe items come from this mod? */
+    /** Does one of the produced items come from this mod? */
     private boolean hasMod(IRecipeInfo recipe, String mod) {
-        for (ItemStack stack : allStacks(recipe)) {
+        for (ItemStack stack : outputStacks(recipe)) {
             if (stack.getItem().getRegistryName() != null
                     && stack.getItem().getRegistryName().getResourceDomain()
                             .toLowerCase(Locale.ROOT).contains(mod)) {
@@ -1004,9 +1052,9 @@ public class GuiPatTerminal extends AEBaseGui {
         return false;
     }
 
-    /** Does one of the recipe items carry this text in its name? */
+    /** Does one of the produced items carry this text in its name? */
     private boolean hasText(IRecipeInfo recipe, String text) {
-        for (ItemStack stack : allStacks(recipe)) {
+        for (ItemStack stack : outputStacks(recipe)) {
             if (stack.getDisplayName().toLowerCase(Locale.ROOT).contains(text)) {
                 return true;
             }
@@ -1014,14 +1062,16 @@ public class GuiPatTerminal extends AEBaseGui {
         return false;
     }
 
-    private List<ItemStack> allStacks(IRecipeInfo recipe) {
+    /**
+     * What the recipe **produces**, and nothing else.
+     *
+     * <p>The search used to read the inputs too. Typing "elite" then returned every recipe
+     * that merely consumes an Elite part, such as "ME Interface" or "Ultimate Crafting
+     * Table". The player looks for the recipe that makes an item, so only the outputs count.
+     */
+    private List<ItemStack> outputStacks(IRecipeInfo recipe) {
         List<ItemStack> stacks = new ArrayList<>();
         for (ItemStack stack : recipe.getOutputs()) {
-            if (!stack.isEmpty()) {
-                stacks.add(stack);
-            }
-        }
-        for (ItemStack stack : recipe.getInputs()) {
             if (!stack.isEmpty()) {
                 stacks.add(stack);
             }

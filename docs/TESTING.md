@@ -95,7 +95,12 @@ Type the name of the produced item, then `zzz`.
 
 ### B4 — Mod prefix 🆕
 Type `@minecraft`.
-→ Only the recipes with an item coming from Minecraft stay.
+→ Only the recipes that **produce** an item from Minecraft stay.
+
+### B7 — The search ignores the ingredients 🆕
+Type `elite`.
+→ Only the recipes that produce an item named Elite stay. "ME Interface" and "Ultimate
+Crafting Table", which merely consume an Elite part, no longer appear. See decision D39.
 
 ### B5 — Type prefix 🆕
 Type `#processing`, then `#ultimate`.
@@ -287,18 +292,27 @@ Clear the search.
 Close the terminal, then reopen it.
 → Everything is collapsed again.
 
-### I8 — Machine in the list
-Look at a recipe line of the Elite type.
-→ On the right, the **Elite Package Crafter** icon replaces the word "Elite". The tooltip says
-"Crafted by: Elite Package Crafter".
+### I8 — Machine on the group row
+Look at a group whose recipes are all of the Elite type.
+→ On the group row, left of the eye, the **Elite Package Crafter** icon appears. The tooltip
+of that row says "Crafted by: Elite Package Crafter".
 
 ### I9 — Machine absent
 Remove the Elite Package Crafter from the network.
-→ The icon turns dark, and the tooltip turns red: "not on the network".
+→ The icon turns dark, and the tooltip line turns red: "not on the network".
 
-### I10 — Type with no machine
-Look at a **Processing** recipe.
-→ No icon on the right. The word "Processing" stays, as before.
+### I10 — Group with two machines
+Put an Elite recipe and an Ultimate recipe into the same group.
+→ **No icon** on the group row. Two different machines cannot be named by one icon.
+
+### I13 — The recipe rows carry the type name 🆕
+Look at a recipe row.
+→ On the right, the short name of the type, such as "Elite". The machine icon is no longer
+there: it moved to the group row.
+
+### I14 — The Patterns button 🆕
+Look at the top left corner of the screen.
+→ The button is whole. Its top edge no longer touches the frame of the screen.
 
 ### I11 — Machine in the editor
 Open an Elite recipe in the editor.

@@ -26,6 +26,10 @@ numbering follows [SemVer](https://semver.org/).
 - Machines now group only when they carry **exactly** the same recipes. Sharing one recipe
   used to be enough, and soldered separate pairs into a single line of six machines or more.
   See decision D38.
+- The search reads the **produced** items only. Typing `elite` no longer returns every recipe
+  that merely consumes an Elite part. See decision D39.
+- The crafting machine icon moved from each recipe row to the group row, where the Unpackager
+  is. The recipe rows carry the short type name again.
 
 ### Fixed
 
@@ -34,3 +38,4 @@ numbering follows [SemVer](https://semver.org/).
   D37.
 - Missing chevron on the first row of the terminal. The row striping left the colour
   multiplier on an alpha of 0.078, and the alpha test discarded the whole icon.
+- The Patterns button was cut by the frame of the screen.

@@ -365,3 +365,44 @@ splits into two rows. Two cases must be told apart:
 
 **Rejected option.** Merging when one set contains the other. It keeps case 2 together, but it
 brings back a cascade as soon as a machine carries the union of two others.
+
+---
+
+## D39 — The search reads the outputs, and the machine sits on the group row
+
+Two changes asked for after the first run on the real server.
+
+### The search reads the produced items only
+
+**Symptom.** Typing `elite` returned "ME Interface", "Molecular Assembler" and "Ultimate
+Crafting Table". None of them is an Elite item.
+
+**Cause.** `hasText` and `hasMod` walked `allStacks`, which held the outputs **and** the
+inputs. Every recipe that merely consumes an Elite part matched.
+
+**Decision.** Both read `outputStacks`, hence the produced items only. The player looks for
+the recipe that makes an item, not for the list of its consumers.
+
+**Rejected option.** A fourth prefix for the ingredients, such as `>elite`. Three prefixes are
+already enough to learn.
+
+### The crafting machine moves to the group row
+
+**Reason given by the player.** On the network the crafting machine always sits next to the
+Unpackager of the group. Its place is therefore the group row, not each recipe row.
+
+**Decision.** The group row shows the machine icon left of the eye, and only when every recipe
+that **needs** a machine names the same one. Two different machines in one group show nothing:
+the row would otherwise state something false.
+
+The recipes whose type needs no machine, such as `processing`, are left out of the
+comparison. They target no machine, so they cannot disagree with one.
+
+**Consequence.** The recipe rows get the type name back on their right, which is what they
+carried before the icon arrived. The tooltip of the group row names the machine, and turns red
+when it is absent from the network.
+
+### The Patterns button was cut
+
+It started at 2 pixels from the top of the screen. The panel bevel takes the first three. The
+button now starts at 4.
