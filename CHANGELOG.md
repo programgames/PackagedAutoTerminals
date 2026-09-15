@@ -5,6 +5,8 @@ numbering follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0-beta.1] - 2026-09-15
+
 ### Added
 
 - Wired terminal that lists the PackagedAuto machines of the ME network and their recipes.
