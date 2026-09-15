@@ -23,8 +23,8 @@ libs/*.jar
 bin/
 out/
 
-# Claude Code settings local to this machine
-.claude/settings.local.json
+# Claude Code settings, local to this machine
+.claude/
 .tools/
 
 # Python caches of the tools
