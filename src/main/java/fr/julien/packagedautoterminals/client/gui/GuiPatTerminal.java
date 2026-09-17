@@ -81,8 +81,6 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int COLOR_TEXT = 0x404040;
     private static final int COLOR_DIM = 0x808080;
     private static final int COLOR_WARNING = 0x803030;
-    /** Veil drawn over a machine absent from the network. */
-    private static final int COLOR_ABSENT = 0x80404040;
     /** E4: every other row, very slightly darkened. */
     private static final int COLOR_STRIPE = 0x14000000;
     /** E1: hovered row. */
@@ -94,7 +92,7 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int CLEAR_TOP = ContainerPatTerminal.SEARCH_TOP + 2;
     private static final int CLEAR_SIZE = 9;
 
-    /** "Eye" icon: position on the sheet, and size. */
+    /** "Locate" pin: position on the sheet, and size. */
     private static final int LOCATE_U = 330;
     private static final int LOCATE_V = 4;
     private static final int LOCATE_SIZE = 12;
@@ -107,15 +105,15 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int COLOR_FIELD_TEXT = 0xE0E0E0;
     /** Left edge of the button, inside a group row. */
     /**
-     * The eye, the type name and the machine icon share the **same** right edge. Without
+     * The pin, the type name and the machine icon share the **same** right edge. Without
      * that, the right column wobbled by two pixels from one row to the next.
      */
     private static final int LOCATE_LEFT = LIST_LEFT + LIST_WIDTH - LOCATE_SIZE - 4;
 
     /**
-     * Crafting machine of a group, left of the eye.
+     * Crafting machine of a group, left of the pin.
      *
-     * <p>Sixteen pixels for the icon, and four of gap before the eye.
+     * <p>Sixteen pixels for the icon, and four of gap before the pin.
      */
     private static final int GROUP_MACHINE_LEFT = LOCATE_LEFT - 20;
 
@@ -299,6 +297,12 @@ public class GuiPatTerminal extends AEBaseGui {
     private void bindSheet() {
         bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        // PITFALL: `Gui.drawRect` ends with `disableBlend`. The striping of the rows, and the
+        // veil of an absent machine, therefore left blending off. The transparent pixels of
+        // the pin then drew opaque black, and the icon sat on a black square.
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
     }
 
     private void drawLine(Line line, int y) {
@@ -352,9 +356,6 @@ public class GuiPatTerminal extends AEBaseGui {
 
             if (!machine.isEmpty()) {
                 drawItem(GROUP_MACHINE_LEFT, y + 1, machine);
-                if (!onNetwork(machineType)) {
-                    dim(GROUP_MACHINE_LEFT, y + 1);
-                }
             }
 
             // The sheet is bound for the icon, then text rendering takes over again.
@@ -447,19 +448,6 @@ public class GuiPatTerminal extends AEBaseGui {
             }
         }
         return false;
-    }
-
-    /**
-     * Darkens a sixteen pixel icon: the machine is not on the network.
-     *
-     * <p>The veil is pushed forward. Without that offset it would go **under** the item,
-     * which the game already draws about a hundred units deep.
-     */
-    private void dim(int x, int y) {
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(0.0F, 0.0F, 400.0F);
-        drawRect(x, y, x + 16, y + 16, COLOR_ABSENT);
-        GlStateManager.popMatrix();
     }
 
     /**

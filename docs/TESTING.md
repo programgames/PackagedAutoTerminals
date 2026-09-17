@@ -15,7 +15,7 @@
 |---|---|
 | A — The foundation | passed |
 | B — Reading and search | passed |
-| C — The eye and the name | passed |
+| C — The pin and the name | passed |
 | D — The merged editor | passed |
 | E — The pair, and its accidents | passed |
 | F — The Machines tab | passed |
@@ -112,11 +112,16 @@ Escape, then reopen and press **E** with the field active.
 
 ---
 
-## C — The eye and the name
+## C — The pin and the name
 
 ### C1 — Locating 🆕
-Click the **eye**, right of the group line.
-→ The screen closes, and both blocks blink cyan for five seconds, even behind a wall.
+Click the **pin**, right of the group line.
+→ The screen closes. Both blocks take a cyan tint, a thick outline and a beam going up. The
+mark lasts **fifteen seconds**, and shows through a wall.
+
+### C1 bis — Seen from afar 🆕
+Walk two hundred blocks away, then click the pin again and turn around.
+→ The beam is visible above the base. Walk into the beam: it stays visible from inside.
 
 ### C2 — Naming 🆕
 Right click the recipe, type `Iron` into the top field, **Enter**.
@@ -174,6 +179,59 @@ machines.
 ### D11 — JEI transfer
 Open a recipe in JEI, click its **+** button.
 → The grid fills, and the type switches to the right one.
+
+### D12 — JEI drag and drop, one item 🆕
+Drag an item out of the JEI list, and drop it on a slot of the grid.
+→ Every **enabled** slot lights up during the drag. The dropped slot takes the item, and the
+open tab gets its red dot.
+
+### D13 — JEI drag and drop, a disabled slot 🆕
+With the `crafting` type, drag an item over a slot outside the 3 by 3 area.
+→ That slot does not light up, and the drop changes nothing.
+
+### D15 — Amount panel 🆕
+Put an item into a slot of the grid, then left click that slot with an empty hand.
+→ A panel opens above the slot. It shows the item name, `+1 +10 +64`, the amount, `-1 -10
+-64`, then **Set** and **Cancel**.
+
+Click `+64` three times, then **Set**.
+→ The slot shows 193. The open tab gets its red dot.
+
+Hold **Shift**.
+→ The six buttons become `x2 x3 x5` and `/2 /3 /5`.
+
+### D16 — The panel on an output 🆕
+Switch to a `processing` type, then left click a filled output slot.
+→ The same panel opens. **Set** writes the amount into the output.
+
+### D17 — Emptying a slot 🆕
+Open the panel, type `0`, then **Set**.
+→ The slot empties. The right click on a slot still empties it too.
+
+### D18 — Cancelling 🆕
+Open the panel, change the amount, then click **Cancel**, or press **Escape**, or click
+outside the panel.
+→ The slot keeps its amount. The click outside reaches nothing else.
+
+### D19 — Keeping the ratio 🆕
+Build a `processing` recipe: 2 of an ingredient, and 1 as the output. Open the panel on the
+output, tick **Garder le ratio**, type `10`, then **Valider**.
+→ The output shows 10, and the ingredient shows 20.
+
+Reopen the panel on the output, keep the box ticked, type `1`, **Valider**.
+→ The output returns to 1, and the ingredient to 2.
+
+### D20 — A ratio that does not divide 🆕
+With the same recipe at 10 and 20, open the panel on the output and type `3`.
+→ Red message "Ce rapport ne tombe pas juste sur tous les slots". **No** slot changes.
+
+### D21 — The box is remembered 🆕
+Tick the box, close the panel, then reopen it on another slot.
+→ The box is still ticked. Untick it: the amount then changes that slot alone.
+
+### D14 — JEI drag and drop, a fluid 🆕
+Drag **Water** out of the JEI list, and drop it on a slot of the grid.
+→ The slot takes a **Water Bucket**. A fluid with no bucket lights up no slot at all.
 
 ---
 
@@ -294,7 +352,7 @@ Close the terminal, then reopen it.
 
 ### I8 — Machine on the group row
 Look at a group whose recipes are all of the Elite type.
-→ On the group row, left of the eye, the **Elite Package Crafter** icon appears. The tooltip
+→ On the group row, left of the pin, the **Elite Package Crafter** icon appears. The tooltip
 of that row says "Crafted by: Elite Package Crafter".
 
 ### I9 — Machine absent

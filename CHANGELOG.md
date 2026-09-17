@@ -5,6 +5,37 @@ numbering follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0-beta.2] - 2026-09-17
+
+### Added
+
+- Drag and drop from JEI into one slot of the editor, for items and for fluids. A fluid
+  enters the grid as its filled bucket.
+- Amount panel in the editor, opened with a left click on a filled slot, for the inputs and
+  for the outputs. Six step buttons, a field, Set and Cancel.
+- "Keep ratio" box in the amount panel. The new amount scales every other filled slot of the
+  recipe. A ratio that does not divide every slot changes nothing, and says so.
+- Config entry `highlightSeconds`: how long the machines stay marked in the world.
+
+### Changed
+
+- The left click on a filled slot of the editor opens the amount panel instead of emptying
+  the slot. The right click still empties it, and so does the amount zero.
+- The "locate" button is a map pin, and no longer an eye. An eye says "look"; a pin says
+  "here it is".
+- The mark in the world gains a tinted cube and a beam going up, and lasts fifteen seconds
+  instead of five.
+- The amount panel takes the look of the game: grey plate with the vanilla bevel, real
+  vanilla buttons with their click sound, the item and its name on the title line, and a
+  tick box drawn like a slot.
+
+### Fixed
+
+- The "Keep ratio" tick was invisible. `drawRect` was given a colour with no alpha byte, so
+  it painted nothing. The box worked, and looked dead.
+- Black square behind the "locate" button, in the terminal list.
+- Dark veil over the machine icon of a group row.
+
 ## [0.1.0-beta.1] - 2026-09-15
 
 ### Added

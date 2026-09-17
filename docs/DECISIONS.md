@@ -391,7 +391,7 @@ already enough to learn.
 **Reason given by the player.** On the network the crafting machine always sits next to the
 Unpackager of the group. Its place is therefore the group row, not each recipe row.
 
-**Decision.** The group row shows the machine icon left of the eye, and only when every recipe
+**Decision.** The group row shows the machine icon left of the pin, and only when every recipe
 that **needs** a machine names the same one. Two different machines in one group show nothing:
 the row would otherwise state something false.
 
@@ -406,3 +406,131 @@ when it is absent from the network.
 
 It started at 2 pixels from the top of the screen. The panel bevel takes the first three. The
 button now starts at 4.
+
+### Drag and drop from JEI: one slot at a time
+
+**Need.** The **+** button of JEI fills the whole grid. It says nothing about a single
+ingredient the player wants to place by hand, and it cannot place a fluid.
+
+**Decision.** A second JEI entry point, `IGhostIngredientHandler`, registered on
+`GuiPatEditor` only. It offers one target per **enabled** slot, and the drop sends
+`PacketEditorGhost`. The server checks the slot, like every other write (D05).
+
+**Why the exact class.** AE2UEL already registers a ghost handler on `AEBaseGui`, from which
+our screen inherits. JEI resolves a handler by **exact class first**, and only then walks the
+registered classes with `isInstance`. Registering `GuiPatEditor.class` therefore wins, whatever
+the load order of the two mods. Read in `GuiScreenHelper.getGhostIngredientHandler`.
+
+**Fluids.** The editor stores `ItemStack` only. A dragged fluid becomes the bucket that holds
+it, through `FluidUtil.getFilledBucket`. A fluid with no bucket offers **no** target, so the
+player never drops into nothing. Real fluid slots stay with `PackagedFluidCrafting`, hence
+with version 2 (D09).
+
+### The left click opens the amount panel
+
+**Need given by the player.** In the editor, the left click emptied the slot. The Package
+Recipe Encoder opens a small screen instead, where the amount is typed.
+
+**Read in the jar**, `packagedauto-1.0.24.73`:
+
+- `GuiContainerTileBase.handleMouseClick` opens `GuiItemAmountSpecifying` under five
+  conditions: `mouseButton == 0`, click type other than `QUICK_MOVE`, empty hand, slot of
+  class `SlotFalseCopy` and enabled, slot not empty.
+- `GuiItemAmountSpecifying.getIncrements` returns `{1, 10, 64}`, and `getMultipliers`
+  returns `{2, 3, 5}`. The six buttons add or subtract a step, and become a multiplication or
+  a division while Shift is held, in `GuiAmountSpecifying.onAmountButtonClicked`.
+- `onOkButtonPressed` clamps to `[0, maxAmount]`, then sends the stack with that count.
+  **Zero therefore empties the slot.**
+- `GuiEncoder.getItemAmountSpecificationLimit` caps the inputs at the maximum stack size of
+  the item, and the outputs at one billion.
+
+**Decision.** The same gesture, and the same six buttons. Three differences, on purpose:
+
+1. The panel is drawn **inside** the editor screen, and is not a screen of its own. A screen
+   of its own would need a container and a second GUI handler, for no gain.
+2. The upper bound is `MAX_SLOT_COUNT`, hence 4096, for every slot. The project already chose
+   that bound for the wheel, and processing recipes need it on the **inputs**, which the
+   Encoder caps at 64.
+3. The middle click keeps opening the same panel. That gesture existed before this change.
+
+**Consequence.** `setSlotCount` now empties the slot on zero. `changeSlotCount`, which the
+wheel uses, keeps its floor of one: scrolling down must never delete an item by surprise.
+
+**Why the buttons are drawn by hand.** `GuiContainer` draws `buttonList` **before** the items
+of the slots. A panel built from `GuiButton` would sit under the grid.
+
+### Keeping the ratio of a recipe
+
+**Need given by the player.** Changing the output from 1 to 10 should multiply the inputs by
+ten, and the other way round.
+
+**Read in the jar.** PackagedAuto has nothing of the sort. **AE2UEL does**, in the Expanded
+Processing Pattern Terminal: `ContainerPatternEncoder.multiply(int)` and `divide(int)`, behind
+the buttons `x2`, `x3`, `/2` and `/3`. Its `divide` walks **every** filled input and output,
+and returns without touching anything as soon as one count is not a multiple. The tooltip of
+its `+1` button even warns: `DOES NOT MAINTAIN INGREDIENT RATIO`.
+
+**Decision.** A tick box in the amount panel, and not four fixed buttons. The ratio then comes
+from the amount the player types, so it is not limited to two and three.
+
+**Refusal rule.** The one of AE2UEL, because it is the honest one: the server tests every slot
+first, and writes nothing at all when a single result is not a whole number. The player reads
+why, in red. A half scaled recipe would be worse than no change.
+
+**Scope.** Every slot the type enables, inputs and outputs alike. The code is the same, and a
+player who fixes an input needs the outputs to follow just as much.
+
+**Reminder.** A `crafting` recipe computes its output, so `canSetOutput()` is false and the
+output slots are not editable. The box then serves the inputs only.
+
+**The state is static.** The choice survives the closing of the editor. Ticking the box again
+for every slot of the same recipe would be busy work.
+
+### The pin, and a mark that is seen
+
+**Reason given by the player.** The eye said nothing about what the button does, and the mark
+in the world was too short and too discreet.
+
+**The icon.** A map pin replaces the eye. An eye means "look at this"; a pin is the mark every
+map uses for "the thing you look for is here". It is drawn by `draw_pin` in
+`tools/make_gui_texture.py`: a round head with a hole, a tail down to a point, and a one pixel
+ground shadow. Without the shadow the drawing floated.
+
+**The mark.** Three layers, from the closest reading to the most distant:
+
+1. a tinted cube, `RenderGlobal.renderFilledBox`, which shows the machine even against a wall
+   of the same colour;
+2. the outline, four pixels wide instead of three, which gives the exact block;
+3. a beam sixty-four blocks high, which is seen from across the base. Without it the player
+   had to already look the right way to find the mark.
+
+`disableCull` goes with the beam: without it the beam vanishes as soon as the player stands
+inside it, because the game would only keep the faces turned away.
+
+**The duration.** Fifteen seconds, and a config entry, `highlightSeconds`, from three to a
+hundred and twenty. Five seconds ran out while the player was still turning around.
+
+### The amount panel takes the look of the game
+
+**Reason given by the player.** The panel did not look like Minecraft, and the tick box showed
+nothing.
+
+**The dead tick. PITFALL.** `drawRect` was given `COLOR_FIELD_TEXT`, which is `0xE0E0E0`. That
+value carries **no alpha byte**, so the alpha is zero and the rectangle is fully transparent.
+The box did toggle; it just painted nothing. Every colour passed to `drawRect` must start with
+`FF`. The text of a `drawString` escapes the trap, because `FontRenderer` forces an opaque
+alpha when the four high bits are zero.
+
+**The look.** Three changes, all of them vanilla:
+
+1. the plate is grey, `0xC6C6C6`, with a black outline, white on the top and left edges and
+   dark grey on the bottom and right ones. That is the relief of every screen of the game;
+2. the buttons are real `GuiButton` objects, twenty pixels tall, with their texture, their
+   hover state and their click sound. They stay **out** of `buttonList`, because the screen
+   draws that list before the items of the slots, and the panel would sit under the grid.
+   They are drawn by hand, at the end of `drawScreen`;
+3. the title line carries the item and its name, and the tick box is drawn like a slot: dark
+   edge, grey fill, green tick.
+
+**Consequence.** The text of the panel is dark, `0x404040`, because the plate is light. The
+amount field keeps its dark recess: that is what the rest of the mod already does.

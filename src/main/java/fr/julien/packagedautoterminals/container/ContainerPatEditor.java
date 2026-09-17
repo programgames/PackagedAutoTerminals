@@ -207,8 +207,12 @@ public class ContainerPatEditor extends AEBaseContainer {
      *
      * <p>PITFALL: {@code AEBaseContainer.addSlotToContainer} refuses any slot that does not
      * extend {@code AppEngSlot}. The PackagedAuto slots are therefore unusable here. AE2
-     * provides its own, including {@link SlotFake}, which also implements
-     * {@code IJEITargetSlot}: drag and drop from JEI comes for free.
+     * provides its own, including {@link SlotFake}.
+     *
+     * <p>Correction: the drag and drop from JEI does **not** come for free with
+     * {@code SlotFake}. The AE2 handler only reads {@code IJEITargetSlot} through
+     * {@code IJEIGhostIngredients}, which the **screen** must implement. We register our own
+     * handler instead, on our screen class. See {@code PatGhostHandler}.
      */
     @Override
     public ItemStack slotClick(int slotId, int dragType, ClickType clickType, EntityPlayer player) {
@@ -321,14 +325,104 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
+     * Drops one item into a ghost slot: the drag and drop from JEI.
+     *
+     * <p>A normal click goes through {@link #slotClick}, which copies the held item. A drag
+     * from JEI carries no held item, so the item travels in the packet. The server checks the
+     * slot here, and nowhere else.
+     */
+    public void setGhostSlot(int slot, ItemStack stack) {
+        if (!editor.isEditable(slot)) {
+            return;
+        }
+        if (stack.isEmpty()) {
+            editor.setInventorySlotContents(slot, ItemStack.EMPTY);
+        } else {
+            ItemStack copy = stack.copy();
+            copy.setCount(Math.max(1, Math.min(MAX_SLOT_COUNT, copy.getCount())));
+            editor.setInventorySlotContents(slot, copy);
+        }
+        dirty = true;
+        detectAndSendChanges();
+    }
+
+    /**
      * Adjusts the amount in one slot.
      *
      * <p>The upper bound is not 64: PackagedAuto can write large amounts, through
      * {@code MiscUtil.saveItemWithLargeCount}. Processing recipes need that.
      */
-    /** Sets the amount of one slot, typed on the keyboard. */
+    /**
+     * Sets the amount of one slot, typed in the amount panel.
+     *
+     * <p>Zero empties the slot. That is the rule of the Package Recipe Encoder, read in
+     * {@code GuiItemAmountSpecifying.onOkButtonPressed}: it clamps to zero, then sends a
+     * stack of zero, which is an empty stack.
+     *
+     * <p>The wheel keeps its own floor of one, in {@link #changeSlotCount}. Scrolling down
+     * must never delete an item by surprise.
+     */
     public void setSlotCount(int slot, int amount) {
+        if (amount <= 0) {
+            setGhostSlot(slot, ItemStack.EMPTY);
+            return;
+        }
         changeSlotCount(slot, amount - editor.getStackInSlot(slot).getCount());
+    }
+
+    /**
+     * Sets the amount of one slot, and keeps the proportions of the recipe.
+     *
+     * <p>The new amount gives a ratio. Every other filled slot the type enables follows that
+     * ratio. A recipe that made one item from two ingredients still makes ten from twenty.
+     *
+     * <p>The rule of the refusal comes from AE2UEL, read in
+     * {@code ContainerPatternEncoder.divide}: it tests **every** slot first, and changes
+     * nothing at all when a single one does not divide. The terminal does the same, and says
+     * why. No recipe is ever written half scaled.
+     *
+     * <p>Only the slots the type enables take part. Writing anywhere else would break the
+     * rule the whole editor follows.
+     */
+    public void setSlotCount(int slot, int amount, boolean scale) {
+        if (!scale) {
+            setSlotCount(slot, amount);
+            return;
+        }
+        int previous = editor.getStackInSlot(slot).getCount();
+        if (!editor.isEditable(slot) || previous <= 0 || amount <= 0) {
+            setSlotCount(slot, amount);
+            return;
+        }
+
+        int last = EditorInventory.INPUT_SLOTS + EditorInventory.OUTPUT_SLOTS;
+        for (int index = 0; index < last; index++) {
+            ItemStack stack = editor.getStackInSlot(index);
+            if (stack.isEmpty() || !editor.isEditable(index)) {
+                continue;
+            }
+            long scaled = (long) stack.getCount() * amount;
+            if (scaled % previous != 0) {
+                tell("gui.packagedautoterminals.ratio_not_exact");
+                return;
+            }
+            if (scaled / previous > MAX_SLOT_COUNT) {
+                tell("gui.packagedautoterminals.ratio_too_large", MAX_SLOT_COUNT);
+                return;
+            }
+        }
+
+        for (int index = 0; index < last; index++) {
+            ItemStack stack = editor.getStackInSlot(index);
+            if (stack.isEmpty() || !editor.isEditable(index)) {
+                continue;
+            }
+            ItemStack changed = stack.copy();
+            changed.setCount((int) ((long) stack.getCount() * amount / previous));
+            editor.setInventorySlotContents(index, changed);
+        }
+        dirty = true;
+        detectAndSendChanges();
     }
 
     public void changeSlotCount(int slot, int delta) {

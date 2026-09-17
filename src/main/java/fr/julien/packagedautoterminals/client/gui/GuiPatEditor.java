@@ -46,6 +46,8 @@ public class GuiPatEditor extends AEBaseGui {
     private static final int BUTTON_CLEAR = 5;
     private static final int BUTTON_TABS_PREVIOUS = 6;
     private static final int BUTTON_TABS_NEXT = 7;
+    /** First id of the amount panel. Its buttons never reach {@code actionPerformed}. */
+    private static final int BUTTON_PANEL = 100;
 
     private static final int SHEET = 512;
 
@@ -61,6 +63,52 @@ public class GuiPatEditor extends AEBaseGui {
     private static final int COLOR_SELECTED = 0xFF2E7D32;
     /** Dot drawn on the tab that holds unsaved work. */
     private static final int COLOR_UNSAVED = 0xFFCC3030;
+
+    /**
+     * Amount panel: size, in screen pixels.
+     *
+     * <p>It holds the item name, the six step buttons, the field and the two commands.
+     */
+    private static final int PANEL_WIDTH = 122;
+    private static final int PANEL_HEIGHT = 126;
+    /** Item icon of the title line. */
+    private static final int PANEL_ICON_LEFT = 5;
+    private static final int PANEL_ICON_TOP = 5;
+    /** Tops of the four rows, inside the panel. */
+    private static final int PANEL_PLUS_TOP = 25;
+    private static final int PANEL_FIELD_TOP = 48;
+    private static final int PANEL_MINUS_TOP = 64;
+    private static final int PANEL_BOX_TOP = 88;
+    private static final int PANEL_COMMAND_TOP = 101;
+    /** Tick box of the proportions. */
+    private static final int PANEL_BOX_SIZE = 10;
+    /** A vanilla button is twenty pixels tall. Any other height reads as foreign. */
+    private static final int PANEL_BUTTON_HEIGHT = 20;
+    /** Number of buttons of the panel: six steps, then Set and Cancel. */
+    private static final int PANEL_BUTTONS = 8;
+    /**
+     * Steps of the six buttons, and the factors they become while Shift is held.
+     *
+     * <p>Both tables are the ones of the Package Recipe Encoder, read in
+     * {@code GuiItemAmountSpecifying.getIncrements} and {@code getMultipliers}.
+     */
+    private static final int[] AMOUNT_STEPS = {1, 10, 64};
+    private static final int[] AMOUNT_FACTORS = {2, 3, 5};
+    /**
+     * Colours of the panel, taken from the vanilla bevel.
+     *
+     * <p>A screen of the game is a grey plate: black outline, white on the top and left
+     * edges, dark grey on the bottom and right ones. The flat dark box that came before did
+     * not belong to the game.
+     */
+    private static final int COLOR_PANEL = 0xFFC6C6C6;
+    private static final int COLOR_PANEL_OUTLINE = 0xFF000000;
+    private static final int COLOR_PANEL_LIGHT = 0xFFFFFFFF;
+    private static final int COLOR_PANEL_SHADOW = 0xFF555555;
+    /** Tick box: the recess of a slot, and a green tick. */
+    private static final int COLOR_BOX_EDGE = 0xFF373737;
+    private static final int COLOR_BOX_FILL = 0xFF8B8B8B;
+    private static final int COLOR_BOX_TICK = 0xFF2E7D32;
 
     private static final long MESSAGE_DURATION = 3_000L;
     private static final int MESSAGE_TOP = 20;
@@ -82,9 +130,31 @@ public class GuiPatEditor extends AEBaseGui {
     private GuiButton saveButton;
     private GuiButton deleteButton;
     private GuiTextField nameField;
-    /** Small amount input box, opened with the middle click. */
+    /** Small amount panel, opened with the left click on a filled slot. */
     private GuiTextField amountField;
     private int amountSlot = -1;
+    /** Item of the slot being edited. It gives the title of the panel. */
+    private ItemStack amountStack = ItemStack.EMPTY;
+    /** Upper bound accepted in the field. */
+    private int amountMax = ContainerPatEditor.MAX_SLOT_COUNT;
+    /** Top left corner of the panel, in screen coordinates. */
+    private int panelLeft;
+    private int panelTop;
+    /**
+     * Keeps the proportions of the recipe when an amount changes.
+     *
+     * <p>The field is **static**: the choice survives the closing of the editor, and the
+     * player does not tick the box again for every slot of the same recipe.
+     */
+    private static boolean keepRatio;
+    /**
+     * The eight buttons of the panel.
+     *
+     * <p>They are real {@link GuiButton} objects, for the vanilla look, but they stay out of
+     * {@code buttonList}: the screen draws that list **before** the items of the slots, and
+     * the panel would then sit under the grid. They are drawn by hand, at the end.
+     */
+    private final java.util.List<GuiButton> panelButtons = new java.util.ArrayList<>();
 
     private int lastFeedbackCount;
     private String message = "";
@@ -104,6 +174,10 @@ public class GuiPatEditor extends AEBaseGui {
     @Override
     public void initGui() {
         super.initGui();
+
+        // A resize moves the whole screen. The panel carries absolute coordinates, so it
+        // would stay behind, next to nothing.
+        closeAmountField();
 
         String previous = nameField == null ? editorContainer.groupName : nameField.getText();
         // Dark background, light text: same reason as the terminal search field.
@@ -201,7 +275,9 @@ public class GuiPatEditor extends AEBaseGui {
     @Override
     public void handleMouseInput() throws IOException {
         int wheel = org.lwjgl.input.Mouse.getEventDWheel();
-        if (wheel != 0) {
+        // While the panel is open, the wheel would change the slot behind the player back,
+        // and the panel would keep showing the old amount.
+        if (wheel != 0 && amountField == null) {
             int x = org.lwjgl.input.Mouse.getEventX() * width / mc.displayWidth;
             int y = height - org.lwjgl.input.Mouse.getEventY() * height / mc.displayHeight - 1;
             Slot slot = slotUnder(x, y);
@@ -251,30 +327,174 @@ public class GuiPatEditor extends AEBaseGui {
         }
     }
 
+    /**
+     * Left click on a filled slot: the amount panel opens.
+     *
+     * <p>This is the gesture of the Package Recipe Encoder, read in
+     * {@code GuiContainerTileBase.handleMouseClick}. That method opens its panel under five
+     * conditions: left click, click type other than QUICK_MOVE, empty hand, ghost slot that
+     * is enabled, and a slot that is not empty. {@link #slotUnder} already checks the ghost
+     * slot and the enabling.
+     *
+     * <p>The left click therefore no longer empties the slot. The right click keeps that
+     * task, and the amount zero does it too, exactly as in the Encoder.
+     *
+     * <p>The middle click still opens the same panel. The gesture existed before, and
+     * removing it would break the habit of a player who uses it.
+     */
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
-        // Middle click on a filled slot: type the amount on the keyboard. The wheel stays
-        // available for quick adjustments.
-        if (mouseButton == 2) {
+        if (amountField != null) {
+            amountPanelClick(mouseX, mouseY, mouseButton);
+            return;
+        }
+
+        if ((mouseButton == 0 || mouseButton == 2) && !isShiftKeyDown()
+                && mc.player.inventory.getItemStack().isEmpty()) {
             Slot slot = slotUnder(mouseX, mouseY);
             if (slot != null && !slot.getStack().isEmpty()) {
                 openAmountField(slot);
                 return;
             }
         }
-        if (amountField != null) {
-            closeAmountField();
-        }
 
         nameField.mouseClicked(mouseX, mouseY, mouseButton);
         super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
+    /**
+     * Click while the panel is open. It always takes the click.
+     *
+     * <p>A click outside the panel cancels it, and reaches nothing else. One gesture, one
+     * effect: the player never empties a slot while aiming at the Cancel button.
+     */
+    private void amountPanelClick(int mouseX, int mouseY, int mouseButton) {
+        if (mouseButton == 0 && panelBox().contains(mouseX, mouseY)) {
+            keepRatio = !keepRatio;
+            mc.getSoundHandler().playSound(net.minecraft.client.audio.PositionedSoundRecord
+                    .getMasterRecord(net.minecraft.init.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            return;
+        }
+        if (mouseButton == 0) {
+            for (int index = 0; index < PANEL_BUTTONS; index++) {
+                if (!panelButtons.get(index).mousePressed(mc, mouseX, mouseY)) {
+                    continue;
+                }
+                panelButtons.get(index).playPressSound(mc.getSoundHandler());
+                if (index == PANEL_BUTTONS - 2) {
+                    applyAmountField();
+                } else if (index == PANEL_BUTTONS - 1) {
+                    closeAmountField();
+                } else {
+                    stepAmount(index);
+                }
+                return;
+            }
+        }
+        if (amountField.mouseClicked(mouseX, mouseY, mouseButton)) {
+            return;
+        }
+        if (mouseX < panelLeft || mouseX >= panelLeft + PANEL_WIDTH
+                || mouseY < panelTop || mouseY >= panelTop + PANEL_HEIGHT) {
+            closeAmountField();
+        }
+    }
+
+    /**
+     * Area of one button of the panel.
+     *
+     * <p>Indexes 0 to 2: the plus row. 3 to 5: the minus row. 6: Set. 7: Cancel.
+     */
+    private java.awt.Rectangle panelButton(int index) {
+        if (index >= PANEL_BUTTONS - 2) {
+            return new java.awt.Rectangle(panelLeft + 4 + (index - (PANEL_BUTTONS - 2)) * 58,
+                    panelTop + PANEL_COMMAND_TOP, 56, PANEL_BUTTON_HEIGHT);
+        }
+        return new java.awt.Rectangle(panelLeft + 4 + (index % 3) * 38,
+                panelTop + (index < 3 ? PANEL_PLUS_TOP : PANEL_MINUS_TOP),
+                36, PANEL_BUTTON_HEIGHT);
+    }
+
+    /** Builds the eight buttons, once the panel knows where it sits. */
+    private void buildPanelButtons() {
+        panelButtons.clear();
+        for (int index = 0; index < PANEL_BUTTONS; index++) {
+            java.awt.Rectangle area = panelButton(index);
+            panelButtons.add(new GuiButton(BUTTON_PANEL + index,
+                    area.x, area.y, area.width, area.height, ""));
+        }
+    }
+
+    /**
+     * Area of the tick box, and of its label.
+     *
+     * <p>The label belongs to the box: clicking the text ticks it too. A box of ten pixels
+     * is a small target.
+     */
+    private java.awt.Rectangle panelBox() {
+        return new java.awt.Rectangle(panelLeft + 5, panelTop + PANEL_BOX_TOP,
+                PANEL_WIDTH - 10, PANEL_BOX_SIZE);
+    }
+
+    /** Label of one button. Shift turns the steps into factors. */
+    private String panelLabel(int index, boolean factor) {
+        if (index == PANEL_BUTTONS - 2) {
+            return I18n.format("gui.packagedautoterminals.set");
+        }
+        if (index == PANEL_BUTTONS - 1) {
+            return I18n.format("gui.packagedautoterminals.cancel");
+        }
+        boolean plus = index < 3;
+        int column = index % 3;
+        if (factor) {
+            return (plus ? "x" : "/") + AMOUNT_FACTORS[column];
+        }
+        return (plus ? "+" : "-") + AMOUNT_STEPS[column];
+    }
+
+    /**
+     * Applies one step to the field. Nothing travels to the server yet.
+     *
+     * <p>The computation runs on a {@code long}: a factor applied to the upper bound
+     * overflows no int before the clamping.
+     */
+    private void stepAmount(int index) {
+        long value = Math.max(0, parseAmount());
+        boolean plus = index < 3;
+        int column = index % 3;
+        if (isShiftKeyDown()) {
+            value = plus ? value * AMOUNT_FACTORS[column] : value / AMOUNT_FACTORS[column];
+        } else {
+            value = plus ? value + AMOUNT_STEPS[column] : value - AMOUNT_STEPS[column];
+        }
+        amountField.setText(String.valueOf(Math.max(0L, Math.min(amountMax, value))));
+    }
+
+    /** Amount typed in the field, or -1 when the text is not a number. */
+    private int parseAmount() {
+        try {
+            return Integer.parseInt(amountField.getText().trim());
+        } catch (NumberFormatException exception) {
+            return -1;
+        }
+    }
+
     private void openAmountField(Slot slot) {
         amountSlot = slot.getSlotIndex();
+        amountStack = slot.getStack().copy();
+        amountMax = ContainerPatEditor.MAX_SLOT_COUNT;
+
+        // The panel opens above the slot, then slides back inside the screen. Without the
+        // clamping, a slot of the last row pushed it off the bottom edge.
+        panelLeft = Math.max(2, Math.min(width - PANEL_WIDTH - 2, guiLeft + slot.xPos - 8));
+        panelTop = Math.max(2,
+                Math.min(height - PANEL_HEIGHT - 2, guiTop + slot.yPos - PANEL_HEIGHT - 4));
+
+        buildPanelButtons();
         amountField = new GuiTextField(1, fontRenderer,
-                guiLeft + slot.xPos - 2, guiTop + slot.yPos - 12, 40, 11);
+                panelLeft + 6, panelTop + PANEL_FIELD_TOP, PANEL_WIDTH - 14, 12);
         amountField.setMaxStringLength(4);
+        amountField.setTextColor(COLOR_FIELD_TEXT);
         amountField.setText(String.valueOf(slot.getStack().getCount()));
         amountField.setFocused(true);
         amountField.setSelectionPos(0);
@@ -284,19 +504,78 @@ public class GuiPatEditor extends AEBaseGui {
     private void closeAmountField() {
         amountField = null;
         amountSlot = -1;
+        amountStack = ItemStack.EMPTY;
+        panelButtons.clear();
     }
 
+    /**
+     * Sends the typed amount.
+     *
+     * <p>Zero empties the slot, like the Encoder. A malformed text changes nothing, and
+     * deserves no error message.
+     */
     private void applyAmountField() {
         if (amountField == null) {
             return;
         }
-        try {
-            int amount = Integer.parseInt(amountField.getText().trim());
-            PatNetwork.CHANNEL.sendToServer(new PacketEditorSlot(amountSlot, amount, true));
-        } catch (NumberFormatException ignored) {
-            // Empty or malformed input changes nothing, and deserves no error.
+        int amount = parseAmount();
+        if (amount >= 0) {
+            PatNetwork.CHANNEL.sendToServer(new PacketEditorSlot(
+                    amountSlot, Math.min(amountMax, amount), true, keepRatio));
         }
         closeAmountField();
+    }
+
+    /**
+     * Draws the panel, over everything else.
+     *
+     * <p>Order matters: the plate, then the item, then the buttons and the field. The item
+     * leaves the lighting of the item renderer behind it, so the lighting is put back off
+     * before any text is drawn.
+     */
+    private void drawAmountPanel(int mouseX, int mouseY, float partialTicks) {
+        if (amountField == null) {
+            return;
+        }
+        drawPanelPlate();
+
+        if (!amountStack.isEmpty()) {
+            drawItem(panelLeft + PANEL_ICON_LEFT, panelTop + PANEL_ICON_TOP, amountStack);
+            net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
+            net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
+            String title = fontRenderer.trimStringToWidth(
+                    amountStack.getDisplayName(), PANEL_WIDTH - 30);
+            fontRenderer.drawString(title, panelLeft + PANEL_ICON_LEFT + 20,
+                    panelTop + PANEL_ICON_TOP + 4, COLOR_TEXT);
+        }
+
+        drawPanelBox(mouseX, mouseY);
+
+        boolean factor = isShiftKeyDown();
+        for (int index = 0; index < PANEL_BUTTONS; index++) {
+            GuiButton button = panelButtons.get(index);
+            button.displayString = panelLabel(index, factor);
+            button.drawButton(mc, mouseX, mouseY, partialTicks);
+        }
+        amountField.drawTextBox();
+    }
+
+    /**
+     * The grey plate of the panel, with the vanilla bevel.
+     *
+     * <p>Black outline, white on the top and left edges, dark grey on the bottom and right
+     * ones. That is the relief of every screen of the game.
+     */
+    private void drawPanelPlate() {
+        int right = panelLeft + PANEL_WIDTH;
+        int bottom = panelTop + PANEL_HEIGHT;
+        drawRect(panelLeft - 1, panelTop - 1, right + 1, bottom + 1, COLOR_PANEL_OUTLINE);
+        drawRect(panelLeft, panelTop, right, bottom, COLOR_PANEL);
+        drawRect(panelLeft, panelTop, right - 1, panelTop + 1, COLOR_PANEL_LIGHT);
+        drawRect(panelLeft, panelTop, panelLeft + 1, bottom - 1, COLOR_PANEL_LIGHT);
+        drawRect(panelLeft + 1, bottom - 1, right, bottom, COLOR_PANEL_SHADOW);
+        drawRect(right - 1, panelTop + 1, right, bottom, COLOR_PANEL_SHADOW);
     }
 
     @Override
@@ -364,12 +643,7 @@ public class GuiPatEditor extends AEBaseGui {
         }
         drawMachineTooltip(mouseX, mouseY);
         nameField.drawTextBox();
-        if (amountField != null) {
-            // A solid background behind the box: over the grid it would be unreadable.
-            drawRect(amountField.x - 2, amountField.y - 2,
-                    amountField.x + amountField.width + 2, amountField.y + 12, 0xFF202020);
-            amountField.drawTextBox();
-        }
+        drawAmountPanel(mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -415,7 +689,8 @@ public class GuiPatEditor extends AEBaseGui {
             messageRefused = editorContainer.feedback.contains("no_")
                     || editorContainer.feedback.contains("unsaved")
                     || editorContainer.feedback.contains("failed")
-                    || editorContainer.feedback.contains("nothing");
+                    || editorContainer.feedback.contains("nothing")
+                    || editorContainer.feedback.contains("ratio_");
         }
 
         if (!message.isEmpty() && System.currentTimeMillis() <= messageExpiry) {
@@ -509,6 +784,59 @@ public class GuiPatEditor extends AEBaseGui {
                 net.minecraft.util.text.TextFormatting.GRAY
                         + I18n.format("gui.packagedautoterminals.machine_needed")),
                 mouseX, mouseY);
+    }
+
+    /**
+     * Editable ghost slots, and the area each one covers on screen.
+     *
+     * <p>The drag and drop from JEI needs it. The geometry is read from the slots themselves,
+     * and never recomputed from the layout constants: the two can therefore never drift
+     * apart.
+     *
+     * <p>Only {@link SlotFake} slots are offered. The tabs and the package preview are
+     * {@code AppEngSlot} slots, so they stay out on their own, with no test of their own.
+     *
+     * @return slot index of {@link EditorInventory}, to its area in screen coordinates.
+     */
+    public java.util.Map<Integer, java.awt.Rectangle> editableSlotAreas() {
+        java.util.Map<Integer, java.awt.Rectangle> areas = new java.util.LinkedHashMap<>();
+        EditorInventory editor = editorContainer.editor;
+        for (Slot slot : editorContainer.inventorySlots) {
+            if (!(slot instanceof SlotFake) || !editor.isEditable(slot.getSlotIndex())) {
+                continue;
+            }
+            areas.put(slot.getSlotIndex(),
+                    new java.awt.Rectangle(guiLeft + slot.xPos, guiTop + slot.yPos, 16, 16));
+        }
+        return areas;
+    }
+
+    /**
+     * Tick box of the proportions.
+     *
+     * <p>The tick is a filled square inside the box, and not a character: the game font has
+     * no reliable tick mark.
+     */
+    private void drawPanelBox(int mouseX, int mouseY) {
+        java.awt.Rectangle row = panelBox();
+        int left = row.x;
+        int right = left + PANEL_BOX_SIZE;
+        boolean hover = row.contains(mouseX, mouseY);
+
+        // PITFALL fixed: the tick used COLOR_FIELD_TEXT, which carries **no** alpha byte.
+        // `drawRect` then painted it fully transparent, and the box looked dead. Every
+        // colour of a `drawRect` must start with FF.
+        drawRect(left, row.y, right, row.y + PANEL_BOX_SIZE, COLOR_BOX_EDGE);
+        drawRect(left + 1, row.y + 1, right - 1, row.y + PANEL_BOX_SIZE - 1, COLOR_BOX_FILL);
+        if (keepRatio) {
+            drawRect(left + 2, row.y + 2, right - 2, row.y + PANEL_BOX_SIZE - 2,
+                    COLOR_BOX_TICK);
+        }
+
+        String label = fontRenderer.trimStringToWidth(
+                I18n.format("gui.packagedautoterminals.keep_ratio"), PANEL_WIDTH - 26);
+        fontRenderer.drawString(label, right + 5, row.y + 1,
+                hover ? COLOR_OK : COLOR_TEXT);
     }
 
     /**

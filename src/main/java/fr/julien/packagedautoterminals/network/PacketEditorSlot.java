@@ -19,17 +19,24 @@ public class PacketEditorSlot implements IMessage {
     public int delta;
     /** True: {@link #delta} is the wanted amount. False: it is a step to add. */
     public boolean absolute;
+    /** True: every other filled slot follows the same ratio. */
+    public boolean scale;
 
     public PacketEditorSlot() {}
 
     public PacketEditorSlot(int slot, int delta) {
-        this(slot, delta, false);
+        this(slot, delta, false, false);
     }
 
     public PacketEditorSlot(int slot, int amount, boolean absolute) {
+        this(slot, amount, absolute, false);
+    }
+
+    public PacketEditorSlot(int slot, int amount, boolean absolute, boolean scale) {
         this.slot = slot;
         this.delta = amount;
         this.absolute = absolute;
+        this.scale = scale;
     }
 
     @Override
@@ -37,6 +44,7 @@ public class PacketEditorSlot implements IMessage {
         slot = buf.readInt();
         delta = buf.readInt();
         absolute = buf.readBoolean();
+        scale = buf.readBoolean();
     }
 
     @Override
@@ -44,6 +52,7 @@ public class PacketEditorSlot implements IMessage {
         buf.writeInt(slot);
         buf.writeInt(delta);
         buf.writeBoolean(absolute);
+        buf.writeBoolean(scale);
     }
 
     public static class Handler implements IMessageHandler<PacketEditorSlot, IMessage> {
@@ -54,7 +63,7 @@ public class PacketEditorSlot implements IMessage {
                 if (player.openContainer instanceof ContainerPatEditor) {
                     ContainerPatEditor editor = (ContainerPatEditor) player.openContainer;
                     if (message.absolute) {
-                        editor.setSlotCount(message.slot, message.delta);
+                        editor.setSlotCount(message.slot, message.delta, message.scale);
                     } else {
                         editor.changeSlotCount(message.slot, message.delta);
                     }

@@ -50,6 +50,14 @@ public final class PatConfig {
     @Config.LangKey("config.packagedautoterminals.tooltip_stacks")
     public static int tooltipStacks = 8;
 
+    @Config.Comment({
+            "How long the machines stay marked in the world, in seconds.",
+            "The mark is the tinted cube, its outline and the beam going up."
+    })
+    @Config.RangeInt(min = 3, max = 120)
+    @Config.LangKey("config.packagedautoterminals.highlight_seconds")
+    public static int highlightSeconds = 15;
+
     private PatConfig() {}
 
     @Mod.EventBusSubscriber(modid = Reference.MOD_ID)

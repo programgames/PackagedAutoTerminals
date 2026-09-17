@@ -61,12 +61,13 @@ SEARCH_HEIGHT = 12
 TERMINAL_INVENTORY_LEFT = 79
 TERMINAL_INVENTORY_TOP = LIST_TOP + LIST_HEIGHT + 16
 
-# "Eye" icon, stored below the screen, in the free area of the sheet.
-EYE_U = 330
-EYE_V = 4
-EYE_SIZE = 12
+# "Locate" icon, stored right of the screen, in the free area of the sheet.
+# It is a map pin, and no longer an eye: an eye says "look", a pin says "here it is".
+LOCATE_U = 330
+LOCATE_V = 4
+LOCATE_SIZE = 12
 
-# Collapse chevrons, stored below the eye. Two drawings: collapsed group, expanded group.
+# Collapse chevrons, stored below the pin. Two drawings: collapsed group, expanded group.
 CHEVRON_U = 330
 CHEVRON_V = 20
 CHEVRON_SIZE = 8
@@ -143,14 +144,39 @@ def player_inventory(px, left, top):
         recess(px, left + column * SLOT_PITCH, top + HOTBAR_GAP, 16, 16, SLOT)
 
 
-def draw_eye(px, x0, y0):
-    """Eye: an almond lid, and a solid pupil."""
-    lid = [(2, 6), (3, 4), (4, 3), (5, 2), (6, 2), (7, 3), (8, 4), (9, 6),
-           (8, 8), (7, 9), (6, 10), (5, 10), (4, 9), (3, 8)]
-    for x, y in lid:
-        fill(px, x0 + x, y0 + y, 1, 1, EDGE)
-    fill(px, x0 + 4, y0 + 5, 4, 3, EDGE)
-    fill(px, x0 + 5, y0 + 4, 2, 5, EDGE)
+def draw_pin(px, x0, y0):
+    """Map pin: a round head with a hole, a tail down to a point, and a ground shadow.
+
+    The eye that came before it read as "watch", which is not what the button does. A pin
+    is the mark every map uses for "the thing you look for is here".
+
+    Each row lists the filled columns. The hole is cut afterwards, so the head reads as a
+    ring and not as a blob.
+    """
+    body = {
+        0: (4, 7),
+        1: (3, 8),
+        2: (2, 9),
+        3: (2, 9),
+        4: (2, 9),
+        5: (2, 9),
+        6: (2, 9),
+        7: (3, 8),
+        8: (4, 7),
+        9: (5, 6),
+        10: (5, 6),
+    }
+    hole = {3: (5, 6), 4: (4, 7), 5: (4, 7), 6: (5, 6)}
+
+    for row, (left, right) in body.items():
+        for x in range(left, right + 1):
+            fill(px, x0 + x, y0 + row, 1, 1, EDGE)
+    for row, (left, right) in hole.items():
+        for x in range(left, right + 1):
+            fill(px, x0 + x, y0 + row, 1, 1, NONE)
+
+    # The shadow places the pin on the ground. Without it the drawing floats.
+    fill(px, x0 + 4, y0 + 11, 4, 1, ICON)
 
 
 def draw_chevron_right(px, x0, y0):
@@ -188,7 +214,7 @@ def build_terminal():
     px = sheet(SHEET, SHEET)
     frame(px, WIDTH, HEIGHT)
     # The icon lives right of the screen, in the free area of the sheet.
-    draw_eye(px, EYE_U, EYE_V)
+    draw_pin(px, LOCATE_U, LOCATE_V)
     draw_chevron_right(px, CHEVRON_U, CHEVRON_V)
     draw_chevron_down(px, CHEVRON_U + 10, CHEVRON_V)
     recess(px, SEARCH_LEFT, SEARCH_TOP, SEARCH_WIDTH, SEARCH_HEIGHT, FIELD)
