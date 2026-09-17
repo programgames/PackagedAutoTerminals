@@ -5,6 +5,19 @@ numbering follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0-beta.3] - 2026-09-17
+
+### Added
+
+- Fourteen new translations: German, Spanish, Italian, Brazilian Portuguese, Dutch, Polish,
+  Czech, Russian, Ukrainian, Turkish, Japanese, Korean and Traditional Chinese. With English,
+  French and Simplified Chinese, the mod now ships sixteen languages.
+- The Simplified Chinese file, contributed in #1, gains the keys added since.
+
+### Fixed
+
+- Simplified Chinese: `summary_machines` printed `%dd` instead of `%d`.
+
 ## [0.1.0-beta.2] - 2026-09-17
 
 ### Added
