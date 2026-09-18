@@ -43,4 +43,19 @@ public class ItemPatTerminal extends Item implements IPartItem<PartPatTerminal> 
                                       float hitX, float hitY, float hitZ) {
         return PartPlacement.place(player.getHeldItem(hand), pos, facing, player, hand, world);
     }
+
+    /**
+     * Two lines that say what the item is for, and the gesture that uses it.
+     *
+     * <p>A player who meets the item in a creative tab or in JEI reads this first. The longer
+     * explanation lives in the JEI description page, reached with the usage key.
+     */
+    @Override
+    @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
+    public void addInformation(ItemStack stack, World world, java.util.List<String> lines,
+                               net.minecraft.client.util.ITooltipFlag flag) {
+        super.addInformation(stack, world, lines, flag);
+        lines.add(net.minecraft.client.resources.I18n.format("tip.packagedautoterminals.terminal"));
+        lines.add(net.minecraft.client.resources.I18n.format("tip.packagedautoterminals.terminal_use"));
+    }
 }

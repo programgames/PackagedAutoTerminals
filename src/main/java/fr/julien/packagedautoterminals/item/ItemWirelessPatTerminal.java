@@ -153,4 +153,22 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
     public static byte wutMode() {
         return (byte) PatConfig.wutModeId;
     }
+
+    /**
+     * Two lines that say what the item is for, and the gesture that uses it.
+     *
+     * <p>A player who meets the item in a creative tab or in JEI reads this first. The longer
+     * explanation lives in the JEI description page, reached with the usage key.
+     */
+    /**
+     * PITFALL: {@code AEBaseItem.addInformation} is **final**. AE2 fills the power line there and
+     * calls this hook afterwards. Overriding the vanilla method does not compile.
+     */
+    @Override
+    public void addCheckedInformation(ItemStack stack, World world, java.util.List<String> lines,
+                                         net.minecraft.client.util.ITooltipFlag flag) {
+        super.addCheckedInformation(stack, world, lines, flag);
+        lines.add(net.minecraft.client.resources.I18n.format("tip.packagedautoterminals.wireless"));
+        lines.add(net.minecraft.client.resources.I18n.format("tip.packagedautoterminals.wireless_link"));
+    }
 }

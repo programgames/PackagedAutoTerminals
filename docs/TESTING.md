@@ -265,6 +265,30 @@ Open a group of more than twenty recipes, and press the right arrow.
 → The row moves by ten tabs. No recipe is lost. At the end of the row, the right arrow is
 greyed out; at the start, the left one is.
 
+### D49 — Every message shows its number 🆕
+Save a recipe on a pair.
+→ The line reads "Applied to 2 machines", with a digit. It must never read "Format error".
+Repeat on a full group and on a ratio refusal: each one shows its number.
+
+### D50 — The wireless terminal in the offhand 🆕
+Put a linked, charged wireless terminal in the **offhand**, leave the main hand empty, right click.
+→ The terminal opens. Repeat with another, unlinked terminal in the main hand: the offhand one
+still opens, and the refusal names the right item.
+
+### D51 — A refusal is red in the terminal 🆕
+In the terminal, try to create a recipe on a machine with no recipe holder.
+→ The line is **red**. So is the full group refusal. A successful write stays green.
+
+### D52 — The group changed underneath 🆕
+Open the editor on a recipe, then remove another recipe of the same group by hand from the holder,
+then press Save.
+→ The editor refuses with "This group changed". The recipe you opened is untouched.
+
+### D53 — The in-game help 🆕
+Hover the terminal item, then press the JEI usage key on it.
+→ Two lines of tooltip. JEI opens a description page of three paragraphs. The wireless terminal
+has its own, of two.
+
 ### D47 — The amount of a fluid in its slot 🆕
 Put 4000 mB of water in a slot of the editor.
 → The slot reads **4**, in the corner, like every AE2 fluid screen. It no longer reads 1. At

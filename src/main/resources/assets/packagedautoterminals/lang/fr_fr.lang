@@ -89,3 +89,14 @@ gui.packagedautoterminals.keep_ratio=Garder le ratio
 gui.packagedautoterminals.amount_locked=Une recette de craft prend un objet par case
 gui.packagedautoterminals.ratio_not_exact=Ce rapport ne tombe pas juste sur tous les slots
 gui.packagedautoterminals.ratio_too_large=Ce rapport dépasserait %d dans un slot
+
+# In-game help: item tooltips, and the JEI description pages.
+tip.packagedautoterminals.terminal=Liste les machines PackagedAuto du réseau ME
+tip.packagedautoterminals.terminal_use=Clic droit sur un groupe pour éditer ses recettes
+tip.packagedautoterminals.wireless=Le même terminal, sans câble
+tip.packagedautoterminals.wireless_link=Lie-le d'abord dans un terminal de sécurité ME
+jei.packagedautoterminals.terminal.1=Pose cette pièce sur un câble ME, puis fais un clic droit dessus. Le terminal liste chaque Packager et chaque Unpackager du réseau, groupés par paire, avec les recettes que chaque paire porte.
+jei.packagedautoterminals.terminal.2=Un clic droit sur un groupe ouvre l'éditeur. Il suit la disposition du Package Recipe Encoder : les ingrédients à gauche, les sorties à droite, un onglet par recette du groupe. Save écrit la recette dans toutes les machines de la paire d'un coup, donc les deux côtés ne peuvent jamais diverger.
+jei.packagedautoterminals.terminal.3=L'onglet Machines liste les Package Crafters du réseau et signale chaque recette qu'aucun crafter ne sait exécuter. Un porte-recettes porte vingt recettes au maximum, ce qui est la limite de l'Encodeur lui-même.
+jei.packagedautoterminals.wireless.1=Le terminal sans fil ouvre le même écran depuis n'importe où dans la portée. Lie-le d'abord dans un terminal de sécurité ME, puis fais un clic droit avec, dans l'une ou l'autre main.
+jei.packagedautoterminals.wireless.2=Il puise dans sa propre réserve d'énergie, comme tout terminal sans fil d'AE2. Hors de portée ou sans énergie, l'écran se ferme au lieu de montrer un réseau qu'il n'atteint plus.
