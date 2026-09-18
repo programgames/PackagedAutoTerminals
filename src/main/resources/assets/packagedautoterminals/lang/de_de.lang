@@ -66,6 +66,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=Drahtloses PackagedAuto-Te
 gui.packagedautoterminals.not_linked=Dieses Terminal ist mit keinem Netzwerk verbunden
 gui.packagedautoterminals.no_power=Dieses Terminal hat keine Energie mehr
 gui.packagedautoterminals.out_of_range=Außer Reichweite
+gui.packagedautoterminals.group_full=Diese Gruppe ist voll: höchstens %d Rezepte
 gui.packagedautoterminals.insert_holder_first=Lege zuerst einen Package Recipe Holder in diese Maschine
 gui.packagedautoterminals.applied_partial=Auf %d angewendet, %d ohne Holder
 gui.packagedautoterminals.section_crafters=Crafter

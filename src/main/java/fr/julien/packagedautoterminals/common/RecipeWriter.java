@@ -26,12 +26,30 @@ public final class RecipeWriter {
 
     private RecipeWriter() {}
 
+    /**
+     * How many recipes one recipe holder can carry.
+     *
+     * <p>Read in {@code PackagedAutoConfig}: the entry {@code pattern_slots} drives
+     * {@code TileEncoder.patternSlots}, and Forge bounds it to **1 to 20**. A Package Recipe
+     * Encoder can therefore never show a twenty first recipe.
+     *
+     * <p>The field is read at run time, not copied, so a pack that lowers the entry is followed.
+     *
+     * <p>FIXED: the terminal used to add without any bound. A player could write a recipe that
+     * their own Encoder would never be able to open again.
+     */
+    public static int maxRecipes() {
+        return Math.max(1, thelm.packagedauto.tile.TileEncoder.patternSlots);
+    }
+
     /** Result of a group write. */
     public static final class Result {
         /** Machines actually changed. */
         public int changed;
         /** Machines skipped for lack of an available recipe holder. */
         public int withoutHolder;
+        /** Machines whose recipe holder already carries {@link #maxRecipes()} recipes. */
+        public int full;
     }
 
     /**
@@ -59,6 +77,9 @@ public final class RecipeWriter {
                 case NO_HOLDER:
                     result.withoutHolder++;
                     break;
+                case FULL:
+                    result.full++;
+                    break;
                 default:
                     break;
             }
@@ -66,7 +87,7 @@ public final class RecipeWriter {
         return result;
     }
 
-    private enum Outcome { CHANGED, UNCHANGED, NO_HOLDER }
+    private enum Outcome { CHANGED, UNCHANGED, NO_HOLDER, FULL }
 
     private static Outcome applyTo(IGrid grid, IActionSource source, ProviderSnapshot snapshot,
                                    IRecipeInfo oldRecipe, IRecipeInfo newRecipe) {
@@ -106,6 +127,11 @@ public final class RecipeWriter {
             // The machine does not carry this recipe yet: it receives it.
             if (indexOf(recipes, newRecipe) >= 0) {
                 return Outcome.UNCHANGED;
+            }
+            // Last guard. The editor refuses a full group before it reaches this point, so
+            // nothing is ever written by halves.
+            if (recipes.size() >= maxRecipes()) {
+                return Outcome.FULL;
             }
             recipes.add(newRecipe);
         }

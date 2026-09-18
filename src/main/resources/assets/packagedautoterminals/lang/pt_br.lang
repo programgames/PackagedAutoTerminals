@@ -66,6 +66,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=Terminal PackagedAuto sem 
 gui.packagedautoterminals.not_linked=Este terminal não está ligado a nenhuma rede
 gui.packagedautoterminals.no_power=Este terminal ficou sem energia
 gui.packagedautoterminals.out_of_range=Fora de alcance
+gui.packagedautoterminals.group_full=Este grupo está cheio: no máximo %d receitas
 gui.packagedautoterminals.insert_holder_first=Coloque primeiro um Package Recipe Holder nesta máquina
 gui.packagedautoterminals.applied_partial=Aplicado a %d, %d sem suporte
 gui.packagedautoterminals.section_crafters=Crafters

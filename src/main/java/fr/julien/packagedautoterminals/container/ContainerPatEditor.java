@@ -517,6 +517,15 @@ public class ContainerPatEditor extends AEBaseContainer {
                 ? group.recipes.get(index)
                 : null;
 
+        // A recipe holder holds twenty recipes at most, and the Package Recipe Encoder shows
+        // exactly that many. Writing a twenty first one would produce a recipe the player could
+        // never open again in their Encoder. The refusal happens here, before any machine is
+        // touched, so no group is ever left half written.
+        if (oldRecipe == null && group.recipes.size() >= RecipeWriter.maxRecipes()) {
+            tell("gui.packagedautoterminals.group_full", RecipeWriter.maxRecipes());
+            return false;
+        }
+
         List<ProviderSnapshot> targets = new ArrayList<>(group.machines);
         ProviderRole missing = ProviderPairing.missingRoleOf(group);
         if (oldRecipe == null && missing != null) {
@@ -648,6 +657,10 @@ public class ContainerPatEditor extends AEBaseContainer {
     public void selectTab(int slot) {
         int target = tabOffset + slot;
         if (target >= recipeCount) {
+            if (!canCreate()) {
+                tell("gui.packagedautoterminals.group_full", RecipeWriter.maxRecipes());
+                return;
+            }
             target = -1;
         }
 
@@ -675,6 +688,7 @@ public class ContainerPatEditor extends AEBaseContainer {
             tabOffset = maxTabOffset();
         }
 
+
         for (int slot = 0; slot < TAB_COUNT; slot++) {
             int recipe = tabOffset + slot;
             ItemStack icon = ItemStack.EMPTY;
@@ -691,13 +705,28 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
+     * Can this group still take one more recipe?
+     *
+     * <p>Both sides compute it: {@code TileEncoder.patternSlots} comes from the PackagedAuto
+     * config, which the client loads too. No field travels for this.
+     */
+    public boolean canCreate() {
+        return recipeCount < RecipeWriter.maxRecipes();
+    }
+
+    /**
      * Last offset the tab row can reach. Zero means the row shows everything.
      *
-     * <p>The row shows {@code TAB_COUNT} slots, and the group needs one more for the creation
-     * tab. The client reads this to grey out an arrow that cannot move.
+     * <p>The row shows {@code TAB_COUNT} slots, which is twenty, and a recipe holder holds
+     * twenty recipes at most. The creation tab is the only reason the row could ever overflow,
+     * and it disappears once the group is full. The offset is therefore zero in practice, and
+     * the arrows stay greyed out.
+     *
+     * <p>That is the real answer to the player report: the row used to slide by one slot on a
+     * full group, and the player read the slide as a deleted recipe. Now nothing slides.
      */
     public int maxTabOffset() {
-        return Math.max(0, recipeCount + 1 - TAB_COUNT);
+        return Math.max(0, recipeCount + (canCreate() ? 1 : 0) - TAB_COUNT);
     }
 
     /**

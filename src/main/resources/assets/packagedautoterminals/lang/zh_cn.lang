@@ -65,6 +65,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=无线封包合成终端
 gui.packagedautoterminals.not_linked=该终端未连接到网络
 gui.packagedautoterminals.no_power=该终端能量已耗尽
 gui.packagedautoterminals.out_of_range=超出连接范围
+gui.packagedautoterminals.group_full=该分组已满：最多 %d 个配方
 gui.packagedautoterminals.insert_holder_first=先向该机器放入一个样板包储存器
 gui.packagedautoterminals.applied_partial=已应用至%d个机器，%d个机器没有储存器
 gui.packagedautoterminals.section_crafters=合成器

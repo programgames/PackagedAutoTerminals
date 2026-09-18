@@ -66,6 +66,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=無線封包合成終端
 gui.packagedautoterminals.not_linked=這個終端未連接到任何網路
 gui.packagedautoterminals.no_power=這個終端沒有能量了
 gui.packagedautoterminals.out_of_range=超出範圍
+gui.packagedautoterminals.group_full=該分組已滿：最多 %d 個配方
 gui.packagedautoterminals.insert_holder_first=請先在這台機器放入封包配方儲存器
 gui.packagedautoterminals.applied_partial=已套用至%d台，%d台沒有儲存器
 gui.packagedautoterminals.section_crafters=合成器

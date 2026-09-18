@@ -66,6 +66,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=무선 PackagedAuto 터미
 gui.packagedautoterminals.not_linked=이 터미널은 네트워크에 연결되어 있지 않습니다
 gui.packagedautoterminals.no_power=이 터미널의 에너지가 없습니다
 gui.packagedautoterminals.out_of_range=범위 밖
+gui.packagedautoterminals.group_full=이 그룹은 가득 찼습니다. 레시피는 최대 %d개입니다
 gui.packagedautoterminals.insert_holder_first=먼저 이 기계에 Package Recipe Holder를 넣으세요
 gui.packagedautoterminals.applied_partial=%d대에 적용, %d대는 홀더 없음
 gui.packagedautoterminals.section_crafters=크래프터

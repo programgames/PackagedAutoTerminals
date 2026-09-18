@@ -213,7 +213,24 @@ public class ContainerPatTerminal extends AEBaseContainer {
             tell("gui.packagedautoterminals.insert_holder_first");
             return;
         }
+        // Same bound as the editor: a recipe holder carries twenty recipes at most, and the
+        // Package Recipe Encoder shows exactly that many.
+        if (recipeCountOf(dimension, pos) >= RecipeWriter.maxRecipes()) {
+            tell("gui.packagedautoterminals.group_full", RecipeWriter.maxRecipes());
+            return;
+        }
         openEditor(dimension, pos, -1);
+    }
+
+    /** How many recipes the group of this machine already carries. */
+    private int recipeCountOf(int dimension, BlockPos pos) {
+        IGrid grid = grid();
+        if (grid == null) {
+            return 0;
+        }
+        ProviderPairing.Group group = ProviderPairing.groupOf(
+                ProviderPairing.group(ProviderScanner.scan(grid)), dimension, pos);
+        return group == null ? 0 : group.recipes.size();
     }
 
     /**

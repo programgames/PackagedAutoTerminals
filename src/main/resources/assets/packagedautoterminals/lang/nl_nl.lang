@@ -66,6 +66,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=Draadloze PackagedAuto-ter
 gui.packagedautoterminals.not_linked=Deze terminal is met geen enkel netwerk verbonden
 gui.packagedautoterminals.no_power=Deze terminal heeft geen energie meer
 gui.packagedautoterminals.out_of_range=Buiten bereik
+gui.packagedautoterminals.group_full=Deze groep is vol: hoogstens %d recepten
 gui.packagedautoterminals.insert_holder_first=Plaats eerst een Package Recipe Holder in deze machine
 gui.packagedautoterminals.applied_partial=Toegepast op %d, %d zonder houder
 gui.packagedautoterminals.section_crafters=Crafters
