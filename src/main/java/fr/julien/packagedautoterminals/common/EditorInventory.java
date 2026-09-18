@@ -85,13 +85,29 @@ public class EditorInventory implements IInventory {
      */
     public void updateRecipeInfo() {
         recipeInfo = null;
-        boolean settable = recipeType != null && recipeType.canSetOutput();
-        int firstOutput = settable ? INPUT_SLOTS + OUTPUT_SLOTS : INPUT_SLOTS;
-        for (int slot = firstOutput; slot < SIZE; slot++) {
+
+        // PITFALL, and it cost a release. When the type is **unknown**, clear the preview and
+        // nothing else.
+        //
+        // The client builds its editor with `recipeType == null` and receives the type through
+        // `@GuiSync`, which arrives **after** the slot contents. Every arriving slot calls this
+        // method. Clearing the outputs on a null type therefore wiped the nine slots the server
+        // had just sent, and the server never sent them again: it believed the client already had
+        // them. The output box stayed empty, the recipe read as invalid, and the Save button
+        // stayed disabled, so pressing it did nothing and said nothing.
+        for (int slot = INPUT_SLOTS + OUTPUT_SLOTS; slot < SIZE; slot++) {
             stacks.set(slot, ItemStack.EMPTY);
         }
         if (recipeType == null) {
             return;
+        }
+
+        // A type that computes its own outputs owns slots 81 to 89, so they are rebuilt here.
+        boolean settable = recipeType.canSetOutput();
+        if (!settable) {
+            for (int slot = INPUT_SLOTS; slot < INPUT_SLOTS + OUTPUT_SLOTS; slot++) {
+                stacks.set(slot, ItemStack.EMPTY);
+            }
         }
 
         List<ItemStack> inputs = new ArrayList<>(stacks.subList(0, INPUT_SLOTS));

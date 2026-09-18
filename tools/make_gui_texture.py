@@ -96,8 +96,14 @@ RIGHT_COLUMN = 190
 OUTPUT_TOP = 112
 PREVIEW_TOP = 172
 
-EDITOR_ARROW_LEFT = 172
+# FIXED: the arrow used to start at 172 and to be 21 pixels wide, so it reached 192 while the
+# right column starts at 190. Its point was drawn under the first output slot, and read as cut.
+# The free band between the grid, which ends at 169, and that column is twenty pixels wide, so
+# the arrow is now twenty wide and starts where the band starts.
+EDITOR_ARROW_LEFT = 170
 EDITOR_ARROW_TOP = 144
+# Shaft length. Shaft plus the seven rows of the point must stay inside the band.
+EDITOR_ARROW_SHAFT = 12
 
 EDITOR_INVENTORY_LEFT = 20
 EDITOR_INVENTORY_TOP = 256
@@ -193,9 +199,9 @@ def draw_chevron_down(px, x0, y0):
 
 def draw_arrow(px, x0, y0):
     """Arrow pointing right, like the Encoder one."""
-    fill(px, x0, y0 + 4, 14, 6, ARROW)
+    fill(px, x0, y0 + 4, EDITOR_ARROW_SHAFT, 6, ARROW)
     for step in range(7):
-        fill(px, x0 + 14 + step, y0 + step, 1, 14 - 2 * step, ARROW)
+        fill(px, x0 + EDITOR_ARROW_SHAFT + step, y0 + step, 1, 14 - 2 * step, ARROW)
 
 
 def draw_package(px, x0, y0):
