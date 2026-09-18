@@ -16,7 +16,7 @@ change. This mod removes that walk.
 | [Diagnostics](Diagnostics) | The Machines tab, and the orphan recipe report |
 | [Troubleshooting](Troubleshooting) | The refusals, and what each one means |
 
-**Francais** : [Accueil](Accueil)
+**Français** : [Accueil](Accueil) · **简体中文** : [首页](Home-zh)
 
 ## Requirements
 

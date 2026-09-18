@@ -17,7 +17,7 @@ changement. Ce mod supprime cette marche.
 | [Le diagnostic](Le-diagnostic) | L'onglet Machines et les recettes orphelines |
 | [Dépannage](Depannage) | Les refus, et ce que chacun veut dire |
 
-**English** : [Home](Home)
+**English** : [Home](Home) · **简体中文** : [首页](Home-zh)
 
 ## Prérequis
 

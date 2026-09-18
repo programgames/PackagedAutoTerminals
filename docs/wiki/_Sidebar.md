@@ -13,3 +13,11 @@
 - [Les fluides](Les-fluides)
 - [Le diagnostic](Le-diagnostic)
 - [Dépannage](Depannage)
+
+### 简体中文
+- [首页](Home-zh)
+- [快速上手](Getting-started-zh)
+- [编辑器](The-editor-zh)
+- [流体](Fluids-zh)
+- [诊断](Diagnostics-zh)
+- [疑难解答](Troubleshooting-zh)
