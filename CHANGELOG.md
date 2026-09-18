@@ -5,6 +5,31 @@ numbering follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0-beta.7] - 2026-09-18
+
+A documentation release. No Java file changed.
+
+### Fixed
+
+- The tooltip of the terminal named the wrong mouse button, in the sixteen languages. It read
+  "Right click a group to edit its recipes". A group row answers the left click, which opens the
+  editor on a new recipe, and a recipe row answers the right click. Read in
+  `GuiPatTerminal.mouseClicked`: `mouseButton == 0` on a group header sends `ACTION_NEW`, and
+  `mouseButton == 1` needs a recipe under the pointer.
+- The JEI description pages carried the same error, and they placed the crafter list above the
+  orphan report. `GuiPatTerminal.buildMachineLines` adds the report first.
+
+### Changed
+
+- The README, the eighteen wiki pages and the in-game help of the sixteen languages are rewritten
+  in plain English: short sentences, active voice, simple tenses, one word for one meaning.
+- The wiki now states the four rules that build a group, the repair of a split group by the group
+  name, the two sections of the Machines tab, the pin button of the Patterns tab, and the recipe
+  of the wireless terminal. Each one was absent or wrong before.
+- Two claims that no source in the repository supports are softened. The orphan recipe is a
+  frequent mistake in game, not the most frequent one. An unpowered terminal darkens and lists no
+  machine, instead of refusing to open.
+
 ## [0.1.0-beta.6] - 2026-09-18
 
 A repair release. **0.1.0-beta.5 carried a regression**; use this one instead.
