@@ -66,6 +66,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=ワイヤレスPackagedAut
 gui.packagedautoterminals.not_linked=この端末はネットワークに接続されていません
 gui.packagedautoterminals.no_power=この端末のエネルギーが尽きました
 gui.packagedautoterminals.out_of_range=範囲外
+gui.packagedautoterminals.group_changed=このグループは変わりました。レシピを開き直してください
 gui.packagedautoterminals.group_full=このグループは満杯です。レシピは最大 %d 件です
 gui.packagedautoterminals.insert_holder_first=まずこの機械に梱包レシピホルダーを入れてください
 gui.packagedautoterminals.applied_partial=%d台に適用、%d台はホルダーなし

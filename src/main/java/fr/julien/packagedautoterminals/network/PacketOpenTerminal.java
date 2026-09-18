@@ -35,8 +35,13 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
  */
 public class PacketOpenTerminal implements IMessage {
 
-    /** Offhand slot, in the flat inventory indexing. */
-    private static final int OFFHAND = 40;
+    /**
+     * Offhand slot, in the flat inventory indexing.
+     *
+     * <p>Public, because every path that opens the terminal needs it: an item used from the
+     * offhand must name that slot, and not the hotbar slot the player happens to have selected.
+     */
+    public static final int OFFHAND = 40;
     /** Size of the main inventory, hotbar included. */
     private static final int MAIN_SIZE = 36;
 

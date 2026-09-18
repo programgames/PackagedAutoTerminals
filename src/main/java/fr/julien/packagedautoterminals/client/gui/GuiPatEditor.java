@@ -194,47 +194,12 @@ public class GuiPatEditor extends AEBaseGui {
     }
 
 
-    /**
-     * The GUI scale the player chose, kept aside while this screen shrinks it. -1: untouched.
-     *
-     * <p>See {@link GuiScaleFit} for the reason, and for the reading of {@code ScaledResolution}
-     * that gives the rule.
-     */
-    private int playerGuiScale = -1;
+    /** Keeps this screen inside a small window. See {@link GuiScaleFit}. */
+    private final GuiScaleFit scaleFit = new GuiScaleFit();
 
-    /**
-     * Lowers the GUI scale when this screen does not fit the window.
-     *
-     * @return true when the scale changed. The caller then returns at once: changing the scale
-     *     runs {@code setWorldAndResolution}, which calls {@code initGui} again, and the second
-     *     pass builds the screen at the right size.
-     */
-    private boolean fitToWindow() {
-        if (playerGuiScale < 0) {
-            playerGuiScale = mc.gameSettings.guiScale;
-        }
-        int wanted = GuiScaleFit.scaleFor(mc, playerGuiScale, xSize, ySize);
-        if (wanted == mc.gameSettings.guiScale) {
-            return false;
-        }
-        mc.gameSettings.guiScale = wanted;
-        net.minecraft.client.gui.ScaledResolution size = GuiScaleFit.resolution(mc);
-        setWorldAndResolution(mc, size.getScaledWidth(), size.getScaledHeight());
-        return true;
-    }
-
-    /**
-     * Gives the player their GUI scale back.
-     *
-     * <p>The setting only ever changed in memory, so a crash with the screen open leaves the
-     * options file of the player untouched.
-     */
     @Override
     public void onGuiClosed() {
-        if (playerGuiScale >= 0) {
-            mc.gameSettings.guiScale = playerGuiScale;
-            playerGuiScale = -1;
-        }
+        scaleFit.restore(mc);
         super.onGuiClosed();
     }
 
@@ -242,7 +207,7 @@ public class GuiPatEditor extends AEBaseGui {
     public void initGui() {
         // The scale must be settled before anything is placed: every widget below reads
         // `width` and `height`.
-        if (fitToWindow()) {
+        if (scaleFit.apply(this, mc, xSize, ySize)) {
             return;
         }
         super.initGui();
@@ -872,12 +837,9 @@ public class GuiPatEditor extends AEBaseGui {
             message = I18n.format(Feedback.key(editorContainer.feedback),
                     Feedback.arguments(editorContainer.feedback));
             messageExpiry = System.currentTimeMillis() + MESSAGE_DURATION;
-            // A refusal is recognised by its key: no translation needed to tell.
-            messageRefused = editorContainer.feedback.contains("no_")
-                    || editorContainer.feedback.contains("unsaved")
-                    || editorContainer.feedback.contains("failed")
-                    || editorContainer.feedback.contains("nothing")
-                    || editorContainer.feedback.contains("ratio_");
+            // One list, in Feedback, for both screens. Each used to carry its own set of
+            // substrings, and they had already drifted apart.
+            messageRefused = Feedback.isRefusal(editorContainer.feedback);
         }
 
         if (!message.isEmpty() && System.currentTimeMillis() <= messageExpiry) {

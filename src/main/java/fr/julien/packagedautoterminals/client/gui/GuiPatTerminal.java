@@ -147,47 +147,12 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
 
-    /**
-     * The GUI scale the player chose, kept aside while this screen shrinks it. -1: untouched.
-     *
-     * <p>See {@link GuiScaleFit} for the reason, and for the reading of {@code ScaledResolution}
-     * that gives the rule.
-     */
-    private int playerGuiScale = -1;
+    /** Keeps this screen inside a small window. See {@link GuiScaleFit}. */
+    private final GuiScaleFit scaleFit = new GuiScaleFit();
 
-    /**
-     * Lowers the GUI scale when this screen does not fit the window.
-     *
-     * @return true when the scale changed. The caller then returns at once: changing the scale
-     *     runs {@code setWorldAndResolution}, which calls {@code initGui} again, and the second
-     *     pass builds the screen at the right size.
-     */
-    private boolean fitToWindow() {
-        if (playerGuiScale < 0) {
-            playerGuiScale = mc.gameSettings.guiScale;
-        }
-        int wanted = GuiScaleFit.scaleFor(mc, playerGuiScale, xSize, ySize);
-        if (wanted == mc.gameSettings.guiScale) {
-            return false;
-        }
-        mc.gameSettings.guiScale = wanted;
-        net.minecraft.client.gui.ScaledResolution size = GuiScaleFit.resolution(mc);
-        setWorldAndResolution(mc, size.getScaledWidth(), size.getScaledHeight());
-        return true;
-    }
-
-    /**
-     * Gives the player their GUI scale back.
-     *
-     * <p>The setting only ever changed in memory, so a crash with the screen open leaves the
-     * options file of the player untouched.
-     */
     @Override
     public void onGuiClosed() {
-        if (playerGuiScale >= 0) {
-            mc.gameSettings.guiScale = playerGuiScale;
-            playerGuiScale = -1;
-        }
+        scaleFit.restore(mc);
         super.onGuiClosed();
     }
 
@@ -195,7 +160,7 @@ public class GuiPatTerminal extends AEBaseGui {
     public void initGui() {
         // The scale must be settled before anything is placed: every widget below reads
         // `width` and `height`.
-        if (fitToWindow()) {
+        if (scaleFit.apply(this, mc, xSize, ySize)) {
             return;
         }
         super.initGui();
@@ -560,8 +525,9 @@ public class GuiPatTerminal extends AEBaseGui {
                     Feedback.arguments(terminalContainer.feedback));
             messageExpiry = System.currentTimeMillis() + MESSAGE_DURATION;
             // A refusal is recognised by its key: no translation needed to tell.
-            messageRefused = terminalContainer.feedback.contains("no_")
-                    || terminalContainer.feedback.contains("failed");
+            // FIXED: this test knew two words while the editor knew five, so the refusals of
+            // the terminal itself, insert_holder_first and group_full, were drawn green.
+            messageRefused = Feedback.isRefusal(terminalContainer.feedback);
         }
         if (message.isEmpty() || System.currentTimeMillis() > messageExpiry) {
             return null;
@@ -882,20 +848,6 @@ public class GuiPatTerminal extends AEBaseGui {
                 + I18n.format(recipes == 1
                         ? "gui.packagedautoterminals.summary_recipe"
                         : "gui.packagedautoterminals.summary_recipes", recipes);
-    }
-
-    private String stateOf(ProviderSnapshot machine) {
-        if (!machine.active) {
-            return I18n.format("gui.packagedautoterminals.inactive");
-        }
-        if (!machine.holderPresent) {
-            return I18n.format("gui.packagedautoterminals.no_holder");
-        }
-        // The singular has its own key: "1 recipes" stands out at once in game.
-        int count = machine.recipes.size();
-        return I18n.format(count == 1
-                ? "gui.packagedautoterminals.recipe"
-                : "gui.packagedautoterminals.recipes", count);
     }
 
     private String trim(String text, int maxWidth) {

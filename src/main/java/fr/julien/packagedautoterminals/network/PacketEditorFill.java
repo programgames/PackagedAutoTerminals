@@ -35,12 +35,24 @@ public class PacketEditorFill implements IMessage {
         this.stacks = stacks;
     }
 
+    /**
+     * Reads the packet.
+     *
+     * <p>This one travels **to the server**, so nothing in it is trusted. The entry count used to
+     * be read raw and used as a loop bound: a crafted packet could announce two billion entries
+     * and hold the decoding thread until the buffer ran dry. The count is now clamped to the size
+     * of the editor, which is what {@code maxSlots} always promised, and the loop also stops as
+     * soon as the buffer is empty.
+     *
+     * <p>{@code fillFromRecipe} already refuses a slot index outside the grid, so a wrong index
+     * inside the payload is harmless.
+     */
     @Override
     public void fromBytes(ByteBuf buf) {
         typeId = buf.readInt();
-        int count = buf.readInt();
+        int count = Math.max(0, Math.min(maxSlots(), buf.readInt()));
         stacks = new Int2ObjectOpenHashMap<>();
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < count && buf.isReadable(); i++) {
             NBTTagCompound tag = ByteBufUtils.readTag(buf);
             if (tag != null) {
                 stacks.put(tag.getInteger(KEY_SLOT),

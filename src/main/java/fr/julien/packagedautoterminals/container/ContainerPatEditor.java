@@ -98,6 +98,19 @@ public class ContainerPatEditor extends AEBaseContainer {
      * recipe. Without that, pressing Save a second time would add a copy.
      */
     private int index;
+    /**
+     * The recipe the editor opened on, or {@code null} for a creation.
+     *
+     * <p>PITFALL: {@link #index} alone is not an identity. It names a **position** in a group that
+     * is rebuilt from a fresh scan on every write. Another player, or a hopper, can change the
+     * recipe holder while this screen is open, and the recipe at that position is then a different
+     * one. Saving replaced it, and destroyed a recipe nobody meant to touch.
+     *
+     * <p>Every write therefore names the recipe itself, and refuses when the group no longer
+     * carries it. {@code IRecipeInfo} implements {@code equals}: {@code RecipeWriter.indexOf} and
+     * {@code save} already rely on it.
+     */
+    private IRecipeInfo openedRecipe;
 
     public ContainerPatEditor(InventoryPlayer inventory, TerminalContext terminal,
                               EditorInventory editor, int dimension, BlockPos pos, int index) {
@@ -110,6 +123,7 @@ public class ContainerPatEditor extends AEBaseContainer {
         // Without this line, the green frame sat on the creation tab, because `currentTab`
         // stayed -1 until a switch happened.
         this.currentTab = index;
+        this.openedRecipe = editor.recipeInfo;
 
         bindEditorSlots();
         bindPlayerInventory(inventory, PLAYER_INVENTORY_OFFSET_X, PLAYER_INVENTORY_TOP);
@@ -513,9 +527,13 @@ public class ContainerPatEditor extends AEBaseContainer {
             return false;
         }
 
-        IRecipeInfo oldRecipe = index >= 0 && index < group.recipes.size()
-                ? group.recipes.get(index)
-                : null;
+        // The recipe this editor opened on, not whatever now sits at its old position. See the
+        // comment on `openedRecipe`.
+        IRecipeInfo oldRecipe = openedRecipe;
+        if (oldRecipe != null && indexOf(group.recipes, oldRecipe) < 0) {
+            tell("gui.packagedautoterminals.group_changed");
+            return false;
+        }
 
         // A recipe holder holds twenty recipes at most, and the Package Recipe Encoder shows
         // exactly that many. Writing a twenty first one would produce a recipe the player could
@@ -561,12 +579,11 @@ public class ContainerPatEditor extends AEBaseContainer {
         // instead of creating a copy.
         ProviderPairing.Group after = currentGroup();
         if (after != null) {
-            for (int i = 0; i < after.recipes.size(); i++) {
-                if (after.recipes.get(i).equals(editor.recipeInfo)) {
-                    index = i;
-                    currentTab = i;
-                    break;
-                }
+            int written = indexOf(after.recipes, editor.recipeInfo);
+            if (written >= 0) {
+                index = written;
+                currentTab = written;
+                openedRecipe = after.recipes.get(written);
             }
         }
         dirty = false;
@@ -749,12 +766,14 @@ public class ContainerPatEditor extends AEBaseContainer {
         index = target;
         editor.clear();
 
+        openedRecipe = null;
         if (target < 0) {
             editor.recipeType = defaultRecipeType();
         } else {
             ProviderPairing.Group group = currentGroup();
             if (group != null && target < group.recipes.size()) {
-                editor.load(group.recipes.get(target));
+                openedRecipe = group.recipes.get(target);
+                editor.load(openedRecipe);
             }
         }
         editor.updateRecipeInfo();
@@ -769,24 +788,38 @@ public class ContainerPatEditor extends AEBaseContainer {
 
     /** Deletes the current recipe, in every machine of the group. */
     public void deleteCurrent() {
-        if (index < 0) {
+        if (index < 0 || openedRecipe == null) {
             tell("gui.packagedautoterminals.nothing_to_delete");
             return;
         }
         IGrid grid = grid();
         ProviderPairing.Group group = currentGroup();
-        if (grid == null || group == null || index >= group.recipes.size()
-                || !hasAccess(SecurityPermissions.BUILD, false)) {
+        if (grid == null || group == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+            return;
+        }
+        // Same rule as save: the recipe is named, never its position.
+        if (indexOf(group.recipes, openedRecipe) < 0) {
+            tell("gui.packagedautoterminals.group_changed");
             return;
         }
 
         RecipeWriter.Result result = RecipeWriter.apply(grid, getActionSource(),
-                group.machines, group.recipes.get(index), null);
+                group.machines, openedRecipe, null);
         tell(result.changed == 1
                         ? "gui.packagedautoterminals.applied_to_one"
                         : "gui.packagedautoterminals.applied_to",
                 result.changed);
         load(-1);
+    }
+
+    /** Position of a recipe in a list, by equality. -1 when the list no longer carries it. */
+    private static int indexOf(List<IRecipeInfo> recipes, IRecipeInfo recipe) {
+        for (int i = 0; i < recipes.size(); i++) {
+            if (recipes.get(i).equals(recipe)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /** Clears the grid, without writing anything into the machines. */

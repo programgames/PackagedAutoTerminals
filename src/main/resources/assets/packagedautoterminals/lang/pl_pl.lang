@@ -66,6 +66,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=Bezprzewodowy terminal Pac
 gui.packagedautoterminals.not_linked=Ten terminal nie jest połączony z siecią
 gui.packagedautoterminals.no_power=Ten terminal nie ma już energii
 gui.packagedautoterminals.out_of_range=Poza zasięgiem
+gui.packagedautoterminals.group_changed=Ta grupa się zmieniła: otwórz recepturę ponownie
 gui.packagedautoterminals.group_full=Ta grupa jest pełna: najwyżej %d receptur
 gui.packagedautoterminals.insert_holder_first=Najpierw włóż Package Recipe Holder do tej maszyny
 gui.packagedautoterminals.applied_partial=Zastosowano do %d, %d bez nośnika

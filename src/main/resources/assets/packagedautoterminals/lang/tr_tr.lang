@@ -66,6 +66,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=Kablosuz PackagedAuto Term
 gui.packagedautoterminals.not_linked=Bu terminal hiçbir ağa bağlı değil
 gui.packagedautoterminals.no_power=Bu terminalin enerjisi bitti
 gui.packagedautoterminals.out_of_range=Menzil dışı
+gui.packagedautoterminals.group_changed=Bu grup değişti: tarifi yeniden aç
 gui.packagedautoterminals.group_full=Bu grup dolu: en fazla %d tarif
 gui.packagedautoterminals.insert_holder_first=Önce bu makineye bir Package Recipe Holder koy
 gui.packagedautoterminals.applied_partial=%d makineye uygulandı, %d taşıyıcısız

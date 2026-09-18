@@ -66,6 +66,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=Bezdrátový terminál Pac
 gui.packagedautoterminals.not_linked=Tento terminál není připojen k žádné síti
 gui.packagedautoterminals.no_power=Tento terminál nemá energii
 gui.packagedautoterminals.out_of_range=Mimo dosah
+gui.packagedautoterminals.group_changed=Tato skupina se změnila: otevři recept znovu
 gui.packagedautoterminals.group_full=Tato skupina je plná: nejvýše %d receptů
 gui.packagedautoterminals.insert_holder_first=Nejdřív vlož do tohoto stroje Package Recipe Holder
 gui.packagedautoterminals.applied_partial=Použito na %d, %d bez nosiče

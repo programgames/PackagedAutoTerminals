@@ -66,6 +66,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=Бездротовий т�
 gui.packagedautoterminals.not_linked=Цей термінал не під’єднано до мережі
 gui.packagedautoterminals.no_power=У цього термінала скінчилася енергія
 gui.packagedautoterminals.out_of_range=Поза межами дії
+gui.packagedautoterminals.group_changed=Ця група змінилася: відкрийте рецепт знову
 gui.packagedautoterminals.group_full=Ця група заповнена: не більше %d рецептів
 gui.packagedautoterminals.insert_holder_first=Спершу встав у цю машину Package Recipe Holder
 gui.packagedautoterminals.applied_partial=Застосовано до %d, без носія: %d

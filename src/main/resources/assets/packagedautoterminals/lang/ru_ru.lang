@@ -66,6 +66,7 @@ item.packagedautoterminals.wireless_pat_terminal.name=Беспроводной �
 gui.packagedautoterminals.not_linked=Этот терминал не подключён к сети
 gui.packagedautoterminals.no_power=В этом терминале кончилась энергия
 gui.packagedautoterminals.out_of_range=Вне зоны действия
+gui.packagedautoterminals.group_changed=Эта группа изменилась: откройте рецепт заново
 gui.packagedautoterminals.group_full=Эта группа заполнена: не более %d рецептов
 gui.packagedautoterminals.insert_holder_first=Сначала вставь в эту машину носитель программы рецепта
 gui.packagedautoterminals.applied_partial=Применено к %d, без носителя: %d

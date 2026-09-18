@@ -83,7 +83,14 @@ public class ContainerPatTerminal extends AEBaseContainer {
     public List<ProviderSnapshot> providers = new ArrayList<>();
     /** Client side only. Crafting machines, for the Machines tab. */
     public List<MachineSnapshot> machines = new ArrayList<>();
-    /** Size of the last packet received or sent, in bytes. Used by the batch 2 measurement. */
+    /**
+     * Size of the last payload received, in bytes. Written by {@code ClientHandler}.
+     *
+     * <p>It is **not shown** anywhere yet, and an earlier comment claimed it was. It exists for
+     * the measurement revision **R2** asks for: R2 accepted the simple "resend everything" path
+     * until a figure proves it too costly, and no figure has been taken yet. Read it in a debugger
+     * on a network with many providers, or draw it in a tooltip for the length of the measurement.
+     */
     public int lastPayloadBytes;
 
     /** Message to show the player, key and arguments packed together. */

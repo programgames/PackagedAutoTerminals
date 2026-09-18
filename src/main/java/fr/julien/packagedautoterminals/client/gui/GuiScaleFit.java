@@ -1,6 +1,7 @@
 package fr.julien.packagedautoterminals.client.gui;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 
 /**
@@ -35,7 +36,53 @@ public final class GuiScaleFit {
     private static final int GUARANTEED_WIDTH = 320;
     private static final int GUARANTEED_HEIGHT = 240;
 
-    private GuiScaleFit() {}
+    /**
+     * The GUI scale the player chose, kept aside while a screen shrinks it. -1: untouched.
+     *
+     * <p>The state lives here, and not in each screen, because the two screens carried a byte for
+     * byte copy of it. A copy drifts: the day one of them forgets to restore, the player keeps a
+     * scale they never chose.
+     */
+    private int playerGuiScale = -1;
+
+    /**
+     * Lowers the GUI scale when this screen does not fit the window.
+     *
+     * <p>The screen calls it first thing in {@code initGui}, and returns at once when it answers
+     * true: changing the scale runs {@code setWorldAndResolution}, which calls {@code initGui}
+     * again, and that second pass builds the screen at the right size.
+     *
+     * <p>A window resize calls {@code initGui} again too. The computation always starts from the
+     * setting the player chose, so growing the window gives their scale straight back.
+     *
+     * @return true when the scale changed.
+     */
+    public boolean apply(GuiScreen screen, Minecraft mc, int xSize, int ySize) {
+        if (playerGuiScale < 0) {
+            playerGuiScale = mc.gameSettings.guiScale;
+        }
+        int wanted = scaleFor(mc, playerGuiScale, xSize, ySize);
+        if (wanted == mc.gameSettings.guiScale) {
+            return false;
+        }
+        mc.gameSettings.guiScale = wanted;
+        ScaledResolution size = new ScaledResolution(mc);
+        screen.setWorldAndResolution(mc, size.getScaledWidth(), size.getScaledHeight());
+        return true;
+    }
+
+    /**
+     * Gives the player their GUI scale back. The screen calls it from {@code onGuiClosed}.
+     *
+     * <p>The setting only ever changed in memory, so a crash with the screen open leaves the
+     * options file of the player untouched.
+     */
+    public void restore(Minecraft mc) {
+        if (playerGuiScale >= 0) {
+            mc.gameSettings.guiScale = playerGuiScale;
+            playerGuiScale = -1;
+        }
+    }
 
     /**
      * GUI scale setting to use so that a screen of this size fits.
@@ -80,8 +127,4 @@ public final class GuiScaleFit {
         return mc.displayWidth / factor >= xSize && mc.displayHeight / factor >= ySize;
     }
 
-    /** Logical size of the window, once a setting is applied. */
-    public static ScaledResolution resolution(Minecraft mc) {
-        return new ScaledResolution(mc);
-    }
 }

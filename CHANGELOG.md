@@ -5,6 +5,40 @@ numbering follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0-beta.5] - 2026-09-18
+
+A quality release. Five agents audited the mod; twelve findings survived an adversarial pass.
+
+### Fixed
+
+- **Every message carrying a number printed "Format error"** instead of the count. `Feedback`
+  packed its arguments as text and handed the text back, while eleven language entries expect
+  `%d`. Read in `Locale.formatMessage` of Forge 14.23.5.2847: the resulting
+  `IllegalFormatConversionException` is caught and the line becomes `Format error: ...`. A token
+  that reads as a whole number now comes back as a number.
+- **The wireless terminal used from the offhand opened nothing**, or opened another terminal held
+  in the main hand. The slot passed to the GUI handler was always the main-hand hotbar slot. The
+  AE2WUT path had the same defect, and there it also stopped AE2WUT from opening its own screen.
+- The terminal drew three of its own refusals in the colour of a success. Each screen carried its
+  own list of keyword **substrings**, and the two had drifted. The list is now exact, and lives in
+  `Feedback.isRefusal`.
+- Saving replaced the recipe at a **position** in the group, not the recipe the editor opened. A
+  second player editing the same group could make a save destroy a recipe nobody meant to touch.
+  Every write now names the recipe, and refuses when the group no longer carries it.
+- A group could be pushed past the twenty recipes a Package Recipe Encoder can show. Every
+  addition now stops at `RecipeWriter.maxRecipes`, read from the PackagedAuto config at run time,
+  and the creation tab disappears once the group is full.
+- `PacketEditorFill` read its entry count from the wire and looped on it. A crafted packet could
+  hold the decoding thread. The count is clamped to the size of the editor.
+
+### Changed
+
+- The `Feedback` separator is written as `` instead of a raw invisible byte.
+- The GUI scale logic lived twice, copied byte for byte between the two screens. It moved into
+  `GuiScaleFit`.
+- Dead code removed: `GuiPatTerminal.stateOf`, and four Javadoc blocks that described another
+  method.
+
 ## [0.1.0-beta.4] - 2026-09-18
 
 ### Fixed

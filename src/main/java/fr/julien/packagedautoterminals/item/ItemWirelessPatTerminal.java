@@ -7,6 +7,7 @@ import appeng.items.tools.powered.powersink.AEBasePoweredItem;
 import appeng.util.ConfigManager;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.common.PatConfig;
+import fr.julien.packagedautoterminals.network.PacketOpenTerminal;
 import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -63,7 +64,13 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
             return new ActionResult<>(EnumActionResult.FAIL, stack);
         }
 
-        int slot = player.inventory.currentItem;
+        // FIXED: the slot used to be `currentItem` whatever the hand. A terminal used from the
+        // offhand passed the **main hand** hotbar slot, and `PatGuiHandler.wireless` then read a
+        // different stack than the one just checked: an empty hand opened nothing at all, and
+        // another terminal in the main hand was opened in its place.
+        int slot = hand == EnumHand.OFF_HAND
+                ? PacketOpenTerminal.OFFHAND
+                : player.inventory.currentItem;
         player.openGui(PackagedAutoTerminals.instance, PatGuiHandler.WIRELESS, world, slot, 0, 0);
         return new ActionResult<>(EnumActionResult.SUCCESS, stack);
     }

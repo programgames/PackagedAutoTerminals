@@ -4,6 +4,7 @@ import appeng.api.AEApi;
 import appeng.api.features.IWirelessTermHandler;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.item.ItemWirelessPatTerminal;
+import fr.julien.packagedautoterminals.network.PacketOpenTerminal;
 import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -64,7 +65,13 @@ public final class WutEventHandler {
             return;
         }
 
+        // Same fix as ItemWirelessPatTerminal, and it mattered more here: the event is already
+        // cancelled above, so a universal terminal used from the offhand opened neither our
+        // screen nor the AE2WUT one.
+        int slot = event.getHand() == net.minecraft.util.EnumHand.OFF_HAND
+                ? PacketOpenTerminal.OFFHAND
+                : player.inventory.currentItem;
         player.openGui(PackagedAutoTerminals.instance, PatGuiHandler.WIRELESS,
-                event.getWorld(), player.inventory.currentItem, 0, 0);
+                event.getWorld(), slot, 0, 0);
     }
 }
