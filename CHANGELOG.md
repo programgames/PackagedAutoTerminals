@@ -5,6 +5,25 @@ numbering follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0-beta.6] - 2026-09-18
+
+A repair release. **0.1.0-beta.5 carried a regression**; use this one instead.
+
+### Fixed
+
+- **The output box of the editor stayed empty**, whatever the recipe. The client builds its editor
+  with no recipe type and receives the type through `@GuiSync`, which arrives **after** the slot
+  contents. Every arriving slot called `updateRecipeInfo`, and that method cleared the nine output
+  slots whenever the type was unknown, so the client wiped the slots the server had just sent. The
+  server never sent them again: it believed the client already had them.
+
+  The same chain disabled **Save**, since the recipe then read as invalid on the client. Pressing
+  it sent nothing and said nothing. When the type is unknown, the editor now clears the package
+  preview and nothing else.
+- The arrow between the grid and the outputs was drawn 21 pixels wide from 172, so it reached 192
+  while the right column starts at 190. Its point sat under the first output slot and read as cut.
+  The free band is twenty pixels; the arrow is now nineteen, with a pixel of air on each side.
+
 ## [0.1.0-beta.5] - 2026-09-18
 
 A quality release. Five agents audited the mod; twelve findings survived an adversarial pass.
