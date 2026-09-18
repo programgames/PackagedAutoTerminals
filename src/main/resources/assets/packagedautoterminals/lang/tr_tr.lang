@@ -91,12 +91,12 @@ gui.packagedautoterminals.ratio_not_exact=Bu oran her yuvayı bölmüyor
 gui.packagedautoterminals.ratio_too_large=Bu oran bir yuvada %d değerini aşar
 
 # In-game help: item tooltips, and the JEI description pages.
-tip.packagedautoterminals.terminal=ME ağındaki PackagedAuto makinelerini listeler
-tip.packagedautoterminals.terminal_use=Tariflerini düzenlemek için bir gruba sağ tıkla
-tip.packagedautoterminals.wireless=Aynı terminal, kablosuz
+tip.packagedautoterminals.terminal=Bu terminal, ME ağındaki PackagedAuto makinelerini listeler
+tip.packagedautoterminals.terminal_use=Yeni tarif için gruba sol tıkla. Tarifi düzenlemek için tarife sağ tıkla
+tip.packagedautoterminals.wireless=Bu terminal aynı işi yapar, kablosuz
 tip.packagedautoterminals.wireless_link=Önce bir ME Security Terminal içinde bağla
-jei.packagedautoterminals.terminal.1=Bu parçayı bir ME kablosuna yerleştir ve üzerine sağ tıkla. Terminal, ağdaki her Packager ve her Unpackager'ı çiftler halinde gruplayarak listeler, her çiftin taşıdığı tariflerle birlikte.
-jei.packagedautoterminals.terminal.2=Bir gruba sağ tıklamak düzenleyiciyi açar. Package Recipe Encoder'ın yerleşimini izler: malzemeler solda, çıktılar sağda, grubun her tarifi için bir sekme. Save, tarifi çiftin bütün makinelerine aynı anda yazar, böylece iki taraf asla birbirinden ayrılmaz.
-jei.packagedautoterminals.terminal.3=Machines sekmesi ağdaki Package Crafter'ları listeler ve hiçbir crafter'ın çalıştıramadığı her tarifi bildirir. Bir recipe holder en fazla yirmi tarif taşır; bu, Encoder'ın kendi sınırıdır.
-jei.packagedautoterminals.wireless.1=Kablosuz terminal, menzil içindeki her yerden aynı ekranı açar. Önce bir ME Security Terminal içinde bağla, sonra onunla sağ tıkla; her iki elde de çalışır.
-jei.packagedautoterminals.wireless.2=Enerjiyi kendi deposundan çeker, AE2'nin her kablosuz terminali gibi. Menzil dışında veya enerjisiz kaldığında ekran, artık ulaşamadığı bir ağı göstermek yerine kapanır.
+jei.packagedautoterminals.terminal.1=Bu parçayı bir ME kablosunun yüzüne yerleştir. Sonra üzerine sağ tıkla. Terminal, ağdaki her Packager'ı, her Unpackager'ı ve her Packaging Provider'ı listeler. Birlikte çalışan makineleri bir grupta toplar.
+jei.packagedautoterminals.terminal.2=Bir grup satırına sol tıkla. Düzenleyici yeni bir tarifle açılır. Bir tarifi değiştirmek için o tarifin satırına sağ tıkla. Düzenleyici, Package Recipe Encoder'ın yerleşimini izler. Malzemeler solda durur. Çıktılar sağda durur. Save, tarifi grubun bütün makinelerine aynı anda yazar. İki taraf aynı kalır.
+jei.packagedautoterminals.terminal.3=Machines sekmesi, ağdaki hiçbir crafter'ın çalıştırmadığı her tarifi bildirir. Bu bildirimin altında ağdaki Package Crafter'ları listeler. Bir recipe holder en fazla yirmi tarif taşır, bu da Encoder'ın kendi sınırıdır.
+jei.packagedautoterminals.wireless.1=Kablosuz terminal, menzil içindeki her yerden aynı ekranı açar. Önce onu bir ME Security Terminal içinde bağla. Sonra onunla sağ tıkla, her iki elde de çalışır.
+jei.packagedautoterminals.wireless.2=Kablosuz terminal enerjiyi kendi deposundan çeker, AE2'nin diğer her kablosuz terminali gibi. Menzil dışında veya enerjisiz kaldığında ekran kapanır. Artık ulaşamadığı bir ağı göstermez.

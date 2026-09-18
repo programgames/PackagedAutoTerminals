@@ -91,12 +91,12 @@ gui.packagedautoterminals.ratio_not_exact=This ratio does not divide every slot
 gui.packagedautoterminals.ratio_too_large=This ratio would pass %d in a slot
 
 # In-game help: item tooltips, and the JEI description pages.
-tip.packagedautoterminals.terminal=Lists the PackagedAuto machines of the ME network
-tip.packagedautoterminals.terminal_use=Right click a group to edit its recipes
-tip.packagedautoterminals.wireless=The same terminal, without a cable
+tip.packagedautoterminals.terminal=This terminal lists the PackagedAuto machines of the ME network
+tip.packagedautoterminals.terminal_use=Left click a group for a new recipe. Right click a recipe to edit it
+tip.packagedautoterminals.wireless=This terminal does the same work, without a cable
 tip.packagedautoterminals.wireless_link=Link it in an ME Security Terminal first
-jei.packagedautoterminals.terminal.1=Place this part on an ME cable, then right click it. The terminal lists every Packager and Unpackager of the network, grouped by pair, with the recipes each pair carries.
-jei.packagedautoterminals.terminal.2=Right click a group to open the editor. It follows the layout of the Package Recipe Encoder: ingredients on the left, outputs on the right, one tab per recipe of the group. Save writes the recipe into every machine of the pair at once, so the two sides can never drift apart.
-jei.packagedautoterminals.terminal.3=The Machines tab lists the Package Crafters of the network and reports every recipe that no crafter can run. A recipe holder carries twenty recipes at most, which is the limit of the Encoder itself.
-jei.packagedautoterminals.wireless.1=The wireless terminal opens the same screen from anywhere in range. Link it in an ME Security Terminal first, then right click with it in either hand.
-jei.packagedautoterminals.wireless.2=It draws power from its own buffer, like every other wireless terminal of AE2. Out of range or out of power, the screen closes instead of showing a network it can no longer reach.
+jei.packagedautoterminals.terminal.1=Place this part on a face of an ME cable. Then right click it. The terminal lists every Packager, every Unpackager and every Packaging Provider of the network. It joins the machines that work together into a group.
+jei.packagedautoterminals.terminal.2=Left click a group row. The editor opens on a new recipe. Right click a recipe row to edit that recipe. The editor follows the layout of the Package Recipe Encoder. The ingredients sit on the left. The outputs sit on the right. Save writes the recipe into every machine of the group at the same time. The two sides stay equal.
+jei.packagedautoterminals.terminal.3=The Machines tab reports every recipe that no crafter on the network runs. It lists the Package Crafters of the network below that report. A recipe holder carries twenty recipes at most, which is the limit of the Encoder itself.
+jei.packagedautoterminals.wireless.1=The wireless terminal opens the same screen from anywhere in range. Link it in an ME Security Terminal first. Then right click with it, in either hand.
+jei.packagedautoterminals.wireless.2=The wireless terminal draws power from its own buffer, like every other wireless terminal of AE2. Out of range or out of power, the screen closes. It does not show a network that it no longer reaches.

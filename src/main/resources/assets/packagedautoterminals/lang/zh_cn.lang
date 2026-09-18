@@ -91,12 +91,12 @@ gui.packagedautoterminals.ratio_not_exact=这个比例无法整除每个格子
 gui.packagedautoterminals.ratio_too_large=这个比例会让某个格子超过%d
 
 # In-game help: item tooltips, and the JEI description pages.
-tip.packagedautoterminals.terminal=列出 ME 网络中的 PackagedAuto 机器
-tip.packagedautoterminals.terminal_use=右键点击分组即可编辑其配方
-tip.packagedautoterminals.wireless=同一个终端，无需线缆
+tip.packagedautoterminals.terminal=该终端列出 ME 网络中的 PackagedAuto 机器
+tip.packagedautoterminals.terminal_use=左键点击分组新建配方，右键点击配方进行编辑
+tip.packagedautoterminals.wireless=同样的终端，不需要线缆
 tip.packagedautoterminals.wireless_link=请先在 ME 安全终端中绑定
-jei.packagedautoterminals.terminal.1=把这个部件安装在 ME 线缆上，然后右键点击它。终端会列出网络中的每一台封包机和解包机，按配对分组，并显示每一对所带的配方。
-jei.packagedautoterminals.terminal.2=右键点击分组会打开编辑器。它沿用样板包编码器的布局：原料在左，产物在右，分组中每个配方各占一个标签。Save 会把配方一次写入该配对的所有机器，因此两边永远不会不一致。
-jei.packagedautoterminals.terminal.3=Machines 标签列出网络中的合成器，并报告每一个没有任何合成器能执行的配方。一个储存器最多带二十个配方，这是编码器本身的上限。
-jei.packagedautoterminals.wireless.1=无线终端可在范围内的任何位置打开同一个界面。请先在 ME 安全终端中绑定，然后用任意一只手右键点击。
-jei.packagedautoterminals.wireless.2=它从自身的电力储备取电，与 AE2 的其他无线终端一样。超出范围或电力耗尽时，界面会关闭，而不是显示一个已经够不到的网络。
+jei.packagedautoterminals.terminal.1=把这个部件安装在 ME 线缆的一个面上。然后右键点击它。终端会列出网络中的每一台封包机、每一台解包机和每一台 Packaging Provider。它把协同工作的机器合并为一个分组。
+jei.packagedautoterminals.terminal.2=左键点击一行分组。编辑器会打开一个新配方。右键点击一行配方，即可编辑该配方。编辑器沿用样板包编码器的版面。原料在左。产物在右。Save 会把配方同时写入该分组的所有机器。两边保持一致。
+jei.packagedautoterminals.terminal.3=Machines 标签会报告每一个网络中没有任何合成器能执行的配方。在该报告下方，它列出网络中的封包合成器。一个样板包储存器最多带二十个配方，这是编码器本身的上限。
+jei.packagedautoterminals.wireless.1=无线终端可在范围内的任何位置打开同一个界面。请先在 ME 安全终端中绑定。然后用任意一只手右键点击。
+jei.packagedautoterminals.wireless.2=无线终端从自身的电力储备取电，与 AE2 的其他无线终端一样。超出范围或电力耗尽时，界面会关闭。它不会显示一个已经够不到的网络。

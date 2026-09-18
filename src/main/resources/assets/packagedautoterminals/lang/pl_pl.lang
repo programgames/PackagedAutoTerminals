@@ -91,12 +91,12 @@ gui.packagedautoterminals.ratio_not_exact=Ta proporcja nie dzieli każdego pola
 gui.packagedautoterminals.ratio_too_large=Ta proporcja przekroczyłaby %d w jednym polu
 
 # In-game help: item tooltips, and the JEI description pages.
-tip.packagedautoterminals.terminal=Wyświetla maszyny PackagedAuto w sieci ME
-tip.packagedautoterminals.terminal_use=Kliknij grupę prawym, aby edytować jej receptury
-tip.packagedautoterminals.wireless=Ten sam terminal, bez kabla
+tip.packagedautoterminals.terminal=Ten terminal wyświetla maszyny PackagedAuto w sieci ME
+tip.packagedautoterminals.terminal_use=Lewy klik na grupie tworzy recepturę. Prawy klik na recepturze otwiera ją do zmiany
+tip.packagedautoterminals.wireless=Ten terminal robi to samo, bez kabla
 tip.packagedautoterminals.wireless_link=Najpierw powiąż go w ME Security Terminal
-jei.packagedautoterminals.terminal.1=Umieść tę część na kablu ME i kliknij ją prawym przyciskiem. Terminal wyświetla każdy Packager i każdy Unpackager w sieci, pogrupowane w pary, wraz z recepturami, które niesie każda para.
-jei.packagedautoterminals.terminal.2=Kliknięcie grupy prawym przyciskiem otwiera edytor. Zachowuje układ Package Recipe Encoder: składniki po lewej, wyniki po prawej, jedna zakładka na recepturę grupy. Save zapisuje recepturę we wszystkich maszynach pary naraz, więc obie strony nigdy się nie rozjeżdżają.
-jei.packagedautoterminals.terminal.3=Zakładka Machines wyświetla Package Craftery w sieci i zgłasza każdą recepturę, której żaden crafter nie potrafi wykonać. Recipe holder niesie najwyżej dwadzieścia receptur, co jest granicą samego Encodera.
-jei.packagedautoterminals.wireless.1=Terminal bezprzewodowy otwiera ten sam ekran z dowolnego miejsca w zasięgu. Najpierw powiąż go w ME Security Terminal, a potem kliknij nim prawym przyciskiem, w dowolnej ręce.
-jei.packagedautoterminals.wireless.2=Czerpie energię z własnego zapasu, jak każdy terminal bezprzewodowy AE2. Poza zasięgiem lub bez energii ekran się zamyka, zamiast pokazywać sieć, do której już nie sięga.
+jei.packagedautoterminals.terminal.1=Umieść tę część na ścianie kabla ME. Potem kliknij ją prawym przyciskiem. Terminal wyświetla każdy Packager, każdy Unpackager i każdy Packaging Provider w sieci. Łączy w grupę maszyny, które pracują razem.
+jei.packagedautoterminals.terminal.2=Kliknij lewym przyciskiem wiersz grupy. Edytor otwiera się na nowej recepturze. Kliknij prawym przyciskiem wiersz receptury, aby ją zmienić. Edytor zachowuje układ Package Recipe Encoder. Składniki są po lewej. Wyniki są po prawej. Save zapisuje recepturę we wszystkich maszynach grupy naraz. Obie strony pozostają takie same.
+jei.packagedautoterminals.terminal.3=Zakładka Machines zgłasza każdą recepturę, której żaden crafter w sieci nie wykonuje. Pod tym zgłoszeniem wyświetla Package Craftery w sieci. Recipe holder niesie najwyżej dwadzieścia receptur, co jest granicą samego Encodera.
+jei.packagedautoterminals.wireless.1=Terminal bezprzewodowy otwiera ten sam ekran z dowolnego miejsca w zasięgu. Najpierw powiąż go w ME Security Terminal. Potem kliknij nim prawym przyciskiem, w dowolnej ręce.
+jei.packagedautoterminals.wireless.2=Terminal bezprzewodowy czerpie energię z własnego zapasu, jak każdy inny terminal bezprzewodowy AE2. Poza zasięgiem lub bez energii ekran się zamyka. Nie pokazuje sieci, do której już nie sięga.

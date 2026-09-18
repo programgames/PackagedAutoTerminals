@@ -91,12 +91,12 @@ gui.packagedautoterminals.ratio_not_exact=Deze verhouding deelt niet elk vak
 gui.packagedautoterminals.ratio_too_large=Deze verhouding gaat in een vak boven %d
 
 # In-game help: item tooltips, and the JEI description pages.
-tip.packagedautoterminals.terminal=Toont de PackagedAuto-machines van het ME-netwerk
-tip.packagedautoterminals.terminal_use=Rechtsklik op een groep om de recepten te bewerken
-tip.packagedautoterminals.wireless=Dezelfde terminal, zonder kabel
+tip.packagedautoterminals.terminal=Deze terminal toont de PackagedAuto-machines van het ME-netwerk
+tip.packagedautoterminals.terminal_use=Linkerklik op een groep voor een nieuw recept. Rechterklik op een recept om het te bewerken
+tip.packagedautoterminals.wireless=Deze terminal doet hetzelfde werk, zonder kabel
 tip.packagedautoterminals.wireless_link=Koppel hem eerst in een ME Security Terminal
-jei.packagedautoterminals.terminal.1=Plaats dit onderdeel op een ME-kabel en klik er met rechts op. De terminal toont elke Packager en elke Unpackager van het netwerk, per paar gegroepeerd, met de recepten die elk paar draagt.
-jei.packagedautoterminals.terminal.2=Een rechtsklik op een groep opent de editor. Hij volgt de indeling van de Package Recipe Encoder: de ingrediënten links, de uitvoer rechts, één tabblad per recept van de groep. Save schrijft het recept in één keer naar alle machines van het paar, zodat de twee kanten nooit uit elkaar lopen.
-jei.packagedautoterminals.terminal.3=Het tabblad Machines toont de Package Crafters van het netwerk en meldt elk recept dat geen enkele crafter kan uitvoeren. Een recipe holder draagt hoogstens twintig recepten, wat de grens van de Encoder zelf is.
-jei.packagedautoterminals.wireless.1=De draadloze terminal opent hetzelfde scherm van overal binnen bereik. Koppel hem eerst in een ME Security Terminal en klik er dan met rechts mee, in beide handen.
-jei.packagedautoterminals.wireless.2=Hij put uit zijn eigen energievoorraad, zoals elke draadloze terminal van AE2. Buiten bereik of zonder energie sluit het scherm, in plaats van een netwerk te tonen dat het niet meer bereikt.
+jei.packagedautoterminals.terminal.1=Plaats dit onderdeel op een zijde van een ME-kabel. Klik er dan met rechts op. De terminal toont elke Packager, elke Unpackager en elke Packaging Provider van het netwerk. Hij voegt de machines die samen werken tot een groep samen.
+jei.packagedautoterminals.terminal.2=Klik met links op een groepsrij. De editor opent op een nieuw recept. Klik met rechts op een receptrij om dat recept te bewerken. De editor volgt de indeling van de Package Recipe Encoder. De ingrediënten staan links. De uitvoer staat rechts. Save schrijft het recept tegelijk naar alle machines van de groep. De twee kanten blijven gelijk.
+jei.packagedautoterminals.terminal.3=Het tabblad Machines meldt elk recept dat geen enkele crafter van het netwerk uitvoert. Onder dat verslag toont het de Package Crafters van het netwerk. Een recipe holder draagt hoogstens twintig recepten, wat de grens van de Encoder zelf is.
+jei.packagedautoterminals.wireless.1=De draadloze terminal opent hetzelfde scherm van overal binnen bereik. Koppel hem eerst in een ME Security Terminal. Klik er daarna met rechts mee. Het werkt in elke hand.
+jei.packagedautoterminals.wireless.2=De draadloze terminal put uit zijn eigen energievoorraad, zoals elke andere draadloze terminal van AE2. Buiten bereik of zonder energie sluit het scherm. Het toont geen netwerk dat het niet meer bereikt.

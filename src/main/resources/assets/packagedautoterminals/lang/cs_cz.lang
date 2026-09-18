@@ -91,12 +91,12 @@ gui.packagedautoterminals.ratio_not_exact=Tento poměr nedělí každý slot
 gui.packagedautoterminals.ratio_too_large=Tento poměr by v jednom slotu přesáhl %d
 
 # In-game help: item tooltips, and the JEI description pages.
-tip.packagedautoterminals.terminal=Vypisuje stroje PackagedAuto v síti ME
-tip.packagedautoterminals.terminal_use=Pravým klikem na skupinu upravíš její recepty
-tip.packagedautoterminals.wireless=Stejný terminál, bez kabelu
+tip.packagedautoterminals.terminal=Tento terminál vypisuje stroje PackagedAuto v síti ME
+tip.packagedautoterminals.terminal_use=Levý klik na skupinu založí recept. Pravý klik na recept ho otevře k úpravě
+tip.packagedautoterminals.wireless=Tento terminál dělá totéž, bez kabelu
 tip.packagedautoterminals.wireless_link=Nejdřív ho spáruj v ME Security Terminal
-jei.packagedautoterminals.terminal.1=Umísti tuto část na ME kabel a klikni na ni pravým tlačítkem. Terminál vypíše každý Packager a každý Unpackager v síti, seskupené po dvojicích, s recepty, které každá dvojice nese.
-jei.packagedautoterminals.terminal.2=Pravý klik na skupinu otevře editor. Drží se rozvržení Package Recipe Encoder: suroviny vlevo, výstupy vpravo, jedna záložka na každý recept skupiny. Save zapíše recept do všech strojů dvojice najednou, takže obě strany se nikdy nerozejdou.
-jei.packagedautoterminals.terminal.3=Záložka Machines vypisuje Package Craftery v síti a hlásí každý recept, který žádný crafter neumí spustit. Recipe holder nese nejvýše dvacet receptů, což je hranice samotného Encoderu.
-jei.packagedautoterminals.wireless.1=Bezdrátový terminál otevře stejnou obrazovku odkudkoli v dosahu. Nejdřív ho spáruj v ME Security Terminal, pak na něj klikni pravým tlačítkem, v kterékoli ruce.
-jei.packagedautoterminals.wireless.2=Čerpá energii z vlastní zásoby, jako každý bezdrátový terminál AE2. Mimo dosah nebo bez energie se obrazovka zavře, místo aby ukazovala síť, na kterou už nedosáhne.
+jei.packagedautoterminals.terminal.1=Umísti tuto část na stěnu ME kabelu. Pak na ni klikni pravým tlačítkem. Terminál vypíše každý Packager, každý Unpackager a každý Packaging Provider v síti. Stroje, které pracují spolu, spojí do skupiny.
+jei.packagedautoterminals.terminal.2=Klikni levým tlačítkem na řádek skupiny. Editor se otevře na novém receptu. Pravým tlačítkem klikni na řádek receptu, abys ten recept upravil. Editor se drží rozvržení Package Recipe Encoder. Suroviny jsou vlevo. Výstupy jsou vpravo. Save zapíše recept do všech strojů skupiny najednou. Obě strany zůstanou stejné.
+jei.packagedautoterminals.terminal.3=Záložka Machines hlásí každý recept, který žádný crafter v síti nespustí. Pod tímto hlášením vypisuje Package Craftery v síti. Recipe holder nese nejvýše dvacet receptů, což je hranice samotného Encoderu.
+jei.packagedautoterminals.wireless.1=Bezdrátový terminál otevře stejnou obrazovku odkudkoli v dosahu. Nejdřív ho spáruj v ME Security Terminal. Potom na něj klikni pravým tlačítkem, v kterékoli ruce.
+jei.packagedautoterminals.wireless.2=Bezdrátový terminál čerpá energii z vlastní zásoby, jako každý jiný bezdrátový terminál AE2. Mimo dosah nebo bez energie se obrazovka zavře. Neukáže síť, na kterou už nedosáhne.

@@ -2,26 +2,37 @@
 
 ## The Machines tab
 
-It lists the **Package Crafters** of the network, their tier, and whether each one is busy.
+The Machines tab opens with the report. The report names every encoded recipe that no crafter on
+the network runs. No other mod reports those recipes.
 
-Its real value is the report below: every encoded recipe that **no crafter on the network can
-run**.
+Two sections come below the report. The Crafters section lists the Package Crafters of the
+network. For each one, it gives the name of the machine and its state, which is inactive, busy or
+idle. The Routers section lists the machines that only move packages, which are the Positioned
+Package Distributor and the Package Crafting Machine Proxy.
 
-## Why that matters
+## Why the report matters
 
-PackagedAuto fails quietly. A recipe encoded for an Elite table, on a network that only owns a
-Basic one, simply never runs. Nothing turns red, nothing is logged, and the item never arrives.
-This is the most frequent mistake in game, and no other mod reports it.
+PackagedAuto fails quietly. Take a recipe encoded for an Elite table, on a network that owns a
+Basic table only. The recipe never runs. Nothing turns red. Nothing reaches the log. The item
+never arrives. This fault is frequent in game.
 
 ## Reading the report
 
-A recipe is reported when its type names a crafting machine that the network does not hold.
+The tab reports a recipe when the type of that recipe names a crafting machine that the network
+does not hold.
 
-The table that maps a recipe type to a crafter class is written **per integration**, because
-`IRecipeType.getRepresentation()` returns the source station of the craft, not the Package
-Crafter. An unrecognised type is shown as **unrecognised** and stays silent, rather than lying.
+We write one table per integration. The table maps a recipe type to a crafter class. We need that
+table because `IRecipeType.getRepresentation()` returns the source station of the craft, not the
+Package Crafter. If a recipe type is absent from the table, the tab reports nothing about it. It
+does not guess.
 
 ## Finding a machine
 
-The pin button on a row marks the machine in the world: a tinted cube and a beam going up, for
-fifteen seconds. The duration is the `highlightSeconds` config entry.
+The pin button sits on the Patterns tab, not on the Machines tab.
+
+1. Open the Patterns tab.
+2. Click the pin button on a group row.
+
+The terminal marks every machine of the group in the world. It draws a tinted cube and a beam that
+rises. The mark lasts fifteen seconds, and the `highlightSeconds` configuration entry sets that
+duration.

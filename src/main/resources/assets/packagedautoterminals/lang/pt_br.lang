@@ -91,12 +91,12 @@ gui.packagedautoterminals.ratio_not_exact=Esta proporção não divide todos os 
 gui.packagedautoterminals.ratio_too_large=Esta proporção passaria de %d em um espaço
 
 # In-game help: item tooltips, and the JEI description pages.
-tip.packagedautoterminals.terminal=Lista as máquinas PackagedAuto da rede ME
-tip.packagedautoterminals.terminal_use=Clique direito em um grupo para editar suas receitas
-tip.packagedautoterminals.wireless=O mesmo terminal, sem cabo
+tip.packagedautoterminals.terminal=Este terminal lista as máquinas PackagedAuto da rede ME
+tip.packagedautoterminals.terminal_use=Clique esquerdo em um grupo para uma receita nova. Clique direito em uma receita para editá-la
+tip.packagedautoterminals.wireless=Este terminal faz o mesmo trabalho, sem cabo
 tip.packagedautoterminals.wireless_link=Vincule-o primeiro em um ME Security Terminal
-jei.packagedautoterminals.terminal.1=Coloque esta peça em um cabo ME e clique com o botão direito nela. O terminal lista cada Packager e cada Unpackager da rede, agrupados em pares, com as receitas que cada par carrega.
-jei.packagedautoterminals.terminal.2=Um clique direito em um grupo abre o editor. Ele segue o layout do Package Recipe Encoder: os ingredientes à esquerda, as saídas à direita, uma aba por receita do grupo. Save grava a receita em todas as máquinas do par de uma só vez, então os dois lados nunca se separam.
-jei.packagedautoterminals.terminal.3=A aba Machines lista os Package Crafters da rede e aponta cada receita que nenhum crafter sabe executar. Um recipe holder carrega no máximo vinte receitas, que é o limite do próprio Encoder.
-jei.packagedautoterminals.wireless.1=O terminal sem fio abre a mesma tela de qualquer lugar dentro do alcance. Vincule-o primeiro em um ME Security Terminal e depois clique com o botão direito com ele, em qualquer uma das mãos.
-jei.packagedautoterminals.wireless.2=Ele consome energia da própria reserva, como todo terminal sem fio do AE2. Fora de alcance ou sem energia, a tela fecha em vez de mostrar uma rede que não alcança mais.
+jei.packagedautoterminals.terminal.1=Coloque esta peça em uma face de um cabo ME. Depois clique com o botão direito nela. O terminal lista cada Packager, cada Unpackager e cada Packaging Provider da rede. Ele reúne em um grupo as máquinas que trabalham juntas.
+jei.packagedautoterminals.terminal.2=Clique com o botão esquerdo em uma linha de grupo. O editor abre em uma receita nova. Clique com o botão direito em uma linha de receita para editar essa receita. O editor segue o layout do Package Recipe Encoder. Os ingredientes ficam à esquerda. As saídas ficam à direita. Save grava a receita em todas as máquinas do grupo ao mesmo tempo. Os dois lados ficam iguais.
+jei.packagedautoterminals.terminal.3=A aba Machines aponta cada receita que nenhum crafter da rede executa. Abaixo desse relatório ela lista os Package Crafters da rede. Um recipe holder carrega no máximo vinte receitas, que é o limite do próprio Encoder.
+jei.packagedautoterminals.wireless.1=O terminal sem fio abre a mesma tela de qualquer lugar dentro do alcance. Vincule-o primeiro em um ME Security Terminal. Depois clique com o botão direito com ele, em qualquer uma das mãos.
+jei.packagedautoterminals.wireless.2=O terminal sem fio consome energia da própria reserva, como todo outro terminal sem fio do AE2. Fora de alcance ou sem energia, a tela fecha. Ela não mostra uma rede que não alcança mais.
