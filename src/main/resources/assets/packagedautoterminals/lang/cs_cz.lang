@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=%s výsledků
 gui.packagedautoterminals.set=Nastavit
 gui.packagedautoterminals.cancel=Zrušit
 gui.packagedautoterminals.keep_ratio=Zachovat poměr
+gui.packagedautoterminals.amount_locked=Výrobní recept bere jednu položku na slot
 gui.packagedautoterminals.ratio_not_exact=Tento poměr nedělí každý slot
 gui.packagedautoterminals.ratio_too_large=Tento poměr by v jednom slotu přesáhl %d

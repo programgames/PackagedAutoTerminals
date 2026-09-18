@@ -146,8 +146,58 @@ public class GuiPatTerminal extends AEBaseGui {
         setScrollBar(new GuiScrollbar());
     }
 
+
+    /**
+     * The GUI scale the player chose, kept aside while this screen shrinks it. -1: untouched.
+     *
+     * <p>See {@link GuiScaleFit} for the reason, and for the reading of {@code ScaledResolution}
+     * that gives the rule.
+     */
+    private int playerGuiScale = -1;
+
+    /**
+     * Lowers the GUI scale when this screen does not fit the window.
+     *
+     * @return true when the scale changed. The caller then returns at once: changing the scale
+     *     runs {@code setWorldAndResolution}, which calls {@code initGui} again, and the second
+     *     pass builds the screen at the right size.
+     */
+    private boolean fitToWindow() {
+        if (playerGuiScale < 0) {
+            playerGuiScale = mc.gameSettings.guiScale;
+        }
+        int wanted = GuiScaleFit.scaleFor(mc, playerGuiScale, xSize, ySize);
+        if (wanted == mc.gameSettings.guiScale) {
+            return false;
+        }
+        mc.gameSettings.guiScale = wanted;
+        net.minecraft.client.gui.ScaledResolution size = GuiScaleFit.resolution(mc);
+        setWorldAndResolution(mc, size.getScaledWidth(), size.getScaledHeight());
+        return true;
+    }
+
+    /**
+     * Gives the player their GUI scale back.
+     *
+     * <p>The setting only ever changed in memory, so a crash with the screen open leaves the
+     * options file of the player untouched.
+     */
+    @Override
+    public void onGuiClosed() {
+        if (playerGuiScale >= 0) {
+            mc.gameSettings.guiScale = playerGuiScale;
+            playerGuiScale = -1;
+        }
+        super.onGuiClosed();
+    }
+
     @Override
     public void initGui() {
+        // The scale must be settled before anything is placed: every widget below reads
+        // `width` and `height`.
+        if (fitToWindow()) {
+            return;
+        }
         super.initGui();
 
         // The field background is drawn on the sheet: the widget only paints the text.
@@ -172,7 +222,7 @@ public class GuiPatTerminal extends AEBaseGui {
         if (PatConfig.machinesTab) {
             // The button starts at 4, and not at 2: the panel bevel takes the first three
             // pixels of the screen, and the top edge of the button was cut by it.
-            viewButton = new GuiButton(BUTTON_VIEW, guiLeft + LIST_LEFT, guiTop + 4, 84, 14, "");
+            viewButton = new PatButton(BUTTON_VIEW, guiLeft + LIST_LEFT, guiTop + 4, 84, 14, "");
             buttonList.add(viewButton);
             updateViewButton();
         }

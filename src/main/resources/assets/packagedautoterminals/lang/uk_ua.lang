@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=результатів: %s
 gui.packagedautoterminals.set=Задати
 gui.packagedautoterminals.cancel=Скасувати
 gui.packagedautoterminals.keep_ratio=Зберігати пропорції
+gui.packagedautoterminals.amount_locked=Рецепт крафту бере один предмет на комірку
 gui.packagedautoterminals.ratio_not_exact=Це відношення ділить не кожну комірку
 gui.packagedautoterminals.ratio_too_large=Це відношення перевищить %d в одній комірці

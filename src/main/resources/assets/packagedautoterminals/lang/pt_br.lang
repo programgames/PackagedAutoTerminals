@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=%s resultados
 gui.packagedautoterminals.set=Aplicar
 gui.packagedautoterminals.cancel=Cancelar
 gui.packagedautoterminals.keep_ratio=Manter a proporção
+gui.packagedautoterminals.amount_locked=Uma receita de fabricação usa um item por espaço
 gui.packagedautoterminals.ratio_not_exact=Esta proporção não divide todos os espaços
 gui.packagedautoterminals.ratio_too_large=Esta proporção passaria de %d em um espaço

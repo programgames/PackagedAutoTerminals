@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=결과 %s개
 gui.packagedautoterminals.set=적용
 gui.packagedautoterminals.cancel=취소
 gui.packagedautoterminals.keep_ratio=비율 유지
+gui.packagedautoterminals.amount_locked=제작 레시피는 칸마다 아이템 하나만 사용합니다
 gui.packagedautoterminals.ratio_not_exact=이 비율은 모든 칸을 나누지 못합니다
 gui.packagedautoterminals.ratio_too_large=이 비율은 한 칸에서 %d을(를) 넘습니다

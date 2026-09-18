@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=%s results
 gui.packagedautoterminals.set=Set
 gui.packagedautoterminals.cancel=Cancel
 gui.packagedautoterminals.keep_ratio=Keep ratio
+gui.packagedautoterminals.amount_locked=A craft recipe takes one item per cell
 gui.packagedautoterminals.ratio_not_exact=This ratio does not divide every slot
 gui.packagedautoterminals.ratio_too_large=This ratio would pass %d in a slot

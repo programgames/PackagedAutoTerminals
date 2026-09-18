@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=%s risultati
 gui.packagedautoterminals.set=Conferma
 gui.packagedautoterminals.cancel=Annulla
 gui.packagedautoterminals.keep_ratio=Mantieni le proporzioni
+gui.packagedautoterminals.amount_locked=Una ricetta di creazione prende un oggetto per casella
 gui.packagedautoterminals.ratio_not_exact=Questa proporzione non divide ogni casella
 gui.packagedautoterminals.ratio_too_large=Questa proporzione supererebbe %d in una casella

@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=%s resultaten
 gui.packagedautoterminals.set=Instellen
 gui.packagedautoterminals.cancel=Annuleren
 gui.packagedautoterminals.keep_ratio=Verhouding behouden
+gui.packagedautoterminals.amount_locked=Een maakrecept neemt één voorwerp per vak
 gui.packagedautoterminals.ratio_not_exact=Deze verhouding deelt niet elk vak
 gui.packagedautoterminals.ratio_too_large=Deze verhouding gaat in een vak boven %d

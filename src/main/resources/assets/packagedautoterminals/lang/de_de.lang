@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=%s Ergebnisse
 gui.packagedautoterminals.set=Setzen
 gui.packagedautoterminals.cancel=Abbrechen
 gui.packagedautoterminals.keep_ratio=Verhältnis halten
+gui.packagedautoterminals.amount_locked=Ein Handwerksrezept nimmt einen Gegenstand pro Feld
 gui.packagedautoterminals.ratio_not_exact=Dieses Verhältnis teilt nicht jeden Slot
 gui.packagedautoterminals.ratio_too_large=Dieses Verhältnis überschreitet %d in einem Slot

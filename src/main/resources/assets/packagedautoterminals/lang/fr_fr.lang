@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=%s résultats
 gui.packagedautoterminals.set=Valider
 gui.packagedautoterminals.cancel=Annuler
 gui.packagedautoterminals.keep_ratio=Garder le ratio
+gui.packagedautoterminals.amount_locked=Une recette de craft prend un objet par case
 gui.packagedautoterminals.ratio_not_exact=Ce rapport ne tombe pas juste sur tous les slots
 gui.packagedautoterminals.ratio_too_large=Ce rapport dépasserait %d dans un slot

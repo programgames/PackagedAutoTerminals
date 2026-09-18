@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=%s sonuç
 gui.packagedautoterminals.set=Uygula
 gui.packagedautoterminals.cancel=İptal
 gui.packagedautoterminals.keep_ratio=Oranı koru
+gui.packagedautoterminals.amount_locked=Bir üretim tarifi yuva başına bir eşya alır
 gui.packagedautoterminals.ratio_not_exact=Bu oran her yuvayı bölmüyor
 gui.packagedautoterminals.ratio_too_large=Bu oran bir yuvada %d değerini aşar

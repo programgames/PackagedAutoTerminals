@@ -1,5 +1,6 @@
 package fr.julien.packagedautoterminals.integration.jei;
 
+import fr.julien.packagedautoterminals.common.FluidPackets;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
@@ -9,16 +10,23 @@ import net.minecraftforge.fluids.FluidUtil;
  * Converts a JEI ingredient into the {@link ItemStack} a ghost slot can hold.
  *
  * <p>The editor stores items only: {@code EditorInventory} is an {@code IInventory}, and
- * PackagedAuto reads its recipes from {@code ItemStack} lists. A fluid therefore enters the
- * grid as the container that holds it.
+ * PackagedAuto reads its recipes from {@code ItemStack} lists.
  *
- * <p>The bucket is the only container built here. Forge resolves it through
- * {@code FluidUtil.getFilledBucket}, which covers water, lava, milk and every fluid of the
- * universal bucket. A fluid with no bucket yields an empty stack, and the caller then offers
- * no target: the player sees at once that the drop cannot work.
+ * <p>A fluid therefore needs an item. Two of them exist, and only one is right.
  *
- * <p>Real fluid slots belong to {@code PackagedFluidCrafting}, hence to version 2. See
- * decision D09.
+ * <ol>
+ *   <li><b>The fluid packet</b>, when {@code PackagedFluidCrafting} is installed. That is what
+ *       the addon itself writes, read in {@code MixinHooks.packToPacket}. The Packager and the
+ *       Crafter turn the packet back into fluid. See {@link FluidPackets}.
+ *   <li><b>The filled bucket</b>, otherwise. Without the addon no machine reads a packet, so the
+ *       bucket is the only item that can still carry the fluid, as an ordinary ingredient.
+ * </ol>
+ *
+ * <p>FIXED: the bucket used to be the only answer. A player who dragged a fluid got a Water Bucket
+ * where the recipe wanted 1000 mB of water, and the recipe never ran.
+ *
+ * <p>A fluid that yields neither a packet nor a bucket gives an empty stack, and the caller then
+ * offers no target: the player sees at once that the drop cannot work.
  */
 public final class JeiIngredients {
 
@@ -31,20 +39,29 @@ public final class JeiIngredients {
             return stack.isEmpty() ? ItemStack.EMPTY : stack.copy();
         }
         if (ingredient instanceof FluidStack) {
-            return bucketOf((FluidStack) ingredient);
+            return fluidStackOf((FluidStack) ingredient);
         }
         return ItemStack.EMPTY;
     }
 
     /**
-     * Filled bucket for this fluid.
+     * Item that carries this fluid.
      *
-     * <p>The amount of the dragged fluid is ignored: a bucket holds one bucket. The player
-     * adjusts the count with the wheel, as for any other slot.
+     * <p>The dragged amount is kept in the packet, exactly as {@code PackagedFluidCrafting} keeps
+     * it. JEI hands over the amount the recipe shows, which is the amount the player wants. The
+     * amount panel then edits it in millibuckets.
+     *
+     * <p>The bucket path ignores the amount instead: a bucket holds one bucket.
      */
-    private static ItemStack bucketOf(FluidStack fluid) {
+    private static ItemStack fluidStackOf(FluidStack fluid) {
         if (fluid == null || fluid.getFluid() == null) {
             return ItemStack.EMPTY;
+        }
+        if (FluidPackets.available()) {
+            ItemStack packet = FluidPackets.pack(fluid);
+            if (!packet.isEmpty()) {
+                return packet;
+            }
         }
         ItemStack bucket = FluidUtil.getFilledBucket(
                 new FluidStack(fluid.getFluid(), Fluid.BUCKET_VOLUME));

@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=%s wyników
 gui.packagedautoterminals.set=Ustaw
 gui.packagedautoterminals.cancel=Anuluj
 gui.packagedautoterminals.keep_ratio=Zachowaj proporcje
+gui.packagedautoterminals.amount_locked=Receptura wytwarzania bierze jeden przedmiot na pole
 gui.packagedautoterminals.ratio_not_exact=Ta proporcja nie dzieli każdego pola
 gui.packagedautoterminals.ratio_too_large=Ta proporcja przekroczyłaby %d w jednym polu

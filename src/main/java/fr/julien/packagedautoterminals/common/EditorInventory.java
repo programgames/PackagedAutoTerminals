@@ -11,6 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.World;
+import thelm.packagedauto.api.IPackagePattern;
 import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.IRecipeType;
 
@@ -76,10 +77,17 @@ public class EditorInventory implements IInventory {
      *
      * <p>The list split follows the Encoder: the first 81 slots are the inputs, and the
      * outputs only count when the type makes them editable.
+     *
+     * <p>FIXED: a recipe whose type does not let the player set the output left slots 81 to 89
+     * empty. The screen then painted the nine of them with the "disabled" veil, and the player
+     * saw a black square where the crafted item belongs. `InventoryEncoderPattern.updateRecipeInfo`
+     * writes the computed result there instead, and so does this method now.
      */
     public void updateRecipeInfo() {
         recipeInfo = null;
-        for (int slot = INPUT_SLOTS + OUTPUT_SLOTS; slot < SIZE; slot++) {
+        boolean settable = recipeType != null && recipeType.canSetOutput();
+        int firstOutput = settable ? INPUT_SLOTS + OUTPUT_SLOTS : INPUT_SLOTS;
+        for (int slot = firstOutput; slot < SIZE; slot++) {
             stacks.set(slot, ItemStack.EMPTY);
         }
         if (recipeType == null) {
@@ -87,7 +95,7 @@ public class EditorInventory implements IInventory {
         }
 
         List<ItemStack> inputs = new ArrayList<>(stacks.subList(0, INPUT_SLOTS));
-        List<ItemStack> outputs = recipeType.canSetOutput()
+        List<ItemStack> outputs = settable
                 ? new ArrayList<>(stacks.subList(INPUT_SLOTS, INPUT_SLOTS + OUTPUT_SLOTS))
                 : Collections.emptyList();
 
@@ -99,9 +107,36 @@ public class EditorInventory implements IInventory {
         recipeInfo = candidate;
 
         List<ItemStack> results = candidate.getOutputs();
-        for (int i = 0; i < PREVIEW_SLOTS && i < results.size(); i++) {
-            stacks.set(INPUT_SLOTS + OUTPUT_SLOTS + i, results.get(i).copy());
+        if (!settable) {
+            int start = INPUT_SLOTS + outputStart(results.size());
+            for (int i = 0; i < results.size() && start + i < INPUT_SLOTS + OUTPUT_SLOTS; i++) {
+                stacks.set(start + i, results.get(i).copy());
+            }
         }
+
+        // The preview shows the **packages** the recipe produces, not the crafted items. That is
+        // the rule of the Encoder, read in `InventoryEncoderPattern.updateRecipeInfo`, which
+        // writes `getPatterns().get(i).getOutput()` there. `PatternHelper` builds that output
+        // with `ItemPackage.makePackage`. Showing the results here repeated the output box.
+        List<IPackagePattern> patterns = candidate.getPatterns();
+        if (patterns != null) {
+            for (int i = 0; i < PREVIEW_SLOTS && i < patterns.size(); i++) {
+                stacks.set(INPUT_SLOTS + OUTPUT_SLOTS + i, patterns.get(i).getOutput().copy());
+            }
+        }
+    }
+
+    /**
+     * First output slot used, so the result sits in the middle of the 3 by 3 square.
+     *
+     * <p>Read in `InventoryEncoderPattern.updateRecipeInfo`: one result goes to the centre, two
+     * or three to the middle row, and more start at the first slot.
+     */
+    private static int outputStart(int count) {
+        if (count == 1) {
+            return 4;
+        }
+        return count <= 3 ? 3 : 0;
     }
 
     /** A slot is editable when the type enables it, and when it is not a preview. */

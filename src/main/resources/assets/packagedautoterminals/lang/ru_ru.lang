@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=результатов: %s
 gui.packagedautoterminals.set=Задать
 gui.packagedautoterminals.cancel=Отмена
 gui.packagedautoterminals.keep_ratio=Сохранять пропорции
+gui.packagedautoterminals.amount_locked=Рецепт крафта берёт один предмет на ячейку
 gui.packagedautoterminals.ratio_not_exact=Это отношение делит не каждую ячейку
 gui.packagedautoterminals.ratio_too_large=Это отношение превысит %d в одной ячейке

@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=%s個結果
 gui.packagedautoterminals.set=設定
 gui.packagedautoterminals.cancel=取消
 gui.packagedautoterminals.keep_ratio=保持比例
+gui.packagedautoterminals.amount_locked=合成配方每格只消耗一個物品
 gui.packagedautoterminals.ratio_not_exact=這個比例無法整除每一格
 gui.packagedautoterminals.ratio_too_large=這個比例會讓某一格超過%d

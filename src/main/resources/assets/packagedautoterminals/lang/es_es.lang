@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=%s resultados
 gui.packagedautoterminals.set=Aplicar
 gui.packagedautoterminals.cancel=Cancelar
 gui.packagedautoterminals.keep_ratio=Mantener la proporción
+gui.packagedautoterminals.amount_locked=Una receta de fabricación toma un objeto por casilla
 gui.packagedautoterminals.ratio_not_exact=Esta proporción no divide todas las casillas
 gui.packagedautoterminals.ratio_too_large=Esta proporción superaría %d en una casilla

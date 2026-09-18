@@ -12,6 +12,7 @@ import appeng.container.guisync.GuiSync;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.common.EditorInventory;
 import fr.julien.packagedautoterminals.common.Feedback;
+import fr.julien.packagedautoterminals.common.FluidPackets;
 import fr.julien.packagedautoterminals.common.GroupNames;
 import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.common.ProviderPairing;
@@ -188,9 +189,25 @@ public class ContainerPatEditor extends AEBaseContainer {
             setNotDraggable();
         }
 
+        /**
+         * The slot is always "valid", so AE2 never paints it red.
+         *
+         * <p>PITFALL, hit twice. {@code AEBaseGui.drawSlot} paints every slot it judges invalid
+         * with the colour {@code 0x66FF6666}, a red veil. The package preview therefore sat on a
+         * red background.
+         *
+         * <p>Removing an {@code isItemValid} override is **not** enough, and that first fix
+         * failed. {@code AppEngSlot.isItemValid} delegates to the item handler, hence to
+         * {@code EditorInventory.isItemValidForSlot}, which answers {@code isEditable}: false for
+         * a preview slot. The veil came back through the inventory.
+         *
+         * <p>Answering {@code Valid} here stops the test at its source. It changes nothing else:
+         * {@code slotClick} intercepts this slot and moves nothing, and {@code canTakeStack}
+         * refuses every withdrawal.
+         */
         @Override
-        public boolean isItemValid(ItemStack stack) {
-            return false;
+        public hasCalculatedValidness getIsValid() {
+            return hasCalculatedValidness.Valid;
         }
 
         @Override
@@ -367,7 +384,34 @@ public class ContainerPatEditor extends AEBaseContainer {
             setGhostSlot(slot, ItemStack.EMPTY);
             return;
         }
-        changeSlotCount(slot, amount - editor.getStackInSlot(slot).getCount());
+        changeSlotCount(slot, amount - amountOf(editor.getStackInSlot(slot)));
+    }
+
+    /**
+     * Amount held by one stack, in the unit that stack uses.
+     *
+     * <p>An item counts in items. A fluid packet counts in millibuckets, and its item count always
+     * stays at one. Every amount rule of the editor goes through this method, so the wheel, the
+     * amount panel and the proportions work the same way on both.
+     */
+    public static int amountOf(ItemStack stack) {
+        int fluid = FluidPackets.amountOf(stack);
+        return fluid >= 0 ? fluid : stack.getCount();
+    }
+
+    /** Upper bound of one stack: 4096 items, or a billion millibuckets. */
+    public static int maxAmountOf(ItemStack stack) {
+        return FluidPackets.isPacket(stack) ? FluidPackets.MAX_AMOUNT : MAX_SLOT_COUNT;
+    }
+
+    /** The same stack, carrying another amount. */
+    private static ItemStack withAmount(ItemStack stack, int amount) {
+        if (FluidPackets.isPacket(stack)) {
+            return FluidPackets.withAmount(stack, amount);
+        }
+        ItemStack changed = stack.copy();
+        changed.setCount(amount);
+        return changed;
     }
 
     /**
@@ -389,7 +433,7 @@ public class ContainerPatEditor extends AEBaseContainer {
             setSlotCount(slot, amount);
             return;
         }
-        int previous = editor.getStackInSlot(slot).getCount();
+        int previous = amountOf(editor.getStackInSlot(slot));
         if (!editor.isEditable(slot) || previous <= 0 || amount <= 0) {
             setSlotCount(slot, amount);
             return;
@@ -401,13 +445,14 @@ public class ContainerPatEditor extends AEBaseContainer {
             if (stack.isEmpty() || !editor.isEditable(index)) {
                 continue;
             }
-            long scaled = (long) stack.getCount() * amount;
+            long scaled = (long) amountOf(stack) * amount;
             if (scaled % previous != 0) {
                 tell("gui.packagedautoterminals.ratio_not_exact");
                 return;
             }
-            if (scaled / previous > MAX_SLOT_COUNT) {
-                tell("gui.packagedautoterminals.ratio_too_large", MAX_SLOT_COUNT);
+            int max = maxAmountOf(stack);
+            if (scaled / previous > max) {
+                tell("gui.packagedautoterminals.ratio_too_large", max);
                 return;
             }
         }
@@ -417,9 +462,8 @@ public class ContainerPatEditor extends AEBaseContainer {
             if (stack.isEmpty() || !editor.isEditable(index)) {
                 continue;
             }
-            ItemStack changed = stack.copy();
-            changed.setCount((int) ((long) stack.getCount() * amount / previous));
-            editor.setInventorySlotContents(index, changed);
+            editor.setInventorySlotContents(index,
+                    withAmount(stack, (int) ((long) amountOf(stack) * amount / previous)));
         }
         dirty = true;
         detectAndSendChanges();
@@ -433,10 +477,9 @@ public class ContainerPatEditor extends AEBaseContainer {
         if (stack.isEmpty()) {
             return;
         }
-        int count = Math.max(1, Math.min(MAX_SLOT_COUNT, stack.getCount() + delta));
-        ItemStack changed = stack.copy();
-        changed.setCount(count);
-        editor.setInventorySlotContents(slot, changed);
+        long amount = (long) amountOf(stack) + delta;
+        amount = Math.max(1L, Math.min(maxAmountOf(stack), amount));
+        editor.setInventorySlotContents(slot, withAmount(stack, (int) amount));
         dirty = true;
         detectAndSendChanges();
     }
@@ -628,8 +671,8 @@ public class ContainerPatEditor extends AEBaseContainer {
         List<IRecipeInfo> recipes = group == null ? new ArrayList<>() : group.recipes;
         recipeCount = recipes.size();
 
-        if (tabOffset > Math.max(0, recipeCount + 1 - TAB_COUNT)) {
-            tabOffset = Math.max(0, recipeCount + 1 - TAB_COUNT);
+        if (tabOffset > maxTabOffset()) {
+            tabOffset = maxTabOffset();
         }
 
         for (int slot = 0; slot < TAB_COUNT; slot++) {
@@ -647,10 +690,28 @@ public class ContainerPatEditor extends AEBaseContainer {
         }
     }
 
-    /** Scrolls the tab row, when the group holds more recipes than the row has slots. */
+    /**
+     * Last offset the tab row can reach. Zero means the row shows everything.
+     *
+     * <p>The row shows {@code TAB_COUNT} slots, and the group needs one more for the creation
+     * tab. The client reads this to grey out an arrow that cannot move.
+     */
+    public int maxTabOffset() {
+        return Math.max(0, recipeCount + 1 - TAB_COUNT);
+    }
+
+    /**
+     * Scrolls the tab row, when the group holds more recipes than the row has slots.
+     *
+     * <p>The step is a **whole row**, not one slot. A one-slot step shifted every icon sideways,
+     * and a player read it as "the arrow deleted my last recipe". A row step moves the icons far
+     * enough that the scrolling is obvious.
+     *
+     * <p>The last step is clamped, so the row always ends on the creation tab.
+     */
     public void scrollTabs(boolean forward) {
-        int maximum = Math.max(0, recipeCount + 1 - TAB_COUNT);
-        tabOffset = Math.max(0, Math.min(maximum, tabOffset + (forward ? 1 : -1)));
+        int step = forward ? TAB_COLUMNS : -TAB_COLUMNS;
+        tabOffset = Math.max(0, Math.min(maxTabOffset(), tabOffset + step));
     }
 
     /** Loads the recipe at the given index, or clears the editor for a creation. */

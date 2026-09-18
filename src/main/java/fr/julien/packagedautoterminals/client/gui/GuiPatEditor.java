@@ -8,6 +8,7 @@ import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.common.CrafterTypes;
 import fr.julien.packagedautoterminals.common.EditorInventory;
 import fr.julien.packagedautoterminals.common.Feedback;
+import fr.julien.packagedautoterminals.common.FluidPackets;
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.network.PacketEditorSlot;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
@@ -93,6 +94,13 @@ public class GuiPatEditor extends AEBaseGui {
      * {@code GuiItemAmountSpecifying.getIncrements} and {@code getMultipliers}.
      */
     private static final int[] AMOUNT_STEPS = {1, 10, 64};
+    /**
+     * Steps of a fluid slot, in millibuckets.
+     *
+     * <p>A fluid packet counts in millibuckets, and a recipe asks for a thousand of them at a
+     * time. Steps of one, ten and sixty-four would make the player click all day.
+     */
+    private static final int[] AMOUNT_STEPS_FLUID = {10, 100, 1000};
     private static final int[] AMOUNT_FACTORS = {2, 3, 5};
     /**
      * Colours of the panel, taken from the vanilla bevel.
@@ -126,9 +134,21 @@ public class GuiPatEditor extends AEBaseGui {
     private static final int MACHINE_LEFT = RIGHT_CENTER - 8;
     private static final int MACHINE_TOP = 90;
 
+    /**
+     * Draws the amount of a fluid in a slot, the way the AE2 fluid terminals do.
+     *
+     * <p>It is AE2 code, so the number reads the same here and in the rest of the network. It
+     * also scales the text down on its own, and never overflows the sixteen pixels of a slot.
+     */
+    private final appeng.fluids.client.render.FluidStackSizeRenderer fluidSize =
+            new appeng.fluids.client.render.FluidStackSizeRenderer();
+
     private final ContainerPatEditor editorContainer;
     private GuiButton saveButton;
     private GuiButton deleteButton;
+    /** The two arrows of the tab row. They are greyed out when the row cannot move. */
+    private GuiButton tabsPreviousButton;
+    private GuiButton tabsNextButton;
     private GuiTextField nameField;
     /** Small amount panel, opened with the left click on a filled slot. */
     private GuiTextField amountField;
@@ -137,6 +157,8 @@ public class GuiPatEditor extends AEBaseGui {
     private ItemStack amountStack = ItemStack.EMPTY;
     /** Upper bound accepted in the field. */
     private int amountMax = ContainerPatEditor.MAX_SLOT_COUNT;
+    /** Steps of the six buttons: items or millibuckets, depending on the open slot. */
+    private int[] amountSteps = AMOUNT_STEPS;
     /** Top left corner of the panel, in screen coordinates. */
     private int panelLeft;
     private int panelTop;
@@ -171,8 +193,58 @@ public class GuiPatEditor extends AEBaseGui {
         this.ySize = ContainerPatEditor.HEIGHT;
     }
 
+
+    /**
+     * The GUI scale the player chose, kept aside while this screen shrinks it. -1: untouched.
+     *
+     * <p>See {@link GuiScaleFit} for the reason, and for the reading of {@code ScaledResolution}
+     * that gives the rule.
+     */
+    private int playerGuiScale = -1;
+
+    /**
+     * Lowers the GUI scale when this screen does not fit the window.
+     *
+     * @return true when the scale changed. The caller then returns at once: changing the scale
+     *     runs {@code setWorldAndResolution}, which calls {@code initGui} again, and the second
+     *     pass builds the screen at the right size.
+     */
+    private boolean fitToWindow() {
+        if (playerGuiScale < 0) {
+            playerGuiScale = mc.gameSettings.guiScale;
+        }
+        int wanted = GuiScaleFit.scaleFor(mc, playerGuiScale, xSize, ySize);
+        if (wanted == mc.gameSettings.guiScale) {
+            return false;
+        }
+        mc.gameSettings.guiScale = wanted;
+        net.minecraft.client.gui.ScaledResolution size = GuiScaleFit.resolution(mc);
+        setWorldAndResolution(mc, size.getScaledWidth(), size.getScaledHeight());
+        return true;
+    }
+
+    /**
+     * Gives the player their GUI scale back.
+     *
+     * <p>The setting only ever changed in memory, so a crash with the screen open leaves the
+     * options file of the player untouched.
+     */
+    @Override
+    public void onGuiClosed() {
+        if (playerGuiScale >= 0) {
+            mc.gameSettings.guiScale = playerGuiScale;
+            playerGuiScale = -1;
+        }
+        super.onGuiClosed();
+    }
+
     @Override
     public void initGui() {
+        // The scale must be settled before anything is placed: every widget below reads
+        // `width` and `height`.
+        if (fitToWindow()) {
+            return;
+        }
         super.initGui();
 
         // A resize moves the whole screen. The panel carries absolute coordinates, so it
@@ -191,28 +263,32 @@ public class GuiPatEditor extends AEBaseGui {
         nameField.setText(previous == null ? "" : previous);
 
         buttonList.clear();
-        buttonList.add(new GuiButton(BUTTON_BACK, guiLeft + 176, guiTop + 4, 74, 14,
+        buttonList.add(new PatButton(BUTTON_BACK, guiLeft + 176, guiTop + 4, 74, 14,
                 I18n.format("gui.packagedautoterminals.back")));
 
-        buttonList.add(new GuiButton(BUTTON_TABS_PREVIOUS, guiLeft + 190, guiTop + 32, 14, 16, "<"));
-        buttonList.add(new GuiButton(BUTTON_TABS_NEXT, guiLeft + 208, guiTop + 32, 14, 16, ">"));
+        tabsPreviousButton =
+                new PatButton(BUTTON_TABS_PREVIOUS, guiLeft + 190, guiTop + 32, 14, 16, "<");
+        tabsNextButton =
+                new PatButton(BUTTON_TABS_NEXT, guiLeft + 208, guiTop + 32, 14, 16, ">");
+        buttonList.add(tabsPreviousButton);
+        buttonList.add(tabsNextButton);
 
-        buttonList.add(new GuiButton(BUTTON_PREVIOUS_TYPE,
+        buttonList.add(new PatButton(BUTTON_PREVIOUS_TYPE,
                 guiLeft + ContainerPatEditor.OUTPUT_LEFT, guiTop + 68, 10, 18, "<"));
-        buttonList.add(new GuiButton(BUTTON_NEXT_TYPE,
+        buttonList.add(new PatButton(BUTTON_NEXT_TYPE,
                 guiLeft + ContainerPatEditor.OUTPUT_LEFT + 44, guiTop + 68, 10, 18, ">"));
 
         // The buttons start below the package preview, which reaches down to 226. They had
         // stayed at their old height when the screen grew by twenty pixels, and Save
         // overlapped the last preview row.
         int buttonTop = ContainerPatEditor.PREVIEW_TOP + 3 * 18 + 6;
-        saveButton = new GuiButton(BUTTON_SAVE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
+        saveButton = new PatButton(BUTTON_SAVE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
                 guiTop + buttonTop, 54, 16, I18n.format("gui.packagedautoterminals.save"));
-        deleteButton = new GuiButton(BUTTON_DELETE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
+        deleteButton = new PatButton(BUTTON_DELETE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
                 guiTop + buttonTop + 18, 54, 16, I18n.format("gui.packagedautoterminals.delete"));
         buttonList.add(saveButton);
         buttonList.add(deleteButton);
-        buttonList.add(new GuiButton(BUTTON_CLEAR, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
+        buttonList.add(new PatButton(BUTTON_CLEAR, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
                 guiTop + buttonTop + 36, 54, 16, I18n.format("gui.packagedautoterminals.clear")));
     }
 
@@ -282,13 +358,58 @@ public class GuiPatEditor extends AEBaseGui {
             int y = height - org.lwjgl.input.Mouse.getEventY() * height / mc.displayHeight - 1;
             Slot slot = slotUnder(x, y);
             if (slot != null) {
-                int step = isCtrlKeyDown() ? 64 : (isShiftKeyDown() ? 10 : 1);
+                if (amountLocked()) {
+                    tellAmountLocked();
+                    return;
+                }
+                int step = wheelStep(slot.getStack());
                 PatNetwork.CHANNEL.sendToServer(
                         new PacketEditorSlot(slot.getSlotIndex(), wheel > 0 ? step : -step));
                 return;
             }
         }
         super.handleMouseInput();
+    }
+
+    /**
+     * Does this recipe type forbid any amount other than one?
+     *
+     * <p>A craft recipe consumes exactly one item per cell. Read in
+     * {@code RecipeInfoCrafting.generateFromStacks}, and in the same method of every tier of
+     * {@code PackagedExCrafting} and of {@code PackagedAvaritia}: each one calls
+     * {@code setCount(1)} on every ingredient before it looks the recipe up. Worse, it calls it
+     * on the **stacks themselves**, not on copies, so a typed amount was undone in the same
+     * instant.
+     *
+     * <p>{@code canSetOutput()} separates the two families exactly, over the eleven types of the
+     * pack: false for every craft type, true for every processing type. The test therefore names
+     * no mod, and an unknown addon falls on the right side by itself.
+     */
+    private boolean amountLocked() {
+        IRecipeType type = editorContainer.editor.recipeType;
+        return type != null && !type.canSetOutput();
+    }
+
+    /** Says why the amount cannot move. The panel used to open, and to change nothing. */
+    private void tellAmountLocked() {
+        message = I18n.format("gui.packagedautoterminals.amount_locked");
+        messageExpiry = System.currentTimeMillis() + MESSAGE_DURATION;
+        messageRefused = true;
+        lastFeedbackCount = editorContainer.feedbackCount;
+    }
+
+    /**
+     * Step of one wheel notch over this slot.
+     *
+     * <p>Items move by one, ten or sixty-four. A fluid packet counts in millibuckets, so the same
+     * gesture moves by a hundred, a thousand or ten thousand. One millibucket per notch would take
+     * a thousand notches to fill a bucket.
+     */
+    private int wheelStep(ItemStack stack) {
+        if (FluidPackets.isPacket(stack)) {
+            return isCtrlKeyDown() ? 10000 : (isShiftKeyDown() ? 1000 : 100);
+        }
+        return isCtrlKeyDown() ? 64 : (isShiftKeyDown() ? 10 : 1);
     }
 
     /**
@@ -353,6 +474,10 @@ public class GuiPatEditor extends AEBaseGui {
                 && mc.player.inventory.getItemStack().isEmpty()) {
             Slot slot = slotUnder(mouseX, mouseY);
             if (slot != null && !slot.getStack().isEmpty()) {
+                if (amountLocked()) {
+                    tellAmountLocked();
+                    return;
+                }
                 openAmountField(slot);
                 return;
             }
@@ -420,7 +545,7 @@ public class GuiPatEditor extends AEBaseGui {
         panelButtons.clear();
         for (int index = 0; index < PANEL_BUTTONS; index++) {
             java.awt.Rectangle area = panelButton(index);
-            panelButtons.add(new GuiButton(BUTTON_PANEL + index,
+            panelButtons.add(new PatButton(BUTTON_PANEL + index,
                     area.x, area.y, area.width, area.height, ""));
         }
     }
@@ -449,7 +574,7 @@ public class GuiPatEditor extends AEBaseGui {
         if (factor) {
             return (plus ? "x" : "/") + AMOUNT_FACTORS[column];
         }
-        return (plus ? "+" : "-") + AMOUNT_STEPS[column];
+        return (plus ? "+" : "-") + amountSteps[column];
     }
 
     /**
@@ -465,24 +590,40 @@ public class GuiPatEditor extends AEBaseGui {
         if (isShiftKeyDown()) {
             value = plus ? value * AMOUNT_FACTORS[column] : value / AMOUNT_FACTORS[column];
         } else {
-            value = plus ? value + AMOUNT_STEPS[column] : value - AMOUNT_STEPS[column];
+            value = plus ? value + amountSteps[column] : value - amountSteps[column];
         }
         amountField.setText(String.valueOf(Math.max(0L, Math.min(amountMax, value))));
     }
 
-    /** Amount typed in the field, or -1 when the text is not a number. */
+    /**
+     * Amount typed in the field, or -1 when the text is not a number.
+     *
+     * <p>The reading uses a {@code long}: a fluid field accepts ten digits, and
+     * {@code Integer.parseInt} would throw on a number above two billion. The value is clamped
+     * instead, so a typing slip never silently cancels the change.
+     */
     private int parseAmount() {
         try {
-            return Integer.parseInt(amountField.getText().trim());
+            long value = Long.parseLong(amountField.getText().trim());
+            return (int) Math.max(0L, Math.min(amountMax, value));
         } catch (NumberFormatException exception) {
             return -1;
         }
     }
 
+    /**
+     * Opens the amount panel over one slot.
+     *
+     * <p>A fluid packet is edited in millibuckets, up to a billion. Its item count always stays
+     * at one, so reading the count would show "1" for a thousand millibuckets of water.
+     * {@code ContainerPatEditor.amountOf} gives the right unit for both cases.
+     */
     private void openAmountField(Slot slot) {
         amountSlot = slot.getSlotIndex();
         amountStack = slot.getStack().copy();
-        amountMax = ContainerPatEditor.MAX_SLOT_COUNT;
+        boolean fluid = FluidPackets.isPacket(amountStack);
+        amountMax = ContainerPatEditor.maxAmountOf(amountStack);
+        amountSteps = fluid ? AMOUNT_STEPS_FLUID : AMOUNT_STEPS;
 
         // The panel opens above the slot, then slides back inside the screen. Without the
         // clamping, a slot of the last row pushed it off the bottom edge.
@@ -493,18 +634,31 @@ public class GuiPatEditor extends AEBaseGui {
         buildPanelButtons();
         amountField = new GuiTextField(1, fontRenderer,
                 panelLeft + 6, panelTop + PANEL_FIELD_TOP, PANEL_WIDTH - 14, 12);
-        amountField.setMaxStringLength(4);
+        amountField.setMaxStringLength(fluid ? 10 : 4);
         amountField.setTextColor(COLOR_FIELD_TEXT);
-        amountField.setText(String.valueOf(slot.getStack().getCount()));
+        amountField.setText(String.valueOf(ContainerPatEditor.amountOf(slot.getStack())));
         amountField.setFocused(true);
         amountField.setSelectionPos(0);
         nameField.setFocused(false);
+    }
+
+    /**
+     * Rectangle of the amount panel, in screen coordinates, or {@code null} when it is closed.
+     *
+     * <p>JEI reads it through {@code PatGuiAreas}, so its tooltips stop covering the buttons.
+     */
+    public java.awt.Rectangle panelArea() {
+        if (amountField == null) {
+            return null;
+        }
+        return new java.awt.Rectangle(panelLeft - 1, panelTop - 1, PANEL_WIDTH + 2, PANEL_HEIGHT + 2);
     }
 
     private void closeAmountField() {
         amountField = null;
         amountSlot = -1;
         amountStack = ItemStack.EMPTY;
+        amountSteps = AMOUNT_STEPS;
         panelButtons.clear();
     }
 
@@ -527,6 +681,28 @@ public class GuiPatEditor extends AEBaseGui {
     }
 
     /**
+     * Puts the OpenGL colour back to white, and makes sure the call really happens.
+     *
+     * <p>PITFALL, measured on a screenshot. The plate of the panel came out at **exactly 40%**
+     * of its grey: 79 instead of 198. The dark text on it then became unreadable. The buttons,
+     * which go through a texture, stayed correct.
+     *
+     * <p>Cause: {@code GlStateManager.color} caches the last colour it set, and skips the call
+     * when the new one matches. Whatever ran before the panel left OpenGL on another colour
+     * without going through that cache. Cache and OpenGL disagreed, so the call inside
+     * {@code drawRect} was skipped, and every rectangle of the panel was multiplied by the stale
+     * colour. The same trap already cost the chevron of the terminal, see the changelog of
+     * 0.1.0-beta.1.
+     *
+     * <p>Setting a **different** colour first forces a real call, and puts the two back in step.
+     * One call alone would be skipped again.
+     */
+    private static void resetColour() {
+        net.minecraft.client.renderer.GlStateManager.color(0.0F, 0.0F, 0.0F, 1.0F);
+        net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
+    /**
      * Draws the panel, over everything else.
      *
      * <p>Order matters: the plate, then the item, then the buttons and the field. The item
@@ -537,12 +713,13 @@ public class GuiPatEditor extends AEBaseGui {
         if (amountField == null) {
             return;
         }
+        resetColour();
         drawPanelPlate();
 
         if (!amountStack.isEmpty()) {
             drawItem(panelLeft + PANEL_ICON_LEFT, panelTop + PANEL_ICON_TOP, amountStack);
             net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
-            net.minecraft.client.renderer.GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            resetColour();
 
             String title = fontRenderer.trimStringToWidth(
                     amountStack.getDisplayName(), PANEL_WIDTH - 30);
@@ -550,6 +727,8 @@ public class GuiPatEditor extends AEBaseGui {
                     panelTop + PANEL_ICON_TOP + 4, COLOR_TEXT);
         }
 
+        // The item renderer ran in between, so the colour needs the same repair again.
+        resetColour();
         drawPanelBox(mouseX, mouseY);
 
         boolean factor = isShiftKeyDown();
@@ -676,6 +855,14 @@ public class GuiPatEditor extends AEBaseGui {
         if (deleteButton != null) {
             deleteButton.enabled = editorContainer.currentTab >= 0;
         }
+        // A dead arrow used to look broken. The player pressed the left one, nothing moved, and
+        // they reported a bug. The arrow now says so itself.
+        if (tabsPreviousButton != null) {
+            tabsPreviousButton.enabled = editorContainer.tabOffset > 0;
+        }
+        if (tabsNextButton != null) {
+            tabsNextButton.enabled = editorContainer.tabOffset < editorContainer.maxTabOffset();
+        }
     }
 
     /** Server message, or recipe state, on the line below the title. */
@@ -721,7 +908,42 @@ public class GuiPatEditor extends AEBaseGui {
         return fontRenderer.trimStringToWidth(text, MESSAGE_WIDTH - 6) + "...";
     }
 
-    /** Frames the open tab. The creation tab follows the last recipe. */
+    /**
+     * Draws one slot. A fluid packet gets its amount, not its item count.
+     *
+     * <p>FIXED, reported by a player: a slot that held four thousand millibuckets of water still
+     * showed a small **1** in its corner. That 1 is the item count of the packet, and the count
+     * of a packet never leaves one, by the rule of AE2 Fluid Crafting.
+     *
+     * <p>Read in {@code AEBaseGui.drawSlot}: AE2 draws the item, then calls
+     * {@code StackSizeRenderer.renderStackSize} with the item count. No hook changes that number,
+     * so this method takes the slot over for a fluid packet: it draws the item, then the amount,
+     * through the AE2 {@code FluidStackSizeRenderer}.
+     *
+     * <p>That renderer counts in **buckets**, like every AE2 fluid screen: 4000 mB reads "4", and
+     * 250 mB reads "0.25". It shrinks its own text, so the number never overflows the slot.
+     * Writing "4000" there would have covered the whole square.
+     */
+    @Override
+    public void drawSlot(Slot slot) {
+        net.minecraftforge.fluids.FluidStack fluid = FluidPackets.fluidOf(slot.getStack());
+        if (fluid == null) {
+            super.drawSlot(slot);
+            return;
+        }
+        drawItem(slot.xPos, slot.yPos, slot.getStack());
+        fluidSize.renderStackSize(fontRenderer,
+                appeng.fluids.util.AEFluidStack.fromFluidStack(fluid), slot.xPos, slot.yPos);
+    }
+
+    /**
+     * Frames the open tab. The creation tab follows the last recipe.
+     *
+     * <p>FIXED: this method placed the frame on a **single** row, with
+     * {@code TAB_LEFT + slot * 18}. The row has held ten columns over two rows for a while. Any
+     * tab past the tenth therefore drew its green frame far to the right, outside the screen.
+     * The placement now matches the one of {@code bindEditorSlots}.
+     */
     private void drawSelectedTab() {
         int slot = editorContainer.currentTab < 0
                 ? editorContainer.recipeCount - editorContainer.tabOffset
@@ -729,8 +951,8 @@ public class GuiPatEditor extends AEBaseGui {
         if (slot < 0 || slot >= ContainerPatEditor.TAB_COUNT) {
             return;
         }
-        int x = ContainerPatEditor.TAB_LEFT + slot * 18;
-        int y = ContainerPatEditor.TAB_TOP;
+        int x = ContainerPatEditor.TAB_LEFT + (slot % ContainerPatEditor.TAB_COLUMNS) * 18;
+        int y = ContainerPatEditor.TAB_TOP + (slot / ContainerPatEditor.TAB_COLUMNS) * 18;
         drawRect(x - 1, y - 1, x + 17, y, COLOR_SELECTED);
         drawRect(x - 1, y + 16, x + 17, y + 17, COLOR_SELECTED);
         drawRect(x - 1, y, x, y + 16, COLOR_SELECTED);
@@ -842,10 +1064,20 @@ public class GuiPatEditor extends AEBaseGui {
     /**
      * Veil over every slot the type does not enable. The server already refuses them; the
      * veil saves the player from trying.
+     *
+     * <p>FIXED: the nine output slots of a craft recipe are not editable, and the veil turned
+     * them into a black square. They are not a forbidden zone; they **show the crafted result**,
+     * which {@code EditorInventory.updateRecipeInfo} now writes there. The veil skips them, as
+     * the Encoder does.
      */
     private void drawDisabledSlots(EditorInventory editor) {
+        boolean readOnlyOutput =
+                editor.recipeType != null && !editor.recipeType.canSetOutput();
         for (int slot = 0; slot < EditorInventory.INPUT_SLOTS + EditorInventory.OUTPUT_SLOTS; slot++) {
             if (editor.isEditable(slot)) {
+                continue;
+            }
+            if (readOnlyOutput && slot >= EditorInventory.INPUT_SLOTS) {
                 continue;
             }
             int x;

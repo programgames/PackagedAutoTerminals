@@ -84,5 +84,6 @@ gui.packagedautoterminals.results=結果%s件
 gui.packagedautoterminals.set=決定
 gui.packagedautoterminals.cancel=キャンセル
 gui.packagedautoterminals.keep_ratio=比率を保つ
+gui.packagedautoterminals.amount_locked=クラフトレシピは1マスにつき1個だけ使います
 gui.packagedautoterminals.ratio_not_exact=この比率ではすべてのスロットを割り切れません
 gui.packagedautoterminals.ratio_too_large=この比率ではスロットが%dを超えます

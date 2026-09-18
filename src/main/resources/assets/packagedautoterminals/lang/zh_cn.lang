@@ -84,5 +84,6 @@ config.packagedautoterminals.highlight_seconds=标记持续时间（秒）
 gui.packagedautoterminals.set=设定
 gui.packagedautoterminals.cancel=取消
 gui.packagedautoterminals.keep_ratio=保持比例
+gui.packagedautoterminals.amount_locked=合成配方每格只消耗一个物品
 gui.packagedautoterminals.ratio_not_exact=这个比例无法整除每个格子
 gui.packagedautoterminals.ratio_too_large=这个比例会让某个格子超过%d
