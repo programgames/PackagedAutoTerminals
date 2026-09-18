@@ -207,3 +207,64 @@ A temporary probe compiled, on 2026-09-12, against: `IGrid`, `IGridNode`,
 classes `appeng.parts.reporting.AbstractPartTerminal` and
 `appeng.items.tools.powered.powersink.AEBasePoweredItem`. Constraint **D20** is therefore
 satisfied by the `flatDir` + `deobfProvided` setup.
+
+---
+
+## 8. Fluids: the Fluid Packet
+
+Verified on 2026-09-18, against `PackagedAuto 1.0.24.73`,
+`PackagedFluidCrafting 1.12.2-1.0.0.3` and `Fluid Craft for AE2 2.6.6-r`.
+
+### 8.1 PackagedAuto alone refuses fluids
+
+`thelm.packagedauto.integration.jei.EncoderGhostIngredientHandler.wrapStack(Object)` returns
+`ItemStack.EMPTY` for anything that is not an `ItemStack`. `getTargets` then returns an empty
+list. In the Package Recipe Encoder, a fluid dragged from JEI lights up no slot at all.
+
+### 8.2 PackagedFluidCrafting adds the packet
+
+`thelm.packagedfluidcrafting.mixin.EncoderGhostIngredientHandlerMixin` injects into that very
+method, and calls `MixinHooks.packToPacket(Object)`:
+
+| Ingredient | Result |
+|---|---|
+| `FluidStack` | `com.glodblock.github.common.item.fake.FakeFluids.packFluid2Packet(fluid)` |
+| `GasStack` | `com.glodblock.github.integration.mek.FakeGases.packGas2Packet(gas)` |
+| anything else | `ItemStack.EMPTY` |
+
+### 8.3 Format of the packet
+
+Read in `FakeFluids$2.packStack(FluidStack)`:
+
+```
+item   ae2fc:fluid_packet
+count  1
+nbt    { FluidStack: <FluidStack.writeToNBT> }
+```
+
+The amount lives in the NBT. The item count never leaves 1. A gas packet is
+`ae2fc:gas_packet`, with the tag `GasStack`.
+
+The format is pure NBT, so `FluidPackets` builds and reads it without AE2FC on the compile
+path. The item is resolved by registry name, through `ForgeRegistries.ITEMS`.
+
+### 8.4 Amounts
+
+`MixinHooks.displayAmountSpecifyingGui` opens `GuiFluidAmountSpecifying` with an upper bound of
+`1_000_000_000`. `GuiFluidAmountSpecifying.onOkButtonPressed` clamps the typed value, copies the
+`FluidStack`, sets its `amount`, packs it again and sends `PacketSetItemStack`. The amount is
+therefore changed **in the packet**, never in the item count.
+
+### 8.5 The JEI transfer already works
+
+`RecipeTypeProcessingMixin` injects into `IRecipeType.getRecipeTransferMap`, and
+`MixinHooks.addToProcessingTransferMap` appends the fluids of the JEI layout as packets. Our
+`PatTransferHandler` calls that same method, so the **+** button of JEI carried fluids correctly
+before this fix. Only the drag and drop of a single fluid was wrong.
+
+### 8.6 Why the terminal must agree
+
+The Packager and the Crafter read a packet back through
+`thelm.packagedfluidcrafting.inventory.ItemHandlerConverting`, wrapped by
+`MixinHooks.getConvertingItemHandler`. A bucket written in a recipe slot is therefore an
+ordinary item, and no fluid is ever moved for it.

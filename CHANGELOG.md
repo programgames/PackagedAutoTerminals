@@ -5,6 +5,53 @@ numbering follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0-beta.4] - 2026-09-18
+
+### Fixed
+
+- A fluid dragged from JEI into the editor wrote the **bucket** of that fluid, and the recipe
+  never ran. It now writes an **AE2FC Fluid Packet**, which is what `PackagedFluidCrafting`
+  itself writes, and what the Packager and the Crafter read back. The bucket stays as the
+  fallback when that addon is absent.
+- The package preview of the editor sat on a **red** background. AE2 paints every slot it judges
+  invalid with a red veil. Removing the `isItemValid` override was not enough: `AppEngSlot`
+  delegates that test to the inventory, which answers "not editable" for a preview slot. The slot
+  now answers `Valid` itself.
+- The output box of a craft recipe was a **black square**. The nine output slots stayed empty,
+  and the "disabled" veil covered them. They now show the crafted result, centred, the way the
+  Package Recipe Encoder does.
+- The amount panel opened on a craft recipe, where the amount cannot move: PackagedAuto forces
+  one item per cell. The panel no longer opens there, and a message says why.
+- The green frame of the open tab flew off the screen, to the right. Its placement assumed a
+  single row of tabs; the row has ten columns over two rows.
+- The plate of the amount panel rendered at **40%** of its grey, so the dark text on it was
+  unreadable. `GlStateManager` caches the last colour it set; the cache and OpenGL had drifted
+  apart, and the call inside `drawRect` was skipped. The panel now resynchronises the two.
+- Every button of the mod lost its bottom bevel. `GuiButton.drawButton` blits `height` rows from
+  the **top** of a texture that is twenty rows tall, so any shorter button is cut. The new
+  `PatButton` blits the top half from the top and the bottom half from the bottom.
+- A slot holding a fluid packet showed a small **1**, the item count of the packet, instead of
+  the amount of fluid. It now shows the amount, drawn by the AE2 `FluidStackSizeRenderer`, which
+  counts in buckets and shrinks its own text so it never overflows the slot.
+- The terminal and the editor did not fit a small Minecraft window. `ScaledResolution` only
+  guarantees 320 by 240 logical pixels, and the editor is 338 tall. Both screens now take the GUI
+  scale down while they are open, and give it back on closing. The setting is changed in memory
+  only.
+- A JEI tooltip covered the buttons of the amount panel. JEI now knows the panel rectangle,
+  through `IAdvancedGuiHandler.getGuiExtraAreas`.
+
+### Changed
+
+- The package preview shows the **packages** the recipe produces, not the crafted items again.
+  That is the rule of the Encoder.
+- The tab arrows scroll by a whole row of ten, not by one slot. A one-slot step read as
+  "the arrow deleted my last recipe". An arrow that cannot move is greyed out.
+
+### Added
+
+- Fluid amounts are edited in millibuckets. The amount panel, the wheel and the proportions all
+  work on a fluid slot, up to one billion mB. The panel steps become 10, 100 and 1000 mB.
+
 ## [0.1.0-beta.3] - 2026-09-17
 
 ### Added

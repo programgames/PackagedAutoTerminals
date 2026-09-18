@@ -231,7 +231,63 @@ Tick the box, close the panel, then reopen it on another slot.
 
 ### D14 — JEI drag and drop, a fluid 🆕
 Drag **Water** out of the JEI list, and drop it on a slot of the grid.
-→ The slot takes a **Water Bucket**. A fluid with no bucket lights up no slot at all.
+→ With `PackagedFluidCrafting` installed, the slot takes a **Fluid Packet** of water, whose
+name reads `Water, 1,000 mB`. Without the addon, it takes a **Water Bucket**. A fluid that gives
+neither lights up no slot at all.
+
+### D14 bis — The amount of a fluid 🆕
+Left click that packet slot.
+→ The panel opens on `1000`, and its buttons read `+10`, `+100`, `+1000`. Type `4000`, then
+press Set. The slot reads `Water, 4,000 mB`. The wheel over the slot moves by 100 mB, by 1000 mB
+with Shift and by 10000 mB with Ctrl.
+
+### D14 ter — A fluid follows the proportions 🆕
+In a recipe that holds 1000 mB of water and 2 items, tick the box and set the water to 2000.
+→ The item goes to 4. Fluids and items scale together.
+
+### D40 — A craft recipe shows its output 🆕
+Open a recipe of a Package Crafter: `Ultimate`, `Extreme`, or any tier.
+→ The 3 by 3 output box shows the crafted item, in its **centre**. The box is no longer black.
+The item cannot be taken, and cannot be replaced.
+
+### D41 — The amount of a craft recipe 🆕
+On that same recipe, left click a filled ingredient slot, then roll the wheel over it.
+→ The panel does **not** open. The wheel changes nothing. A message reads "Une recette de craft
+prend un objet par case". On a `Processing` recipe, both gestures still work.
+
+### D42 — The frame of the open tab 🆕
+Open a group of more than ten recipes, and select a recipe of the **second** row.
+→ The green frame sits on that tab, inside the screen. No green square appears outside the
+screen.
+
+### D43 — The tab arrows 🆕
+Open a group of more than twenty recipes, and press the right arrow.
+→ The row moves by ten tabs. No recipe is lost. At the end of the row, the right arrow is
+greyed out; at the start, the left one is.
+
+### D47 — The amount of a fluid in its slot 🆕
+Put 4000 mB of water in a slot of the editor.
+→ The slot reads **4**, in the corner, like every AE2 fluid screen. It no longer reads 1. At
+250 mB it reads 0.25, and at 120000 mB it reads 120K. The text never overflows the slot.
+
+### D48 — A small Minecraft window 🆕
+Shrink the game window until it is about 1000 by 600 pixels, then open the terminal and the
+editor.
+→ Both screens fit whole. Nothing is cut at the top or at the bottom. JEI and the hotbar shrink
+with them. Close the screen: the GUI scale of the game is the one the player chose.
+
+### D45 — The plate of the amount panel 🆕
+Open the amount panel over the dark sky, not over the screen.
+→ The plate is the **light** grey of a vanilla screen. The item name and "Keep ratio" read
+clearly. A plate that comes out dark means the colour repair failed.
+
+### D46 — The bottom edge of the buttons 🆕
+Look at Back, Save, Delete and Clear.
+→ Each one has a light bevel on top **and** a shadow at the bottom. None looks cut.
+
+### D44 — The panel and the JEI tooltip 🆕
+Open the amount panel so that it covers the JEI list, and move the mouse over the buttons.
+→ No JEI tooltip appears. The buttons stay readable.
 
 ---
 

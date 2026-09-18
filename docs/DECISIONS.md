@@ -14,7 +14,7 @@ Every line here was approved with the player. Date: 2026-09-12.
 | D06 | No mixin as long as a public API is enough | a mixin breaks on every update of another mod |
 | D07 | Every integration is optional, detected by modid | the mod must run without the addons |
 | D08 | Delta synchronisation, sent in chunks | **Revised, see R2** |
-| D09 | v1 = items. v2 = fluids and gases (`PackagedFluidCrafting`) | that addon extends the core through mixins; it needs a dedicated module |
+| D09 | v1 = items. v2 = fluids and gases (`PackagedFluidCrafting`) | **Revised, see R5**: fluids are a plain NBT item, so they needed no module |
 | D10 | The terminal pulls a blank Recipe Holder from the ME network. Otherwise it refuses and explains | avoids forcing the player to carry one |
 | D11 | "Encode from JEI" button in the terminal | the most useful day-to-day function |
 | D12 | Strict respect of the AE2 security permissions | consistency with the native terminals |
@@ -33,6 +33,7 @@ Every line here was approved with the player. Date: 2026-09-12.
 | **R1** | The "Machines" tab diagnostic **cannot be generic**. It needs a `recipe type → crafter class` table, written in each integration module. An unknown type shows "unrecognised" and stays silent, instead of lying | 1. `IPackageCraftingMachine.acceptPackage(…, boolean)` is **not** a simulation mode: the default method delegates to the 3-argument version, which actually runs the craft. 2. `IRecipeType.getRepresentation()` returns the **source station** of the craft (`Blocks.CRAFTING_TABLE`, `ModBlocks.blockBasicTable`), not the Package Crafter |
 | **R2** | Replace chunk splitting with **simple incremental updates**, following the AE2 `ContainerInterfaceTerminal`. Measure at batch 2. Only add splitting if the measurement proves it necessary | our payload is far smaller than the one of `cell-terminal`, which handles thousands of items per cell |
 | **R3** | **A single module to start with**, no `core`. The `core` module will appear at the 1.16 port, once we know what is truly shared | here, almost everything depends on Minecraft: `ItemStack`, `TileEntity`, the AE2 grid. An empty module costs friction on every build |
+| **R5** | Fluids move to **v1**. A fluid in a recipe is an AE2FC **Fluid Packet**, not a bucket. The packet is pure NBT, so it needs no compile dependency and no module | `MixinHooks.packToPacket` calls `FakeFluids.packFluid2Packet`. Format read in `FakeFluids$2.packStack`: `ae2fc:fluid_packet`, count 1, tag `FluidStack`. See section 8 of `PACKAGEDAUTO-MODEL.md` |
 | **R4** | Load test under Cleanroom from batch 1, with the empty jar | a failure discovered at batch 7 would cost days. The player notes that the risk is low: every mod of the pack also runs on Forge, and MeatballCraft accepts both |
 
 ## Findings that become constraints
@@ -65,6 +66,65 @@ Every line here was approved with the player. Date: 2026-09-12.
 | D29 | Amounts go up to **4096**, not 64 | PackagedAuto writes large amounts through `MiscUtil.saveItemWithLargeCount`, and processing recipes need them |
 | D30 | Snapshot comparison covers the **whole message** | comparing the providers alone hid every machine state change |
 | D31 | A `checkLang` Gradle task breaks the build when the languages diverge | Minecraft falls back to English without a word: the divergence would be invisible |
+
+## Player reports of 18 September 2026
+
+### The output box of a craft recipe was black
+
+**Report.** "The output doesn't even show, the little box is completely black."
+
+**Cause.** `IRecipeType.canSetOutput()` is **false** for every craft type, and true for every
+processing type. The editor veiled every slot the type does not enable, and the nine output slots
+of a craft recipe fell in that set. It also never wrote anything there.
+
+**Read in the jar.** `InventoryEncoderPattern.updateRecipeInfo` fills slots 81 to 89 with
+`recipeInfo.getOutputs()` when `canSetOutput()` is false, and it **centres** them: one result goes
+to slot 85, two or three start at 84, more start at 81.
+
+**Decision.** The editor does the same, and the veil skips those nine slots. They stay read only.
+
+**Side finding.** The preview, slots 90 to 98, showed the results again. The Encoder writes
+`getPatterns().get(i).getOutput()` there, which `PatternHelper` builds with
+`ItemPackage.makePackage`: the **packages**, not the results. Corrected at the same time.
+
+### The amount panel did nothing on a craft recipe
+
+**Report.** "You can open the gui to change the ingredient amount but they don't modify anything."
+
+**Cause, read in the jars.** `RecipeInfoCrafting.generateFromStacks` calls `setCount(1)` on every
+ingredient before it looks the recipe up. So do `RecipeInfoBasic` to `RecipeInfoUltimate`,
+`RecipeInfoCombination` and `RecipeInfoExtreme`. `RecipeInfoProcessing` calls it **never**. A
+craft consumes one item per cell; that is the rule of the game.
+
+The stacks are mutated in place, not copied. The typed amount was therefore undone in the same
+instant, which is why nothing ever appeared.
+
+**Decision.** The panel does not open, and the wheel does nothing, when `canSetOutput()` is false.
+A message says why. The marker names no mod: it separates the eleven types of the pack exactly,
+and an unknown addon falls on the right side by itself.
+
+### The green frame flew off the screen
+
+**Report.** "The right arrow deletes the last recipe, and adds a green square on the right side of
+the screen."
+
+**Cause.** Nothing was deleted: the row scrolled by one slot, and the player read the shift as a
+loss. The green square is a real defect: `drawSelectedTab` placed the frame with
+`TAB_LEFT + slot * 18`, a single row, while the row holds ten columns over two rows.
+
+**Decision.** The frame uses the placement of `bindEditorSlots`. The arrows scroll by a whole row
+of ten, so the movement is obvious, and an arrow that cannot move is greyed out.
+
+### A JEI tooltip covered the amount panel
+
+**Report.** "Make the overlay go above the JEI ui, that way your mouse isn't hovering over an item
+in jei while trying to press the buttons."
+
+**Cause.** The panel is drawn over JEI, but JEI does not know it exists. The mouse still pointed at
+an ingredient of its list, so JEI drew its tooltip after our screen.
+
+**Decision.** `IAdvancedGuiHandler.getGuiExtraAreas` is the JEI answer to that exact case. The
+rectangle of the panel is declared while it is open, and JEI leaves it alone.
 
 ## Questions still open
 
@@ -421,10 +481,38 @@ our screen inherits. JEI resolves a handler by **exact class first**, and only t
 registered classes with `isInstance`. Registering `GuiPatEditor.class` therefore wins, whatever
 the load order of the two mods. Read in `GuiScreenHelper.getGhostIngredientHandler`.
 
-**Fluids.** The editor stores `ItemStack` only. A dragged fluid becomes the bucket that holds
-it, through `FluidUtil.getFilledBucket`. A fluid with no bucket offers **no** target, so the
-player never drops into nothing. Real fluid slots stay with `PackagedFluidCrafting`, hence
-with version 2 (D09).
+**Fluids.** The editor stores `ItemStack` only. The fluid therefore needs an item, and the
+first answer was wrong.
+
+**R5 — the bucket was the wrong item.** A player reported it: dropping water into a slot wrote
+a *Water Bucket*, and the recipe never ran. `FluidUtil.getFilledBucket` was a guess, not a
+reading.
+
+**Read in the jars.** `PackagedAuto` itself refuses fluids:
+`EncoderGhostIngredientHandler.wrapStack` returns an empty stack for anything that is not an
+`ItemStack`. Its addon `PackagedFluidCrafting` adds the real behaviour, through a mixin on that
+very method: `MixinHooks.packToPacket` turns a `FluidStack` into
+`FakeFluids.packFluid2Packet(fluid)`, an **AE2FC Fluid Packet**. The machines read it back
+through `ItemHandlerConverting`.
+
+**Format**, read in `FakeFluids$2.packStack`: item `ae2fc:fluid_packet`, count **1**, tag
+`{ FluidStack: <FluidStack.writeToNBT> }`. The amount lives in the NBT, never in the item
+count. Upper bound one billion millibuckets, read in `MixinHooks.displayAmountSpecifyingGui`.
+
+**Decision.** `FluidPackets` builds and reads that packet from NBT alone, so AE2FC stays out of
+the compile path. A dragged fluid becomes a packet when `packagedfluidcrafting` is loaded, and
+the bucket stays as the fallback: without the addon no machine reads a packet, and the bucket is
+then the only item that can carry the fluid at all. A fluid that yields neither offers **no**
+target, so the player never drops into nothing.
+
+**Amounts.** `ContainerPatEditor.amountOf` and `maxAmountOf` give the unit of a slot: items, or
+millibuckets. The wheel, the amount panel and the proportions all go through them, so a fluid
+scales with the rest of the recipe. The panel steps become 10, 100 and 1000 mB, and the wheel
+100, 1000 and 10000 mB.
+
+**Gases.** `ae2fc:gas_packet` follows the same shape, under the tag `GasStack`. They are left
+out: no Mekanism in the test instance means no way to verify the format in the game, and working
+rule 1 forbids writing from memory.
 
 ### The left click opens the amount panel
 

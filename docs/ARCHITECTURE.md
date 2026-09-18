@@ -29,7 +29,7 @@ it today.
 
 ### Out of scope for v1
 
-- Fluids and gases (`PackagedFluidCrafting`) → v2
+- Gases (`PackagedFluidCrafting` + Mekanism) → v2. Fluids arrived in v1: see **R5**
 - ME network item panel in the same screen → no, we stay on a pattern list, like the
   Interface Terminal
 - `ISettingsCloneable` → later

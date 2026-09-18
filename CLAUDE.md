@@ -62,7 +62,7 @@ from `libs/`, otherwise FML refuses to start (see section 4.1):
 ```
 Avaritia, Baubles, CodeChickenLib, Cucumber, ExtendedCrafting-Nomifactory-Edition,
 HadEnoughItems, PackagedAvaritia, PackagedExCrafting, PackagingProvider, mixinbooter,
-ae2wut, cell-terminal
+ae2wut, cell-terminal, Fluid Craft for AE2, PackagedFluidCrafting
 ```
 
 > ⚠️ **`cell-terminal` crashes with `ae2wut-1.0.5`.** Cell Terminal 1.6.7 calls
@@ -83,6 +83,10 @@ ae2wut, cell-terminal
 
 > `PackagingProvider` requires `mixinbooter`. Without it, FML stops with a
 > `MissingModsException`.
+
+> `Fluid Craft for AE2` and `PackagedFluidCrafting` are needed to test the fluids. They are
+> **not** compile dependencies: `FluidPackets` builds the AE2FC fluid packet from NBT alone. See
+> revision **R5**.
 
 ### Test instance
 
