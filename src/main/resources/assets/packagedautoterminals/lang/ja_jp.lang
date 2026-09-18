@@ -91,12 +91,12 @@ gui.packagedautoterminals.ratio_not_exact=この比率ではすべてのスロ�
 gui.packagedautoterminals.ratio_too_large=この比率ではスロットが%dを超えます
 
 # In-game help: item tooltips, and the JEI description pages.
-tip.packagedautoterminals.terminal=Lists the PackagedAuto machines of the ME network
-tip.packagedautoterminals.terminal_use=Right click a group to edit its recipes
-tip.packagedautoterminals.wireless=The same terminal, without a cable
-tip.packagedautoterminals.wireless_link=Link it in an ME Security Terminal first
-jei.packagedautoterminals.terminal.1=Place this part on an ME cable, then right click it. The terminal lists every Packager and Unpackager of the network, grouped by pair, with the recipes each pair carries.
-jei.packagedautoterminals.terminal.2=Right click a group to open the editor. It follows the layout of the Package Recipe Encoder: ingredients on the left, outputs on the right, one tab per recipe of the group. Save writes the recipe into every machine of the pair at once, so the two sides can never drift apart.
-jei.packagedautoterminals.terminal.3=The Machines tab lists the Package Crafters of the network and reports every recipe that no crafter can run. A recipe holder carries twenty recipes at most, which is the limit of the Encoder itself.
-jei.packagedautoterminals.wireless.1=The wireless terminal opens the same screen from anywhere in range. Link it in an ME Security Terminal first, then right click with it in either hand.
-jei.packagedautoterminals.wireless.2=It draws power from its own buffer, like every other wireless terminal of AE2. Out of range or out of power, the screen closes instead of showing a network it can no longer reach.
+tip.packagedautoterminals.terminal=MEネットワークのPackagedAuto機械を一覧します
+tip.packagedautoterminals.terminal_use=グループを右クリックするとレシピを編集できます
+tip.packagedautoterminals.wireless=同じ端末を、ケーブルなしで
+tip.packagedautoterminals.wireless_link=先にMEセキュリティ端末で登録してください
+jei.packagedautoterminals.terminal.1=このパーツをMEケーブルに設置し、右クリックしてください。端末はネットワークの梱包機と開梱機をすべて一覧し、ペアごとにまとめて、そのペアが持つレシピを並べます。
+jei.packagedautoterminals.terminal.2=グループを右クリックするとエディタが開きます。配置はPackage Recipe Encoderに従います。材料が左、出力が右、グループのレシピごとにタブが一つ。Saveはペアのすべての機械に同時にレシピを書き込むので、両側がずれることはありません。
+jei.packagedautoterminals.terminal.3=Machinesタブはネットワークのクラフターを一覧し、どのクラフターにも実行できないレシピをすべて報告します。レシピホルダーが持てるレシピは最大二十件で、これはEncoder自身の上限です。
+jei.packagedautoterminals.wireless.1=ワイヤレス端末は、範囲内のどこからでも同じ画面を開きます。先にMEセキュリティ端末で登録し、どちらの手に持っていても右クリックしてください。
+jei.packagedautoterminals.wireless.2=AE2の他のワイヤレス端末と同じく、自身の蓄電から電力を引きます。範囲外や電力切れでは、届かなくなったネットワークを表示せずに画面を閉じます。

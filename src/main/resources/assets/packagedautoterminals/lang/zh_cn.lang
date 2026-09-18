@@ -91,12 +91,12 @@ gui.packagedautoterminals.ratio_not_exact=这个比例无法整除每个格子
 gui.packagedautoterminals.ratio_too_large=这个比例会让某个格子超过%d
 
 # In-game help: item tooltips, and the JEI description pages.
-tip.packagedautoterminals.terminal=Lists the PackagedAuto machines of the ME network
-tip.packagedautoterminals.terminal_use=Right click a group to edit its recipes
-tip.packagedautoterminals.wireless=The same terminal, without a cable
-tip.packagedautoterminals.wireless_link=Link it in an ME Security Terminal first
-jei.packagedautoterminals.terminal.1=Place this part on an ME cable, then right click it. The terminal lists every Packager and Unpackager of the network, grouped by pair, with the recipes each pair carries.
-jei.packagedautoterminals.terminal.2=Right click a group to open the editor. It follows the layout of the Package Recipe Encoder: ingredients on the left, outputs on the right, one tab per recipe of the group. Save writes the recipe into every machine of the pair at once, so the two sides can never drift apart.
-jei.packagedautoterminals.terminal.3=The Machines tab lists the Package Crafters of the network and reports every recipe that no crafter can run. A recipe holder carries twenty recipes at most, which is the limit of the Encoder itself.
-jei.packagedautoterminals.wireless.1=The wireless terminal opens the same screen from anywhere in range. Link it in an ME Security Terminal first, then right click with it in either hand.
-jei.packagedautoterminals.wireless.2=It draws power from its own buffer, like every other wireless terminal of AE2. Out of range or out of power, the screen closes instead of showing a network it can no longer reach.
+tip.packagedautoterminals.terminal=列出 ME 网络中的 PackagedAuto 机器
+tip.packagedautoterminals.terminal_use=右键点击分组即可编辑其配方
+tip.packagedautoterminals.wireless=同一个终端，无需线缆
+tip.packagedautoterminals.wireless_link=请先在 ME 安全终端中绑定
+jei.packagedautoterminals.terminal.1=把这个部件安装在 ME 线缆上，然后右键点击它。终端会列出网络中的每一台封包机和解包机，按配对分组，并显示每一对所带的配方。
+jei.packagedautoterminals.terminal.2=右键点击分组会打开编辑器。它沿用样板包编码器的布局：原料在左，产物在右，分组中每个配方各占一个标签。Save 会把配方一次写入该配对的所有机器，因此两边永远不会不一致。
+jei.packagedautoterminals.terminal.3=Machines 标签列出网络中的合成器，并报告每一个没有任何合成器能执行的配方。一个储存器最多带二十个配方，这是编码器本身的上限。
+jei.packagedautoterminals.wireless.1=无线终端可在范围内的任何位置打开同一个界面。请先在 ME 安全终端中绑定，然后用任意一只手右键点击。
+jei.packagedautoterminals.wireless.2=它从自身的电力储备取电，与 AE2 的其他无线终端一样。超出范围或电力耗尽时，界面会关闭，而不是显示一个已经够不到的网络。

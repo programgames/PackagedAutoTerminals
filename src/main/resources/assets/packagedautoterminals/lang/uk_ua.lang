@@ -91,12 +91,12 @@ gui.packagedautoterminals.ratio_not_exact=Це відношення ділить
 gui.packagedautoterminals.ratio_too_large=Це відношення перевищить %d в одній комірці
 
 # In-game help: item tooltips, and the JEI description pages.
-tip.packagedautoterminals.terminal=Lists the PackagedAuto machines of the ME network
-tip.packagedautoterminals.terminal_use=Right click a group to edit its recipes
-tip.packagedautoterminals.wireless=The same terminal, without a cable
-tip.packagedautoterminals.wireless_link=Link it in an ME Security Terminal first
-jei.packagedautoterminals.terminal.1=Place this part on an ME cable, then right click it. The terminal lists every Packager and Unpackager of the network, grouped by pair, with the recipes each pair carries.
-jei.packagedautoterminals.terminal.2=Right click a group to open the editor. It follows the layout of the Package Recipe Encoder: ingredients on the left, outputs on the right, one tab per recipe of the group. Save writes the recipe into every machine of the pair at once, so the two sides can never drift apart.
-jei.packagedautoterminals.terminal.3=The Machines tab lists the Package Crafters of the network and reports every recipe that no crafter can run. A recipe holder carries twenty recipes at most, which is the limit of the Encoder itself.
-jei.packagedautoterminals.wireless.1=The wireless terminal opens the same screen from anywhere in range. Link it in an ME Security Terminal first, then right click with it in either hand.
-jei.packagedautoterminals.wireless.2=It draws power from its own buffer, like every other wireless terminal of AE2. Out of range or out of power, the screen closes instead of showing a network it can no longer reach.
+tip.packagedautoterminals.terminal=Показує машини PackagedAuto в мережі МЕ
+tip.packagedautoterminals.terminal_use=Правий клік на групі відкриває її рецепти
+tip.packagedautoterminals.wireless=Той самий термінал, без кабелю
+tip.packagedautoterminals.wireless_link=Спершу прив'яжіть його в терміналі безпеки МЕ
+jei.packagedautoterminals.terminal.1=Поставте цю деталь на кабель МЕ і клацніть по ній правою кнопкою. Термінал покаже кожен пакувальник і кожен розпакувальник мережі, згруповані парами, разом з рецептами, які несе кожна пара.
+jei.packagedautoterminals.terminal.2=Правий клік на групі відкриває редактор. Він повторює розкладку Package Recipe Encoder: інгредієнти ліворуч, виходи праворуч, по вкладці на кожен рецепт групи. Save записує рецепт одразу в усі машини пари, тож обидві сторони ніколи не розходяться.
+jei.packagedautoterminals.terminal.3=Вкладка Machines показує виготовлювачі мережі й повідомляє про кожен рецепт, який жоден виготовлювач не вміє виконати. Носій рецептів несе щонайбільше двадцять рецептів: це межа самого Encoder.
+jei.packagedautoterminals.wireless.1=Бездротовий термінал відкриває той самий екран з будь-якої точки в радіусі дії. Спершу прив'яжіть його в терміналі безпеки МЕ, потім клацніть правою кнопкою, у будь-якій руці.
+jei.packagedautoterminals.wireless.2=Він бере енергію з власного запасу, як будь-який бездротовий термінал AE2. Поза радіусом або без енергії екран закривається, замість показувати мережу, до якої вже не дістає.

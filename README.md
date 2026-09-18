@@ -85,10 +85,9 @@ and nothing crashes.
   never open again.
 - A craft recipe takes **one item per cell**. PackagedAuto forces it, so the amount panel does not
   open on those recipes.
+- The mod ships **sixteen languages**, in game. The wiki is written in English and in French.
 - **Gases** are not carried yet. The format exists in AE2 Fluid Crafting, but it cannot be
   verified without Mekanism, and this project does not write from memory.
-- Fourteen of the sixteen languages carry the **English text** for the new in-game help.
-  Translations are welcome.
 
 ---
 
