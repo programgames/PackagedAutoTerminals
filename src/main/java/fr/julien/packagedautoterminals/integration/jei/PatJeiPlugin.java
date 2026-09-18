@@ -19,6 +19,9 @@ import mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper;
  *   <li>the drag and drop of one item or one fluid, through {@link PatGhostHandler}.
  * </ol>
  *
+ * <p>A third registration is not an entry point: {@link PatGuiAreas} tells JEI to keep its hands
+ * off the rectangle of the amount panel.
+ *
  * <p>This class is only loaded when JEI is present. Forge does not follow absent classes as
  * long as nothing references them, and {@code @JEIPlugin} is only read by JEI.
  */
@@ -34,5 +37,6 @@ public class PatJeiPlugin implements IModPlugin {
         registry.getRecipeTransferRegistry()
                 .addUniversalRecipeTransferHandler(new PatTransferHandler());
         registry.addGhostIngredientHandler(GuiPatEditor.class, new PatGhostHandler());
+        registry.addAdvancedGuiHandlers(new PatGuiAreas());
     }
 }
