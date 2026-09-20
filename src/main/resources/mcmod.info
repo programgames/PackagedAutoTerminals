@@ -2,12 +2,16 @@
   {
     "modid": "packagedautoterminals",
     "name": "PackagedAuto Terminals",
-    "description": "AE2 terminals to browse and edit PackagedAuto recipes remotely.",
+    "description": "Two AE2 terminals that list and edit PackagedAuto recipes from anywhere on the ME network. One wired part, one wireless item. You stop walking to every Packager to change a recipe.",
     "version": "${version}",
     "mcversion": "${mcversion}",
-    "url": "",
-    "authorList": ["Julien"],
-    "credits": "PackagedAuto by TheLMiffy1111 (MIT). AE2 Unofficial Extended Life by the AE2-UEL team.",
-    "dependencies": ["appliedenergistics2", "packagedauto"]
+    "url": "https://github.com/programgames/PackagedAutoTerminals",
+    "updateUrl": "https://raw.githubusercontent.com/programgames/PackagedAutoTerminals/main/update.json",
+    "logoFile": "/logo.png",
+    "authorList": ["programgames"],
+    "credits": "PackagedAuto by TheLMiffy1111 (MIT). AE2 Unofficial Extended Life by the AE2-UEL team (LGPL v3). Mouse Tweaks interface by YaLTeR.",
+    "requiredMods": ["appliedenergistics2", "packagedauto@[1.0.24.73,)"],
+    "dependencies": ["appliedenergistics2", "packagedauto"],
+    "useDependencyInformation": false
   }
 ]

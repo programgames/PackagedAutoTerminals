@@ -5,6 +5,30 @@ numbering follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0-beta.8] - 2026-09-20
+
+A packaging release. No game behaviour changed.
+
+### Added
+
+- `update.json` at the root of the repository, and `updateJSON` on the `@Mod` annotation. Forge
+  now marks the mod as outdated in the mod list when a newer version is published.
+- `tools/release.sh`: builds the jar, checks the version, the CHANGELOG section and the JDK,
+  tags the commit, then creates the GitHub release with the jar attached.
+- `.github/workflows/release.yml`: sends the jar of a published GitHub release to CurseForge.
+  The build itself stays local, because `libs/maven` is not versioned.
+- `docs/CURSEFORGE.md`: the description to paste on the CurseForge project page.
+- `src/main/resources/logo.png`, shown by Forge in the mod list, and
+  `docs/assets/curseforge-avatar.png`. Both are built by `tools/make_logo.py` from the
+  part face textures and the palette of the wireless terminal icon.
+
+### Changed
+
+- `mcmod.info` carries the project URL, the update URL, the logo file, the credits and the
+  required mods. Those fields were empty.
+- The `@Mod` dependency line states the minimum PackagedAuto version, `1.0.24.73`. AE2UEL keeps
+  no bound: it reports its version as `v0.56.5`, and the leading letter breaks a Maven range.
+
 ## [0.1.0-beta.7] - 2026-09-18
 
 A documentation release. No Java file changed.

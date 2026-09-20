@@ -29,10 +29,14 @@ import org.apache.logging.log4j.Logger;
         name = Reference.MOD_NAME,
         version = Reference.VERSION,
         acceptedMinecraftVersions = "[1.12.2]",
+        updateJSON = Reference.UPDATE_JSON,
+        // AE2UEL carries no bound: it reports its version as "v0.56.5", and the leading
+        // letter makes any Maven range unreliable. PackagedAuto reports "1.0.24.73",
+        // which parses, so the minimum we compile against is stated.
         // `after` without `required`: AE2WUT stays optional, but it must load before us.
         // Its recipe classes read our item as soon as registration happens.
         dependencies = "required-after:" + Reference.AE2
-                + ";required-after:" + Reference.PACKAGED_AUTO
+                + ";required-after:" + Reference.PACKAGED_AUTO + "@[1.0.24.73,)"
                 + ";after:" + Reference.AE2WUT
 )
 public class PackagedAutoTerminals {

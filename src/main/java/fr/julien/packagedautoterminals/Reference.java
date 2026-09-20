@@ -16,6 +16,13 @@ public final class Reference {
      */
     public static final String CHANNEL = "pat_terminals";
 
+    /**
+     * Where FML reads the version list, for the update notice in the mod list.
+     * The file lives at the root of the repository, on the default branch.
+     */
+    public static final String UPDATE_JSON =
+            "https://raw.githubusercontent.com/programgames/PackagedAutoTerminals/main/update.json";
+
     /** Modid of AE2 Unofficial Extended Life. Same as the official AE2 one. */
     public static final String AE2 = "appliedenergistics2";
     public static final String PACKAGED_AUTO = "packagedauto";
