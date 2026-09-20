@@ -24,11 +24,17 @@ sources="build/libs/packagedautoterminals-${mc}-${version}-sources.jar"
 echo "Version : ${version}"
 echo "Tag     : ${tag}"
 
-# 1. The working tree must be clean: the tag points at a commit, not at your desk.
-if [ -n "$(git status --porcelain)" ]; then
-  echo "ERROR: the working tree carries uncommitted changes. Commit them first." >&2
-  git status --short >&2
+# 1. Every tracked change must be committed: the tag points at a commit, not at your desk.
+#    Untracked files only draw a warning. They reach neither the tag nor the jar.
+if ! git diff --quiet HEAD -- .; then
+  echo "ERROR: tracked files carry uncommitted changes. Commit them first." >&2
+  git status --short --untracked-files=no >&2
   exit 1
+fi
+untracked="$(git ls-files --others --exclude-standard)"
+if [ -n "$untracked" ]; then
+  echo "WARNING: these files are untracked and stay out of the release:" >&2
+  echo "$untracked" | sed 's/^/  /' >&2
 fi
 
 # 2. The tag must be free.
