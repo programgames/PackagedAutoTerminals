@@ -33,6 +33,13 @@ The Machines tab names every encoded recipe that no crafter on the network runs.
 Package Crafters of the network below that report. This fault is frequent in game, and no other
 mod reports it.
 
+### It never sends you back to the machine
+
+A machine with no Package Recipe Holder receives a blank one from the ME network, when you
+save a recipe into it. The extraction follows the AE2 energy and security rules, and only a
+blank holder ever leaves storage. Set `pullHolderFromNetwork` to false in the config to keep
+the holders under your own hand.
+
 ### It works with JEI in both directions
 
 The `+` button of a JEI recipe fills the whole grid. A single ingredient dragged out of JEI fills

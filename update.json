@@ -8,9 +8,10 @@
     "0.1.0-beta.5": "Number formatting, offhand wireless terminal, recipe named on save, group cap.",
     "0.1.0-beta.6": "Repairs the empty output box and the disabled Save button of beta.5.",
     "0.1.0-beta.7": "Documentation release: README, wiki and in-game help rewritten.",
-    "0.1.0-beta.8": "Update check, mod logo, complete metadata, release script and CurseForge workflow."
+    "0.1.0-beta.8": "Update check, mod logo, complete metadata, release script and CurseForge workflow.",
+    "0.1.0-beta.9": "Blank holders served from the ME network, six fixes, a much lighter screen, and unit tests."
   },
   "promos": {
-    "1.12.2-latest": "0.1.0-beta.8"
+    "1.12.2-latest": "0.1.0-beta.9"
   }
 }

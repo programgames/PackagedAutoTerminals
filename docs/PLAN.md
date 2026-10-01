@@ -122,25 +122,25 @@ This point is verified at the start of batch 1, never at batch 3.
 
 ---
 
-## State as of 2026-09-13
+## State as of 2026-10-01
 
-| Batch | State | Left |
-|---|---|---|
-| 0, 1, 2 | ✅ tested in game | |
-| 3 | ✅ written, removal and editing tested | creation, amounts and moving **untested** |
-| 4 | ✅ written | JEI transfer and search **untested** |
-| 5 | ✅ written | Machines tab and diagnostic **untested** |
-| 6 | ⬜ not started | wireless terminal, on a separate branch |
-| 7 | 🔶 licence, notice, changelog, CI, config, crafting recipe | AE2WUT, Baubles |
+| Batch | State |
+|---|---|
+| 0, 1, 2, 3, 4, 5 | tested in game |
+| 6 — wireless terminal | tested in game |
+| 7 — integration, polish, release | AE2WUT and the opening key written and tested; Baubles not started |
 
-> Everything marked "untested" waits for the test session described in `docs/TESTING.md`. The
-> code compiles, but has never run.
+Eight releases shipped, from `0.1.0-beta.1` to `0.1.0-beta.9`. The test protocol of
+`docs/TESTING.md` passes from group A to group H1.
 
 ### What is left, by value
 
-1. **Run through `docs/TESTING.md`**, from T1 to T15. That is the only way to validate
-   fifteen functions written without playing.
-2. **Batch 6**, the wireless terminal. It requires detaching the container from the wired
-   part, which touches working code. To be done on a branch.
-3. **AE2WUT and Baubles**, once the wireless terminal is validated.
-4. **Fluids and gases**, planned for version 2 (decision D09).
+1. **Publish on CurseForge.** The metadata, the logo, the update file and the release
+   workflow are in place. The project page and the two secrets are not.
+2. **Baubles**, so the wireless terminal sits in a bauble slot.
+3. **Duplicate a recipe** in the editor. To encode a variant, the player retypes everything.
+4. **The R2 measurement**: the size of the snapshot packet on a loaded network. Revision R2
+   accepted the simple "resend everything" path until a figure proves it too costly, and no
+   figure has been taken.
+5. **Gases**, which need a format nobody has verified in game.
+6. **The 1.16 port**, described in `docs/PORTING.md`.

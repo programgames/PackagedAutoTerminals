@@ -5,19 +5,16 @@ import java.util.List;
 
 import appeng.api.config.SecurityPermissions;
 import appeng.api.networking.IGrid;
-import appeng.api.networking.IGridNode;
 import appeng.container.AEBaseContainer;
 import appeng.container.guisync.GuiSync;
-import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.common.Feedback;
 import fr.julien.packagedautoterminals.common.MachineSnapshot;
 import fr.julien.packagedautoterminals.common.NetworkItems;
+import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.common.ProviderPairing;
-import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.common.ProviderScanner;
 import fr.julien.packagedautoterminals.common.RecipeWriter;
-import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.network.PacketProviderList;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.common.TerminalContext;
@@ -25,14 +22,12 @@ import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentTranslation;
 import thelm.packagedauto.api.IPackageProvidingMachine;
-import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.IRecipeInfo;
 
 /**
@@ -83,6 +78,14 @@ public class ContainerPatTerminal extends AEBaseContainer {
     public List<ProviderSnapshot> providers = new ArrayList<>();
     /** Client side only. Crafting machines, for the Machines tab. */
     public List<MachineSnapshot> machines = new ArrayList<>();
+    /**
+     * Client side only. Counts the snapshots received.
+     *
+     * <p>The screen rebuilds its rows only when this number moves. Before that, it rebuilt
+     * them on every frame, and each rebuild regrouped the machines by comparing their recipes
+     * two by two.
+     */
+    public int revision;
     /**
      * Size of the last payload received, in bytes. Written by {@code ClientHandler}.
      *
@@ -154,15 +157,6 @@ public class ContainerPatTerminal extends AEBaseContainer {
         return list;
     }
 
-    /**
-     * Removes a recipe, **from every machine of the group**.
-     *
-     * <p>PackagedAuto requires the same recipe in the Packager and in the Unpackager.
-     * Removing it from one side only would break the automation without a single message.
-     *
-     * <p>The index refers to the **group** list, as the terminal shows it, not to the list of
-     * one machine: client and server compute the same grouping, from the same data.
-     */
     /** Crafting machines of the network. Empty when the tab is disabled in the config. */
     private NBTTagList buildMachinePayload() {
         NBTTagList list = new NBTTagList();
@@ -180,6 +174,15 @@ public class ContainerPatTerminal extends AEBaseContainer {
         return terminal.grid();
     }
 
+    /**
+     * Removes a recipe, **from every machine of the group**.
+     *
+     * <p>PackagedAuto requires the same recipe in the Packager and in the Unpackager.
+     * Removing it from one side only would break the automation without a single message.
+     *
+     * <p>The index refers to the **group** list, as the terminal shows it, not to the list of
+     * one machine: client and server compute the same grouping, from the same data.
+     */
     public void removeRecipe(int dimension, BlockPos pos, int index) {
         IGrid grid = grid();
         if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
@@ -195,10 +198,16 @@ public class ContainerPatTerminal extends AEBaseContainer {
 
         RecipeWriter.Result result = RecipeWriter.apply(grid, getActionSource(),
                 group.machines, group.recipes.get(index), null);
-        tell(result.changed == 1
-                        ? "gui.packagedautoterminals.applied_to_one"
-                        : "gui.packagedautoterminals.applied_to",
-                result.changed);
+        // FIXED: zero changed machines used to read as "Applied to 0 machines", in the
+        // colour of a success.
+        if (result.changed == 0) {
+            tell("gui.packagedautoterminals.write_failed");
+        } else {
+            tell(result.changed == 1
+                            ? "gui.packagedautoterminals.applied_to_one"
+                            : "gui.packagedautoterminals.applied_to",
+                    result.changed);
+        }
         refreshNow();
     }
 
@@ -211,33 +220,63 @@ public class ContainerPatTerminal extends AEBaseContainer {
      */
     public void newRecipe(int dimension, BlockPos pos) {
         IGrid grid = grid();
-        IPackageProvidingMachine machine = ProviderScanner.find(grid, dimension, pos);
-        if (machine == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+            return;
+        }
+        // One scan serves the whole command. It used to walk the grid four times for a single
+        // click: once to find the machine, once to count the recipes, then twice more inside
+        // openEditor.
+        List<ProviderSnapshot> all = ProviderScanner.scan(grid);
+        ProviderSnapshot target = snapshotAt(all, dimension, pos);
+        if (target == null) {
             return;
         }
 
-        if (machine.getPatternStack().isEmpty()) {
-            tell("gui.packagedautoterminals.insert_holder_first");
+        if (!target.holderPresent && !canSupplyHolder(grid)) {
+            // Either the setting forbids taking a holder from storage, or the network has
+            // none to give. Both leave the player with the same job, so both say so.
+            tell(PatConfig.pullHolderFromNetwork
+                    ? "gui.packagedautoterminals.no_blank_holder"
+                    : "gui.packagedautoterminals.insert_holder_first");
             return;
         }
+
+        ProviderPairing.Group group =
+                ProviderPairing.groupOf(ProviderPairing.group(all), dimension, pos);
         // Same bound as the editor: a recipe holder carries twenty recipes at most, and the
-        // Package Recipe Encoder shows exactly that many.
-        if (recipeCountOf(dimension, pos) >= RecipeWriter.maxRecipes()) {
-            tell("gui.packagedautoterminals.group_full", RecipeWriter.maxRecipes());
+        // Package Recipe Encoder shows exactly that many. A full group takes no new recipe,
+        // but it must stay editable: the editor is the only screen that removes one. Refusing
+        // to open it locked a full group out of every change, which the player reported.
+        // The message goes to the action bar, because the screen changes right after.
+        if (group != null && group.recipes.size() >= RecipeWriter.maxRecipes()) {
+            getPlayerInv().player.sendStatusMessage(new TextComponentTranslation(
+                    "gui.packagedautoterminals.group_full", RecipeWriter.maxRecipes()), false);
+            openEditor(group, dimension, pos, 0);
             return;
         }
-        openEditor(dimension, pos, -1);
+        openEditor(group, dimension, pos, -1);
     }
 
-    /** How many recipes the group of this machine already carries. */
-    private int recipeCountOf(int dimension, BlockPos pos) {
-        IGrid grid = grid();
-        if (grid == null) {
-            return 0;
+    /**
+     * Can the network hand out a blank Package Recipe Holder?
+     *
+     * <p>The question is simulated, so nothing leaves storage here. The holder is taken at
+     * save time, by {@code RecipeWriter}: an editor closed without saving then costs nothing.
+     */
+    private boolean canSupplyHolder(IGrid grid) {
+        return PatConfig.pullHolderFromNetwork
+                && NetworkItems.hasBlankHolder(grid, getActionSource());
+    }
+
+    /** The machine of a scan, at this position, or {@code null} when it is not on the grid. */
+    private static ProviderSnapshot snapshotAt(List<ProviderSnapshot> all, int dimension,
+                                               BlockPos pos) {
+        for (ProviderSnapshot snapshot : all) {
+            if (snapshot.dimension == dimension && snapshot.pos.equals(pos)) {
+                return snapshot;
+            }
         }
-        ProviderPairing.Group group = ProviderPairing.groupOf(
-                ProviderPairing.group(ProviderScanner.scan(grid)), dimension, pos);
-        return group == null ? 0 : group.recipes.size();
+        return null;
     }
 
     /**
@@ -312,13 +351,16 @@ public class ContainerPatTerminal extends AEBaseContainer {
         if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
             return;
         }
-        if (ProviderScanner.find(grid, dimension, pos) == null) {
+        List<ProviderSnapshot> all = ProviderScanner.scan(grid);
+        if (snapshotAt(all, dimension, pos) == null) {
             return;
         }
+        openEditor(ProviderPairing.groupOf(ProviderPairing.group(all), dimension, pos),
+                dimension, pos, index);
+    }
 
-        ProviderPairing.Group group =
-                ProviderPairing.groupOf(ProviderPairing.group(ProviderScanner.scan(grid)),
-                        dimension, pos);
+    /** Opens the editor on a group that the caller has already computed. */
+    private void openEditor(ProviderPairing.Group group, int dimension, BlockPos pos, int index) {
         IRecipeInfo recipe = group != null && index >= 0 && index < group.recipes.size()
                 ? group.recipes.get(index)
                 : null;

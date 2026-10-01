@@ -42,5 +42,7 @@ public final class ClientHandler {
         container.machines = machines;
 
         container.lastPayloadBytes = message.payloadBytes;
+        // The screen watches this number to know that its rows are out of date.
+        container.revision++;
     }
 }

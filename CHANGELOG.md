@@ -5,6 +5,82 @@ numbering follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0-beta.9] - 2026-10-01
+
+A repair and performance release. It also adds the one thing the mod promised and did not do:
+a machine with no recipe holder is served from the ME network.
+
+### Added
+
+- **The terminal takes a blank Package Recipe Holder out of the ME network** when a machine
+  has none. Until now it answered "insert a holder first", and the player had to walk to the
+  machine, which is the walk this mod exists to remove. The extraction goes through
+  `NetworkItems.extractOne`, hence through the AE2 energy and security rules. The prototype
+  carries no NBT, so only a **blank** holder ever matches: a holder that already lists recipes
+  stays in storage. The holder is taken when the recipe is saved, never when the editor opens,
+  so an editor closed without saving costs nothing. The new config entry
+  `pullHolderFromNetwork` turns the behaviour off, and the old message comes back.
+- Unit tests, which the project had none of, against working rule 6 of `CLAUDE.md`.
+  Thirty-eight of them cover the grouping of the machines, the search syntax, the packing of
+  the messages and the storage of the group names. They run without Minecraft, and
+  `gradlew build` runs them.
+
+### Fixed
+
+- **A full group could no longer be edited at all.** A left click on the group row sends
+  `ACTION_NEW`, and `ContainerPatTerminal.newRecipe` refused to open the editor once the group
+  held twenty recipes. The editor is the only screen that deletes a recipe, so the player
+  could not free a slot. The terminal now opens the editor on the first recipe of the group,
+  and says that the group is full in the action bar. The cap on **creation** does not move.
+- **The group names could erase each other, and two dimensions shared one entry.**
+  `WorldServer.init` builds `this.mapStorage = new MapStorage(this.saveHandler)` for every
+  dimension, over the **same** `data` folder. Two dimensions therefore held two instances of
+  the storage over one file, and the last one to save dropped the names of the other. The key
+  was also the position alone, so a Packager at 100, 64, 100 in the Nether shared its name
+  with one at 100, 64, 100 in the overworld. Everything now goes through the overworld
+  storage, and the key carries the dimension. An entry written before this release is read as
+  dimension zero.
+- **The editor read the group name in the world of the player**, not in the world of the
+  machine. A network that crosses a Quantum Bridge showed an empty name.
+- **A rename packet could announce a name of any length.** `ByteBufUtils.readUTF8String` reads
+  the length the packet gives, then that many bytes. The length is now clamped before the read.
+  The name is also stripped of the section sign, which starts a colour code, and of the control
+  characters, one of which is the feedback separator.
+- **A write that filled one machine and not the other was called a success.**
+  `RecipeWriter.Result.full` was counted and never shown. A pair whose two sides had drifted,
+  one at twenty recipes and the other below, took the write on one machine only.
+- **"Applied to 0 machines" was drawn in the colour of a success.** A removal that changed
+  nothing now says so, and in the colour of a refusal.
+
+### Changed
+
+- **The terminal list is built once per change, not once per frame.** `drawFG` called
+  `buildLines`, which regroups the machines by comparing their recipes two by two, then formats
+  every row. On a network of fifty machines carrying twenty recipes each, the screen paid for
+  tens of thousands of recipe comparisons per second, for a list that changes about once a
+  second. The rows are now rebuilt only when the snapshot, the search, the tab or the unfolded
+  groups move.
+- **One click costs one recipe rebuild, not ninety.** Every slot write called
+  `EditorInventory.updateRecipeInfo`, which resolves a crafting recipe against the whole
+  registry. A JEI transfer fills up to 81 slots, and a change of amount that keeps the
+  proportions rewrites every filled slot.
+- **One click walks the ME grid once, not four times.** Opening the editor used to search the
+  machine, count the recipes, then search and scan again inside `openEditor`. A write also
+  searched the whole grid once per target machine; the snapshot now carries the machine on the
+  server.
+- The search parser moved out of the screen into `SearchQuery`, where it is tested. A lone
+  `@` or `#`, which is a search being typed, no longer counts as a word to look for.
+- `.github/workflows/release.yml` builds the jar itself, publishes the GitHub release from the
+  CHANGELOG section, and sends the file to CurseForge. `tools/release.sh` now only runs the
+  checks and pushes the tag. The previous version said GitHub could not build this mod, which
+  was wrong: `libs/maven` is versioned.
+
+### Removed
+
+- Dead code: `ProviderScanner.translate`, which nobody called and which answered in the
+  language of the server, the language key `new_recipe`, which no screen read, one duplicate
+  import and ten unused ones.
+
 ## [0.1.0-beta.8] - 2026-09-20
 
 A packaging release. No game behaviour changed.

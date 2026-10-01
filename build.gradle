@@ -90,6 +90,10 @@ dependencies {
     // there is no duplicate with `run/mods/mixinbooter-10.7.jar`; and the `checkDevMods` task
     // only walks `libs/maven`.
     compileOnly files('libs/mixinbooter-10.7.jar')
+
+    // Pure JUnit, for the classes that hold no Minecraft state: grouping, search parsing,
+    // message packing and the name storage. Working rule 6 of CLAUDE.md asks for them.
+    testCompile 'junit:junit:4.12'
 }
 
 // PITFALL, continued. ForgeGradle does add the deobfuscated jars to the compile path, but it
@@ -99,6 +103,19 @@ dependencies {
 afterEvaluate {
     sourceSets.main.compileClasspath = sourceSets.main.compileClasspath.filter { file ->
         !file.absolutePath.startsWith(new File(projectDir, 'libs/maven').absolutePath)
+    }
+
+    // The tests read the same classes as the mod, so they need the same path, and they need
+    // it AFTER the filter above. Wiring it earlier would capture the unfiltered collection,
+    // put the raw SRG jars back in front, and the tests would stop seeing the MCP names.
+    sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
+    sourceSets.test.runtimeClasspath += sourceSets.main.compileClasspath
+}
+
+test {
+    // One line per test, so a failure in the CI log says which one.
+    testLogging {
+        events 'passed', 'skipped', 'failed'
     }
 }
 

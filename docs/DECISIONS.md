@@ -622,3 +622,74 @@ alpha when the four high bits are zero.
 
 **Consequence.** The text of the panel is dark, `0x404040`, because the plate is light. The
 amount field keeps its dark recess: that is what the rest of the mod already does.
+
+
+## D40 — The terminal serves a blank recipe holder from the ME network
+
+Taken on 2026-10-01. It **reverses** the rule written at batch 2, which said that the
+terminal takes nothing out of storage on its own, and that inserting a recipe holder stays
+the player's decision.
+
+The rule was wrong in practice. A machine with no recipe holder answered "insert a holder
+first", and the only way to obey was to walk to the machine. That walk is the one thing this
+mod exists to remove, so the mod failed at its own purpose in the exact case where it was
+needed most.
+
+What makes the extraction safe:
+
+- It goes through `NetworkItems.extractOne`, hence through `poweredExtraction`. The AE2
+  energy cost and the AE2 security rules both apply, and a player without permission takes
+  nothing.
+- The prototype is `new ItemStack(holderItem)`, with no NBT. AE2 matches the item, its
+  metadata and its tag, so a holder that already lists recipes never answers. Only a blank
+  one leaves the network.
+- The holder is taken **when the recipe is saved**, not when the editor opens. An editor
+  closed without saving therefore costs nothing. The terminal only asks the question before
+  opening, with a simulated extraction.
+- Every path of `RecipeWriter.applyTo` that writes nothing puts a borrowed holder back into
+  the network. A refusal cannot swallow the item.
+
+The config entry `pullHolderFromNetwork` restores the old behaviour, including the old
+message.
+
+## D41 — The group names live in the overworld storage, keyed by dimension
+
+Found on 2026-10-01, while reading `WorldServer.init` of Forge 14.23.5.2847.
+
+```java
+this.mapStorage = new MapStorage(this.saveHandler);
+```
+
+That line runs for **every** dimension, and `saveHandler` points at the same `data` folder.
+Two dimensions therefore held two instances of `GroupNames` over one file. Each one loaded
+the file, each one saved the whole of its own map, and the last one to save dropped the names
+of the other.
+
+The key was `pos.toLong()` alone, so a Packager at 100, 64, 100 in the Nether and one at
+100, 64, 100 in the overworld shared a single entry.
+
+Both are fixed: `GroupNames.get` always answers the instance of dimension zero, and the key
+carries the dimension. An entry written before this release has no dimension field, and
+`getInteger` answers zero, which is where a single player world keeps its machines.
+
+Forge also offers `perWorldStorage`, which is per dimension. It is the wrong tool here: a
+group can span dimensions through a Quantum Bridge, and its name must stay one name.
+
+## D42 — GitHub builds the releases
+
+The file `.github/workflows/build.yml` carried this comment:
+
+> The dependencies live in libs/maven, which is not versioned: the jars belong to their
+> authors.
+
+It is false. `git ls-files libs/` lists `ae2-uel-0.56.5.jar`, `packagedauto-1.0.24.73.jar`
+and `hadenoughitems-4.31.2.jar`, and every build run on GitHub is green. The comment led to a
+release workflow that refused to build and asked for a jar built by hand.
+
+The `release` workflow now builds the jar itself on a tag, runs the tests and `checkLang`,
+publishes the GitHub release from the matching CHANGELOG section, and sends the file to
+CurseForge. `tools/release.sh` only runs the checks and pushes the tag.
+
+One point stays open, and it belongs to the licences rather than to the build: a public
+repository that carries the jars of AE2UEL, PackagedAuto and HadEnoughItems redistributes
+them. LGPL v3 and MIT both allow it, under their own conditions. Nobody has asked the authors.

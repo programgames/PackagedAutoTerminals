@@ -17,14 +17,18 @@ jobs:
           distribution: temurin
           java-version: "8"
 
-      # The dependencies live in libs/maven, which is not versioned: the jars belong to
-      # their authors. Without them, the build cannot complete.
-      - name: Check that the dependencies are present
-        run: |
-          if [ ! -f libs/maven/pat/ae2-uel/*/ae2-uel-*.jar ]; then
-            echo "::warning::libs/maven is empty, the build will be skipped."
-            exit 0
-          fi
-
       - run: chmod +x gradlew
+
+      # `build` compiles the mod, runs the unit tests, and runs checkLang, which compares
+      # the sixteen language files against en_us.lang.
+      #
+      # The dependency jars live in libs/maven and are versioned, so this build needs no
+      # download beyond Gradle itself.
       - run: ./gradlew build --no-daemon
+
+      - name: Keep the test report when a test fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: build/reports/tests/test

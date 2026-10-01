@@ -118,10 +118,14 @@ disappears and the game does not crash.
 
 ---
 
-## The rest of the page
+## Links and license
 
-- **Source and issues**: https://github.com/programgames/PackagedAutoTerminals
-- **Wiki**: https://github.com/programgames/PackagedAutoTerminals/wiki
-- **License**: MIT. This project copies no file from AE2 or from PackagedAuto. It compiles
-  against them only.
-- **In a modpack**: yes, no permission needed. Credit is welcome, not required.
+| Subject | Where |
+|---|---|
+| Source and issues | https://github.com/programgames/PackagedAutoTerminals |
+| Wiki | https://github.com/programgames/PackagedAutoTerminals/wiki |
+
+The license is MIT. This project copies no file from AE2 and no file from PackagedAuto. It
+compiles against them only.
+
+You may put this mod in a modpack. You need no permission. Credit is welcome, and not required.

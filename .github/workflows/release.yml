@@ -1,77 +1,121 @@
-# Publishes a release to CurseForge.
+# Builds, publishes and ships a release.
 #
-# The build does not happen here. libs/maven holds the dependency jars, and those jars are
-# not versioned: they belong to their authors. GitHub therefore cannot compile the mod.
-# You build the jar on your machine with tools/release.sh, which creates the GitHub release
-# and attaches the jar. This workflow starts when that release is published, takes the jar
-# back from it, and sends it to CurseForge.
+# One gesture starts it: push a tag named after the version, for example v0.1.0-beta.9.
+# tools/release.sh runs the checks and pushes that tag for you.
 #
-# Two secrets are needed, under Settings > Secrets and variables > Actions:
-#   CURSEFORGE_TOKEN       an API token from https://legacy.curseforge.com/account/api-tokens
-#   CURSEFORGE_PROJECT_ID  the numeric id shown on the right of the project page
-# Without them the job stops with a message, and the GitHub release stays valid.
+# GitHub can build this mod: libs/maven is versioned, so the dependency jars are in the
+# repository. An earlier version of this file claimed the opposite and built nothing.
+#
+# Two secrets send the jar to CurseForge, under Settings > Secrets and variables > Actions:
+#   CURSEFORGE_TOKEN       a token from https://legacy.curseforge.com/account/api-tokens
+#   CURSEFORGE_PROJECT_ID  the numeric id on the right of the project page
+# Without them the GitHub release still happens, and the job says what is missing.
 
 name: release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag of the release to send, for example v0.1.0-beta.8"
+        description: "Tag to release, for example v0.1.0-beta.9"
         required: true
 
+permissions:
+  contents: write
+
 jobs:
-  curseforge:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
-      - name: Check that the secrets are present
+      # ForgeGradle 2.3 and Gradle 4.10.3 only accept JDK 8.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "8"
+
+      - name: Read the version, and check that the tag agrees with it
+        id: version
         env:
-          TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
-          PROJECT: ${{ secrets.CURSEFORGE_PROJECT_ID }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
-          if [ -z "$TOKEN" ] || [ -z "$PROJECT" ]; then
-            echo "::error::CURSEFORGE_TOKEN or CURSEFORGE_PROJECT_ID is missing. Upload the jar by hand this time."
+          version="$(grep -E '^modVersion=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')"
+          mc="$(grep -E '^mcVersion=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')"
+          if [ "v${version}" != "$TAG" ]; then
+            echo "::error::The tag is ${TAG} and gradle.properties says ${version}."
             exit 1
           fi
-
-      - name: Download the jar of the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: |
-          mkdir -p dist
-          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.jar' --dir dist
-          # The sources jar must not reach CurseForge as the main file.
-          rm -f dist/*-sources.jar
-          ls -l dist
-
-      - name: Read the release type from the version
-        id: kind
-        env:
-          TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: |
-          case "$TAG" in
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "jar=build/libs/packagedautoterminals-${mc}-${version}.jar" >> "$GITHUB_OUTPUT"
+          case "$version" in
             *alpha*) echo "type=alpha" >> "$GITHUB_OUTPUT" ;;
             *beta*|*rc*) echo "type=beta" >> "$GITHUB_OUTPUT" ;;
             *) echo "type=release" >> "$GITHUB_OUTPUT" ;;
           esac
 
-      - name: Find the jar
-        id: jar
-        run: echo "path=$(ls dist/*.jar | head -1)" >> "$GITHUB_OUTPUT"
+      - name: Check that update.json announces this version
+        run: |
+          if ! grep -q "\"${{ steps.version.outputs.version }}\"" update.json; then
+            echo "::error::update.json does not list ${{ steps.version.outputs.version }}."
+            exit 1
+          fi
+
+      # `build` also runs the unit tests and checkLang, which compares the sixteen
+      # language files against en_us.lang.
+      - run: chmod +x gradlew
+      - run: ./gradlew build --no-daemon
+
+      - name: Cut the release notes out of the CHANGELOG
+        run: |
+          awk -v v="## [${{ steps.version.outputs.version }}]" '
+            index($0, v) == 1 { on = 1; next }
+            on && /^## \[/ { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error::CHANGELOG.md carries no section for this version."
+            exit 1
+          fi
+          cat notes.md
+
+      - name: Publish the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: PackagedAuto Terminals ${{ steps.version.outputs.version }}
+          body_path: notes.md
+          prerelease: ${{ steps.version.outputs.type != 'release' }}
+          files: |
+            build/libs/packagedautoterminals-*.jar
+
+      - name: Check the CurseForge secrets
+        id: curseforge
+        env:
+          TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          PROJECT: ${{ secrets.CURSEFORGE_PROJECT_ID }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$PROJECT" ]; then
+            echo "::warning::CURSEFORGE_TOKEN or CURSEFORGE_PROJECT_ID is missing. Upload the jar by hand."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Upload to CurseForge
+        if: steps.curseforge.outputs.ready == 'true'
         uses: itsmeow/curseforge-upload@v3
         with:
           token: ${{ secrets.CURSEFORGE_TOKEN }}
           project_id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
           game_endpoint: minecraft
-          file_path: ${{ steps.jar.outputs.path }}
-          release_type: ${{ steps.kind.outputs.type }}
+          file_path: ${{ steps.version.outputs.jar }}
+          display_name: PackagedAuto Terminals ${{ steps.version.outputs.version }}
+          release_type: ${{ steps.version.outputs.type }}
           game_versions: "1.12.2,Java 8,Forge"
           changelog_type: markdown
-          changelog: ${{ github.event.release.body || 'See the CHANGELOG of the repository.' }}
+          changelog_path: notes.md

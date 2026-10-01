@@ -11,7 +11,6 @@ import java.util.Set;
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.widgets.GuiScrollbar;
 import fr.julien.packagedautoterminals.Reference;
-import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.client.BlockHighlighter;
 import fr.julien.packagedautoterminals.common.CrafterTypes;
 import fr.julien.packagedautoterminals.common.Feedback;
@@ -20,6 +19,7 @@ import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.common.ProviderPairing;
 import fr.julien.packagedautoterminals.common.ProviderRole;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
+import fr.julien.packagedautoterminals.common.SearchQuery;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
 import fr.julien.packagedautoterminals.network.PatNetwork;
@@ -133,6 +133,21 @@ public class GuiPatTerminal extends AEBaseGui {
      * order.
      */
     private final Set<Long> expanded = new HashSet<>();
+    /**
+     * The rows of the list, built once per change.
+     *
+     * <p>{@code drawFG} runs on every frame. It used to call {@link #buildLines} there, and
+     * that method regroups the machines by comparing their recipes two by two, then formats
+     * every row. On a network of fifty machines carrying twenty recipes each, the screen paid
+     * for tens of thousands of recipe comparisons per second, for a list that changes about
+     * once a second.
+     *
+     * <p>The rows are now rebuilt only when something they depend on moves: the snapshot from
+     * the server, the search text, the open tab, or the set of unfolded groups.
+     */
+    private List<Line> cachedLines;
+    private String cacheKey = "";
+
     private int lastFeedbackCount;
     private String message = "";
     private long messageExpiry;
@@ -236,7 +251,7 @@ public class GuiPatTerminal extends AEBaseGui {
         int summaryY = ContainerPatTerminal.PLAYER_INVENTORY_TOP - 11;
 
         // The rows are built before the summary: the result counter depends on them.
-        List<Line> lines = buildLines();
+        List<Line> lines = lines();
         getScrollBar().setRange(0, Math.max(0, lines.size() - ROWS), 2);
 
         // The message takes the place of the summary for three seconds. The title line is
@@ -726,7 +741,7 @@ public class GuiPatTerminal extends AEBaseGui {
         if (row < 0) {
             return null;
         }
-        List<Line> lines = buildLines();
+        List<Line> lines = lines();
         int index = getScrollBar().getCurrentScroll() + row;
         return index < lines.size() ? lines.get(index) : null;
     }
@@ -864,46 +879,28 @@ public class GuiPatTerminal extends AEBaseGui {
      * Without this rule, a recipe found would appear without its machine, and the player
      * would not know where it sits.
      */
-    private List<Line> buildLines() {
-        Query query = Query.parse(search == null ? "" : search.getText());
-        return machinesView ? buildMachineLines(query) : buildPatternLines(query);
+    /**
+     * The rows to draw, rebuilt only when their sources have changed.
+     *
+     * <p>The key names every source: the snapshot counter of the container, the search text,
+     * the open tab, and the unfolded groups. {@code expanded} holds the position of each
+     * unfolded group, so its hash code changes as soon as one is folded or unfolded.
+     */
+    private List<Line> lines() {
+        String key = terminalContainer.revision
+                + "|" + (search == null ? "" : search.getText())
+                + "|" + machinesView
+                + "|" + expanded.size() + ":" + expanded.hashCode();
+        if (cachedLines == null || !key.equals(cacheKey)) {
+            cachedLines = buildLines();
+            cacheKey = key;
+        }
+        return cachedLines;
     }
 
-    /**
-     * Search split into criteria.
-     *
-     * <p>Three prefixes, taken from the AE2 and JEI terminals: {@code @} targets the source
-     * mod, {@code #} targets the recipe type, and the rest is searched in the names. All
-     * criteria must be satisfied at once.
-     *
-     * <p>{@code @} and the plain text both read the **produced** items only, never the
-     * ingredients. See {@link GuiPatTerminal#outputStacks}.
-     */
-    private static final class Query {
-        final List<String> text = new ArrayList<>();
-        final List<String> mods = new ArrayList<>();
-        final List<String> types = new ArrayList<>();
-
-        static Query parse(String raw) {
-            Query query = new Query();
-            for (String token : raw.trim().toLowerCase(Locale.ROOT).split(" +")) {
-                if (token.isEmpty()) {
-                    continue;
-                }
-                if (token.startsWith("@") && token.length() > 1) {
-                    query.mods.add(token.substring(1));
-                } else if (token.startsWith("#") && token.length() > 1) {
-                    query.types.add(token.substring(1));
-                } else {
-                    query.text.add(token);
-                }
-            }
-            return query;
-        }
-
-        boolean isEmpty() {
-            return text.isEmpty() && mods.isEmpty() && types.isEmpty();
-        }
+    private List<Line> buildLines() {
+        SearchQuery query = SearchQuery.parse(search == null ? "" : search.getText());
+        return machinesView ? buildMachineLines(query) : buildPatternLines(query);
     }
 
     /**
@@ -912,7 +909,7 @@ public class GuiPatTerminal extends AEBaseGui {
      * <p>A recipe is an orphan when no crafter on the network can run its type. That is the
      * most frequent mistake in game, and no other mod reports it.
      */
-    private List<Line> buildMachineLines(Query query) {
+    private List<Line> buildMachineLines(SearchQuery query) {
         List<Line> lines = new ArrayList<>();
 
         Set<String> present = new HashSet<>();
@@ -969,7 +966,7 @@ public class GuiPatTerminal extends AEBaseGui {
      * them separately would display the same thing twice, and invite the player to edit only
      * one of them.
      */
-    private List<Line> buildPatternLines(Query query) {
+    private List<Line> buildPatternLines(SearchQuery query) {
         List<Line> lines = new ArrayList<>();
         boolean searching = !query.isEmpty();
 
@@ -1003,7 +1000,7 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /** Does a recipe satisfy **all** the criteria? */
-    private boolean matches(IRecipeInfo recipe, Query query) {
+    private boolean matches(IRecipeInfo recipe, SearchQuery query) {
         if (query.isEmpty()) {
             return true;
         }
@@ -1069,7 +1066,7 @@ public class GuiPatTerminal extends AEBaseGui {
         return stacks;
     }
 
-    private boolean matchesText(Query query, String name) {
+    private boolean matchesText(SearchQuery query, String name) {
         String lower = name.toLowerCase(Locale.ROOT);
         for (String text : query.text) {
             if (!lower.contains(text)) {

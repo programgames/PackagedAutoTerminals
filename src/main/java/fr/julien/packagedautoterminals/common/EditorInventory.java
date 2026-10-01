@@ -51,6 +51,17 @@ public class EditorInventory implements IInventory {
     /** The world is needed by {@code generateFromStacks}, which resolves crafting recipes. */
     private final World world;
 
+    /**
+     * While this is true, a slot write does not rebuild the recipe.
+     *
+     * <p>{@link #updateRecipeInfo} calls {@code generateFromStacks}, which resolves a
+     * crafting recipe against the whole registry. One write of one slot therefore costs a
+     * recipe lookup. A JEI transfer fills up to 81 slots, and a change of amount that keeps
+     * the proportions rewrites every filled slot, so a single click paid for up to ninety
+     * lookups where one is enough.
+     */
+    private boolean grouping;
+
     public EditorInventory(World world, IRecipeType recipeType) {
         this.world = world;
         this.recipeType = recipeType;
@@ -204,6 +215,24 @@ public class EditorInventory implements IInventory {
             return;
         }
         stacks.set(index, stack);
+        if (!grouping) {
+            updateRecipeInfo();
+        }
+    }
+
+    /**
+     * Starts a group of slot writes. The recipe is rebuilt once, by {@link #endGroup}.
+     *
+     * <p>Always close the group, including on an early return: the editor would otherwise
+     * stop following its own slots.
+     */
+    public void beginGroup() {
+        grouping = true;
+    }
+
+    /** Closes a group of slot writes, and rebuilds the recipe once. */
+    public void endGroup() {
+        grouping = false;
         updateRecipeInfo();
     }
 

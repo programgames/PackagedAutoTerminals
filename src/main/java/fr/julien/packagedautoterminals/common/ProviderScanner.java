@@ -9,7 +9,6 @@ import appeng.api.networking.IGridNode;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.translation.I18n;
 import thelm.packagedauto.api.IPackageProvidingMachine;
 import thelm.packagedauto.api.IRecipeList;
 import thelm.packagedauto.api.IRecipeListItem;
@@ -83,6 +82,8 @@ public final class ProviderScanner {
     private static ProviderSnapshot describe(int id, IGridNode node, IPackageProvidingMachine machine) {
         ProviderSnapshot snapshot = new ProviderSnapshot();
         snapshot.id = id;
+        // Server side only, and never serialised. See the field.
+        snapshot.machine = machine;
         snapshot.active = node.isActive();
         snapshot.role = ProviderRole.of(machine);
         snapshot.icon = node.getGridBlock().getMachineRepresentation();
@@ -95,7 +96,8 @@ public final class ProviderScanner {
             snapshot.pos = tile.getPos();
             snapshot.dimension = tile.getWorld().provider.getDimension();
             if (!tile.getWorld().isRemote) {
-                snapshot.customName = GroupNames.get(tile.getWorld()).get(tile.getPos());
+                snapshot.customName = GroupNames.get(tile.getWorld())
+                        .get(snapshot.dimension, snapshot.pos);
             }
         }
 
@@ -108,10 +110,5 @@ public final class ProviderScanner {
             }
         }
         return snapshot;
-    }
-
-    /** Translation without going through the client, usable on both sides. */
-    public static String translate(String key, Object... args) {
-        return I18n.translateToLocalFormatted(key, args);
     }
 }

@@ -55,6 +55,7 @@ public final class Feedback {
                     "gui.packagedautoterminals.ratio_not_exact",
                     "gui.packagedautoterminals.ratio_too_large",
                     "gui.packagedautoterminals.applied_partial",
+                    "gui.packagedautoterminals.applied_partial_full",
                     "gui.packagedautoterminals.applied_no_partner")));
 
     private Feedback() {}

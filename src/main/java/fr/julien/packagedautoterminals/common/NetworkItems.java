@@ -83,6 +83,26 @@ public final class NetworkItems {
      * @return the extracted stack, or an empty stack when the network has none.
      */
     public static ItemStack extractOne(IGrid grid, ItemStack prototype, IActionSource source) {
+        return extractOne(grid, prototype, source, Actionable.MODULATE);
+    }
+
+    /**
+     * Does the network hold a blank Package Recipe Holder?
+     *
+     * <p>The question is asked with a simulated extraction, so nothing leaves storage. The
+     * terminal uses it before opening the editor: taking the holder at that moment would
+     * waste one every time the player closes the screen without saving.
+     */
+    public static boolean hasBlankHolder(IGrid grid, IActionSource source) {
+        Item blank = findRecipeHolder();
+        if (blank == null) {
+            return false;
+        }
+        return !extractOne(grid, new ItemStack(blank), source, Actionable.SIMULATE).isEmpty();
+    }
+
+    private static ItemStack extractOne(IGrid grid, ItemStack prototype, IActionSource source,
+                                        Actionable mode) {
         if (grid == null || prototype.isEmpty()) {
             return ItemStack.EMPTY;
         }
@@ -106,7 +126,7 @@ public final class NetworkItems {
         request.setStackSize(1);
 
         IAEItemStack extracted = AEApi.instance().storage()
-                .poweredExtraction(energy, inventory, request, source, Actionable.MODULATE);
+                .poweredExtraction(energy, inventory, request, source, mode);
         return extracted == null ? ItemStack.EMPTY : extracted.createItemStack();
     }
 }

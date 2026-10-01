@@ -6,10 +6,8 @@ import java.util.NavigableMap;
 
 import appeng.api.config.SecurityPermissions;
 import appeng.api.networking.IGrid;
-import appeng.api.networking.IGridNode;
 import appeng.container.AEBaseContainer;
 import appeng.container.guisync.GuiSync;
-import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.common.EditorInventory;
 import fr.julien.packagedautoterminals.common.Feedback;
 import fr.julien.packagedautoterminals.common.FluidPackets;
@@ -21,7 +19,6 @@ import fr.julien.packagedautoterminals.common.ProviderScanner;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.common.RecipeWriter;
 import fr.julien.packagedautoterminals.common.TerminalContext;
-import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ClickType;
@@ -29,13 +26,9 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraft.util.math.BlockPos;
-import thelm.packagedauto.api.IPackageProvidingMachine;
 import thelm.packagedauto.api.IRecipeInfo;
-import thelm.packagedauto.api.IRecipeList;
-import thelm.packagedauto.api.IRecipeListItem;
 import thelm.packagedauto.api.IRecipeType;
 import thelm.packagedauto.api.RecipeTypeRegistry;
 import appeng.container.slot.AppEngSlot;
@@ -308,7 +301,7 @@ public class ContainerPatEditor extends AEBaseContainer {
                 }
             }
             // The name is read again on every cycle: another screen may have changed it.
-            groupName = GroupNames.get(world).get(pos);
+            groupName = GroupNames.get(world).get(dimension, pos);
             refreshTabs();
         }
         super.detectAndSendChanges();
@@ -340,17 +333,22 @@ public class ContainerPatEditor extends AEBaseContainer {
         editor.clear();
         editor.recipeType = type;
 
-        for (Int2ObjectMap.Entry<ItemStack> entry : transfer.int2ObjectEntrySet()) {
-            int slot = entry.getIntKey();
-            if (slot < 0 || slot >= EditorInventory.SIZE || !editor.isEditable(slot)) {
-                continue;
+        // One rebuild for the whole transfer, not one per slot. See EditorInventory.grouping.
+        editor.beginGroup();
+        try {
+            for (Int2ObjectMap.Entry<ItemStack> entry : transfer.int2ObjectEntrySet()) {
+                int slot = entry.getIntKey();
+                if (slot < 0 || slot >= EditorInventory.SIZE || !editor.isEditable(slot)) {
+                    continue;
+                }
+                ItemStack stack = entry.getValue();
+                if (!stack.isEmpty()) {
+                    editor.setInventorySlotContents(slot, stack.copy());
+                }
             }
-            ItemStack stack = entry.getValue();
-            if (!stack.isEmpty()) {
-                editor.setInventorySlotContents(slot, stack.copy());
-            }
+        } finally {
+            editor.endGroup();
         }
-        editor.updateRecipeInfo();
         dirty = true;
         detectAndSendChanges();
     }
@@ -471,13 +469,19 @@ public class ContainerPatEditor extends AEBaseContainer {
             }
         }
 
-        for (int index = 0; index < last; index++) {
-            ItemStack stack = editor.getStackInSlot(index);
-            if (stack.isEmpty() || !editor.isEditable(index)) {
-                continue;
+        // Every slot of the recipe moves at once, so the recipe is rebuilt once.
+        editor.beginGroup();
+        try {
+            for (int index = 0; index < last; index++) {
+                ItemStack stack = editor.getStackInSlot(index);
+                if (stack.isEmpty() || !editor.isEditable(index)) {
+                    continue;
+                }
+                editor.setInventorySlotContents(index,
+                        withAmount(stack, (int) ((long) amountOf(stack) * amount / previous)));
             }
-            editor.setInventorySlotContents(index,
-                    withAmount(stack, (int) ((long) amountOf(stack) * amount / previous)));
+        } finally {
+            editor.endGroup();
         }
         dirty = true;
         detectAndSendChanges();
@@ -563,9 +567,21 @@ public class ContainerPatEditor extends AEBaseContainer {
         // The player always gets one piece of feedback, and **only one**. Two successive
         // `tell` calls overwrote each other: the player saw the warning, never the
         // confirmation, and no longer knew whether the write had succeeded.
+        //
+        // The order runs from the most serious to the least. A machine left behind matters
+        // more than a holder taken from storage, which matters more than a plain success.
         if (result.withoutHolder > 0) {
             tell("gui.packagedautoterminals.applied_partial",
                     result.changed, result.withoutHolder);
+        } else if (result.full > 0) {
+            // FIXED: this count was computed and never shown. A pair whose two sides had
+            // drifted, one at twenty recipes and the other below, took the write on one
+            // machine only, and the terminal called it a success.
+            tell("gui.packagedautoterminals.applied_partial_full",
+                    result.changed, result.full);
+        } else if (result.supplied > 0) {
+            tell("gui.packagedautoterminals.applied_with_holder",
+                    result.changed, result.supplied);
         } else if (result.changed == 1 && missing != null) {
             tell("gui.packagedautoterminals.applied_no_partner", result.changed);
         } else {
@@ -609,16 +625,13 @@ public class ContainerPatEditor extends AEBaseContainer {
             return;
         }
 
-        World world = getPlayerInv().player.world;
+        // One storage for the whole server: GroupNames.get hands back the overworld
+        // instance whatever world it is given. The key carries the dimension.
+        GroupNames names = GroupNames.get(getPlayerInv().player.world);
         for (ProviderSnapshot machine : group.machines) {
-            World target = world.provider.getDimension() == machine.dimension
-                    ? world
-                    : net.minecraftforge.common.DimensionManager.getWorld(machine.dimension);
-            if (target != null) {
-                GroupNames.get(target).set(machine.pos, name);
-            }
+            names.set(machine.dimension, machine.pos, name);
         }
-        groupName = name == null ? "" : name;
+        groupName = GroupNames.sanitize(name);
         tell("gui.packagedautoterminals.renamed");
     }
 
@@ -805,6 +818,12 @@ public class ContainerPatEditor extends AEBaseContainer {
 
         RecipeWriter.Result result = RecipeWriter.apply(grid, getActionSource(),
                 group.machines, openedRecipe, null);
+        // FIXED: zero changed machines used to read as "Applied to 0 machines", which the
+        // screen drew in the colour of a success.
+        if (result.changed == 0) {
+            tell("gui.packagedautoterminals.write_failed");
+            return;
+        }
         tell(result.changed == 1
                         ? "gui.packagedautoterminals.applied_to_one"
                         : "gui.packagedautoterminals.applied_to",

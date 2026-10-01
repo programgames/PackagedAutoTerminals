@@ -38,6 +38,15 @@ public final class PatConfig {
     @Config.LangKey("config.packagedautoterminals.wireless_power")
     public static double wirelessPowerPerTick = 1.0;
 
+    @Config.Comment({
+            "Takes a blank Package Recipe Holder out of the ME network when a machine has none.",
+            "The extraction follows the AE2 energy and security rules, and only a blank holder",
+            "ever matches. Turn it off to keep the holders under your own hand; the terminal",
+            "then asks you to insert one yourself, which means walking to the machine."
+    })
+    @Config.LangKey("config.packagedautoterminals.pull_holder")
+    public static boolean pullHolderFromNetwork = true;
+
     @Config.Comment("Shows the Machines tab and the diagnostic for orphan recipes.")
     @Config.LangKey("config.packagedautoterminals.machines_tab")
     public static boolean machinesTab = true;

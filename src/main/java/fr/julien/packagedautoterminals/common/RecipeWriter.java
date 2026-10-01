@@ -5,7 +5,9 @@ import java.util.List;
 
 import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionSource;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
 import thelm.packagedauto.api.IPackageProvidingMachine;
 import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.IRecipeList;
@@ -50,6 +52,8 @@ public final class RecipeWriter {
         public int withoutHolder;
         /** Machines whose recipe holder already carries {@link #maxRecipes()} recipes. */
         public int full;
+        /** Blank recipe holders taken from the ME network for this write. */
+        public int supplied;
     }
 
     /**
@@ -59,9 +63,15 @@ public final class RecipeWriter {
      * on an edit. That is the whole point: repairing an out-of-sync pair in one gesture.
      * Without this rule, the machine left behind would stay behind.
      *
-     * <p>A machine **without a recipe holder is left untouched**, and counted in
-     * {@link Result#withoutHolder}. The terminal reports it, but takes nothing from the
-     * network on its own: pulling an item out of storage is the player's decision.
+     * <p>A machine **without a recipe holder** receives a blank one from the ME network, when
+     * {@code PatConfig.pullHolderFromNetwork} allows it. That setting is on by default: a
+     * machine with no holder otherwise forced the player to walk to it, which is the one
+     * thing this mod exists to remove. The extraction goes through
+     * {@code NetworkItems.extractOne}, hence through the AE2 energy and security rules, and
+     * the prototype carries no NBT, so only a **blank** holder ever matches.
+     *
+     * <p>When the setting is off, or the network holds no blank holder, the machine stays
+     * untouched and is counted in {@link Result#withoutHolder}.
      *
      * @param oldRecipe target recipe. {@code null} for an addition.
      * @param newRecipe recipe to write. {@code null} for a removal.
@@ -70,7 +80,7 @@ public final class RecipeWriter {
                                IRecipeInfo oldRecipe, IRecipeInfo newRecipe) {
         Result result = new Result();
         for (ProviderSnapshot snapshot : machines) {
-            switch (applyTo(grid, source, snapshot, oldRecipe, newRecipe)) {
+            switch (applyTo(grid, source, snapshot, oldRecipe, newRecipe, result)) {
                 case CHANGED:
                     result.changed++;
                     break;
@@ -89,28 +99,50 @@ public final class RecipeWriter {
 
     private enum Outcome { CHANGED, UNCHANGED, NO_HOLDER, FULL }
 
+    /**
+     * The machine of a snapshot, without walking the grid again when it is already known.
+     *
+     * <p>The snapshot carries the machine on the server. The tile is tested all the same: a
+     * block broken between the scan and the write would leave an invalid one behind.
+     */
+    private static IPackageProvidingMachine machineOf(IGrid grid, ProviderSnapshot snapshot) {
+        IPackageProvidingMachine known = snapshot.machine;
+        if (known instanceof TileEntity && !((TileEntity) known).isInvalid()) {
+            return known;
+        }
+        return ProviderScanner.find(grid, snapshot.dimension, snapshot.pos);
+    }
+
     private static Outcome applyTo(IGrid grid, IActionSource source, ProviderSnapshot snapshot,
-                                   IRecipeInfo oldRecipe, IRecipeInfo newRecipe) {
-        IPackageProvidingMachine machine =
-                ProviderScanner.find(grid, snapshot.dimension, snapshot.pos);
+                                   IRecipeInfo oldRecipe, IRecipeInfo newRecipe, Result result) {
+        IPackageProvidingMachine machine = machineOf(grid, snapshot);
         if (machine == null) {
             return Outcome.UNCHANGED;
         }
 
         ItemStack holder = machine.getPatternStack();
+        // A holder taken from the network goes back there on every path that writes nothing.
+        // Otherwise a refusal would swallow the item.
+        boolean borrowed = false;
         if (holder.isEmpty()) {
-            // A removal has nothing to do on an empty machine; a write, on the other hand,
-            // needs a recipe holder that the player put there themselves.
-            return newRecipe == null ? Outcome.UNCHANGED : Outcome.NO_HOLDER;
+            // A removal has nothing to do on an empty machine.
+            if (newRecipe == null) {
+                return Outcome.UNCHANGED;
+            }
+            holder = takeBlankHolder(grid, source);
+            if (holder.isEmpty()) {
+                return Outcome.NO_HOLDER;
+            }
+            borrowed = true;
         }
         if (!(holder.getItem() instanceof IRecipeListItem)) {
-            return Outcome.UNCHANGED;
+            return giveBack(grid, source, holder, borrowed, Outcome.UNCHANGED);
         }
 
         IRecipeListItem holderItem = (IRecipeListItem) holder.getItem();
         IRecipeList recipeList = holderItem.getRecipeList(holder);
         if (recipeList == null) {
-            return Outcome.UNCHANGED;
+            return giveBack(grid, source, holder, borrowed, Outcome.UNCHANGED);
         }
 
         List<IRecipeInfo> recipes = new ArrayList<>(recipeList.getRecipeList());
@@ -126,12 +158,12 @@ public final class RecipeWriter {
         } else {
             // The machine does not carry this recipe yet: it receives it.
             if (indexOf(recipes, newRecipe) >= 0) {
-                return Outcome.UNCHANGED;
+                return giveBack(grid, source, holder, borrowed, Outcome.UNCHANGED);
             }
             // Last guard. The editor refuses a full group before it reaches this point, so
             // nothing is ever written by halves.
             if (recipes.size() >= maxRecipes()) {
-                return Outcome.FULL;
+                return giveBack(grid, source, holder, borrowed, Outcome.FULL);
             }
             recipes.add(newRecipe);
         }
@@ -139,7 +171,37 @@ public final class RecipeWriter {
         recipeList.setRecipeList(recipes);
         holderItem.setRecipeList(holder, recipeList);
         machine.setPatternStack(holder);
+        if (borrowed) {
+            result.supplied++;
+        }
         return Outcome.CHANGED;
+    }
+
+    /**
+     * Takes one blank Package Recipe Holder out of the ME network.
+     *
+     * <p>The prototype carries no NBT. AE2 matches an item, its metadata and its tag, so a
+     * holder that already lists recipes never answers this request: only a blank one leaves
+     * the network.
+     */
+    private static ItemStack takeBlankHolder(IGrid grid, IActionSource source) {
+        if (!PatConfig.pullHolderFromNetwork) {
+            return ItemStack.EMPTY;
+        }
+        Item blank = NetworkItems.findRecipeHolder();
+        if (blank == null) {
+            return ItemStack.EMPTY;
+        }
+        return NetworkItems.extractOne(grid, new ItemStack(blank), source);
+    }
+
+    /** Puts a borrowed holder back into the network, then answers the given outcome. */
+    private static Outcome giveBack(IGrid grid, IActionSource source, ItemStack holder,
+                                    boolean borrowed, Outcome outcome) {
+        if (borrowed) {
+            NetworkItems.insert(grid, holder, source);
+        }
+        return outcome;
     }
 
     private static int indexOf(List<IRecipeInfo> recipes, IRecipeInfo recipe) {

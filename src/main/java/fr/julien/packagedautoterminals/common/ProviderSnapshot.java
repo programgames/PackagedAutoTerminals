@@ -7,6 +7,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
+import thelm.packagedauto.api.IPackageProvidingMachine;
 import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.MiscUtil;
 
@@ -35,6 +36,19 @@ public class ProviderSnapshot {
     /** Name given by the player, or empty string. Stored by our mod, not by PackagedAuto. */
     public String customName = "";
     public List<IRecipeInfo> recipes = new ArrayList<>();
+
+    /**
+     * The machine itself, on the server only.
+     *
+     * <p>It never travels: {@link #writeToNBT} ignores it, so it is always {@code null} on
+     * the client. It saves {@link RecipeWriter} from walking the whole grid again for every
+     * machine it writes to, which made one save cost a scan per target.
+     *
+     * <p>A write happens in the same tick as the scan that produced this snapshot, so the
+     * reference cannot age. {@link RecipeWriter} still tests the tile before using it, and
+     * falls back to a fresh search.
+     */
+    public transient IPackageProvidingMachine machine;
 
     public NBTTagCompound writeToNBT() {
         NBTTagCompound tag = new NBTTagCompound();
