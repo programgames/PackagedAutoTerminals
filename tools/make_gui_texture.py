@@ -262,9 +262,13 @@ def draw_package(px, x0, y0):
 def draw_tab(px, x0, y0, active):
     """One tab of the strip, in its two states.
 
-    The active one takes the colour of the panel and a raised bevel, so it reads as the sheet
-    in front. The inactive one is a shade darker and keeps a dark line under it, so it reads
-    as a sheet behind. That is the vanilla way, and the way AE2 draws its own tabs.
+    Both are closed boxes. The active one takes the colour of the panel and a raised bevel,
+    so it reads as the sheet in front; the inactive one is a shade darker and keeps a shadow
+    under its edge, so it reads as a sheet behind.
+
+    FIXED: the active tab used to be drawn with no bottom edge, so it would merge into what
+    sits below it. Three pixels of panel separate the strip from the list, so it merged with
+    nothing, and a tab open at the bottom reads as a drawing left unfinished.
     """
     body = PANEL if active else TAB_OFF
     fill(px, x0, y0, TAB_WIDTH, TAB_HEIGHT, body)
@@ -276,8 +280,9 @@ def draw_tab(px, x0, y0, active):
     fill(px, x0 + 1, y0 + 1, TAB_WIDTH - 2, 1, WHITE)
     fill(px, x0 + 1, y0 + 1, 1, TAB_HEIGHT - 2, WHITE)
     fill(px, x0 + TAB_WIDTH - 2, y0 + 2, 1, TAB_HEIGHT - 3, SHADOW)
+    fill(px, x0, y0 + TAB_HEIGHT - 1, TAB_WIDTH, 1, EDGE)
     if not active:
-        fill(px, x0, y0 + TAB_HEIGHT - 1, TAB_WIDTH, 1, EDGE)
+        # The tab behind keeps a shadow inside its edge, which sinks it one step further.
         fill(px, x0 + 1, y0 + TAB_HEIGHT - 2, TAB_WIDTH - 2, 1, SHADOW)
 
 

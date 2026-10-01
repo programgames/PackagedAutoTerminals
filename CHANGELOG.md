@@ -62,7 +62,10 @@ a machine with no recipe holder is served from the ME network.
   tall; `GuiScaleFit` already handles a small window. Two pixels of panel separate the band
   from the strip and three separate the strip from the list, four separate the two tabs, and
   the icon and the label of a tab each keep their air. Without that the three bands read as
-  one block and the two tabs read as one wide tab cut in half.
+  one block and the two tabs read as one wide tab cut in half. The open tab is a closed box
+  like the other one: it was drawn with no bottom edge, so it would merge into what sits under
+  it, and three pixels of panel separate the strip from the list, so it merged with nothing.
+  A tab open at the bottom reads as a drawing left unfinished.
 - **The search field says what it is for, and whether it is listening.** A magnifier sits
   inside it, and a light ring surrounds it while it has focus. It was a plain dark rectangle.
 - **The list shows its own hierarchy.** A rule closes each group header, a guide runs in front
