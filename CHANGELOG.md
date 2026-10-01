@@ -12,6 +12,13 @@ a machine with no recipe holder is served from the ME network.
 
 ### Added
 
+- **One button puts the recipe holders in, and takes them out.** Hovering a group row shows
+  an arrow: it points into the box while a machine of the group waits for a holder, and out
+  of it once they all have one. A new pair used to mean walking to both machines with a
+  holder in hand. The holders come from the ME network, so the AE2 energy and security rules
+  apply, and only a blank holder ever leaves storage. The `pullHolderFromNetwork` setting does
+  not reach this button: that setting governs the holder taken on its own while a recipe is
+  saved, and a click is a decision the player has just made.
 - **The terminal takes a blank Package Recipe Holder out of the ME network** when a machine
   has none. Until now it answered "insert a holder first", and the player had to walk to the
   machine, which is the walk this mod exists to remove. The extraction goes through
@@ -65,7 +72,11 @@ a machine with no recipe holder is served from the ME network.
   one block and the two tabs read as one wide tab cut in half. The open tab is a closed box
   like the other one: it was drawn with no bottom edge, so it would merge into what sits under
   it, and three pixels of panel separate the strip from the list, so it merged with nothing.
-  A tab open at the bottom reads as a drawing left unfinished.
+  A tab open at the bottom reads as a drawing left unfinished. The title band is twenty rows
+  instead of eighteen: the search field needs fourteen with its border, and the frame bevel of
+  the window owns the first three rows, so the field had to start on the bevel and its top
+  edge was drawn outside the band. The counts of the status bar keep four pixels from its
+  border, as every other text of the screen does.
 - **The search field says what it is for, and whether it is listening.** A magnifier sits
   inside it, and a light ring surrounds it while it has focus. It was a plain dark rectangle.
 - **The list shows its own hierarchy.** A rule closes each group header, a guide runs in front

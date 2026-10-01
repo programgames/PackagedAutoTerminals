@@ -10,7 +10,7 @@ SHEET = Image.open(
 ).convert('RGBA')
 
 WIDTH, ROWS, ROW_H = 320, 12, 18
-BAND, TAB_TOP, TAB_H, TAB_W, TAB_GAP = 18, 20, 22, 92, 4
+BAND, TAB_TOP, TAB_H, TAB_W, TAB_GAP = 20, 22, 22, 92, 4
 LIST_TOP = TAB_TOP + TAB_H + 3
 LIST_LEFT, LIST_WIDTH = 8, 288
 FOOTER = 104
@@ -78,12 +78,12 @@ screen.alpha_composite(SHEET.crop((400, 90, 412, 102)), (tool_left(0), tool_top)
 screen.alpha_composite(SHEET.crop((384, 90, 396, 102)), (tool_left(1), tool_top))
 
 # --- the title band ----------------------------------------------------------------
-text(LIST_LEFT, 5, 'PackagedAuto Terminal', TEXT)
-screen.alpha_composite(SHEET.crop((330, 90, 338, 98)), (153, 5))
-text(165, 6, 'iron', FIELD_TEXT)
-text(288, 5, 'x', FIELD_TEXT)
+text(LIST_LEFT, 7, 'PackagedAuto Terminal', TEXT)
+screen.alpha_composite(SHEET.crop((330, 90, 338, 98)), (153, 7))
+text(165, 8, 'iron', FIELD_TEXT)
+text(288, 7, 'x', FIELD_TEXT)
 # The ring that says the field is listening.
-draw.rectangle([149, 2, 296, 16], outline=(0xFF, 0xFF, 0xFF, 0x90))
+draw.rectangle([149, 4, 296, 18], outline=(0xFF, 0xFF, 0xFF, 0x90))
 
 # --- the rows ----------------------------------------------------------------------
 rows = [
@@ -132,14 +132,18 @@ for index, (kind, label, state, warning) in enumerate(rows):
                         LIST_LEFT + LIST_WIDTH - 19, y + 16], fill=(0x55, 0x60, 0x55))
         screen.alpha_composite(SHEET.crop((330, 4, 342, 16)),
                                (LIST_LEFT + LIST_WIDTH - 16, y + 3))
+        if index == 4:
+            # A group whose machines wait for a holder: the arrow goes in.
+            screen.alpha_composite(SHEET.crop((414, 90, 424, 100)),
+                                   (LIST_LEFT + LIST_WIDTH - 50, y + 4))
     else:
         text(LIST_LEFT + 22, y + 5, label, TEXT)
         chip(LIST_LEFT + LIST_WIDTH - 4, y, state, warning)
 
 # --- the status bar ----------------------------------------------------------------
-text(LIST_LEFT + 2, STATUS_TOP + 2, '22 machines - 144 recipes', TEXT)
+text(LIST_LEFT + 4, STATUS_TOP + 2, '22 machines - 144 recipes', TEXT)
 results = '9 results'
-text(LIST_LEFT + LIST_WIDTH - int(width_of(results)), STATUS_TOP + 2, results, DIM)
+text(LIST_LEFT + 304 - 4 - int(width_of(results)), STATUS_TOP + 2, results, DIM)
 
 out = screen.resize((WIDTH * 2, HEIGHT * 2), Image.NEAREST)
 canvas = Image.new('RGB', (out.width + 40, out.height + 40), (0x2b, 0x2b, 0x33))

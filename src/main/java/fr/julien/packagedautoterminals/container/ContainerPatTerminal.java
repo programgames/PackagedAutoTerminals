@@ -22,6 +22,7 @@ import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -48,8 +49,14 @@ public class ContainerPatTerminal extends AEBaseContainer {
     public static final int SHEET_ROWS = 16;
     /** Height of the screen footer: status bar, inventory, margin. */
     public static final int FOOTER = 104;
-    /** Title band: it carries the screen name and the search field. */
-    public static final int BAND_HEIGHT = 18;
+    /**
+     * Title band: it carries the screen name and the search field.
+     *
+     * <p>Twenty rows, not eighteen. The search field takes fourteen with its border, and the
+     * frame bevel of the window owns the first three rows of the screen. At eighteen the
+     * field had to start on that bevel, and its top edge was drawn outside the band.
+     */
+    public static final int BAND_HEIGHT = 20;
     /**
      * Tab strip, under the band.
      *
@@ -81,9 +88,11 @@ public class ContainerPatTerminal extends AEBaseContainer {
     public static final int STATUS_TOP = LIST_TOP + ROWS * ROW_HEIGHT + 4;
     public static final int STATUS_HEIGHT = 12;
     public static final int STATUS_WIDTH = 304;
+    /** The bar spans the list and the scrollbar, so it starts where the list starts. */
+    public static final int STATUS_LEFT = LIST_LEFT;
     /** Search field, on the title line. */
     public static final int SEARCH_LEFT = 150;
-    public static final int SEARCH_TOP = 3;
+    public static final int SEARCH_TOP = 5;
     public static final int SEARCH_WIDTH = 146;
     public static final int SEARCH_HEIGHT = 12;
 
@@ -347,6 +356,64 @@ public class ContainerPatTerminal extends AEBaseContainer {
                             ? "gui.packagedautoterminals.applied_to_one"
                             : "gui.packagedautoterminals.applied_to",
                     removed);
+        }
+        refreshNow();
+    }
+
+    /**
+     * Gives a blank Package Recipe Holder to every machine of the group that has none.
+     *
+     * <p>This is the gesture the mod was missing: a new pair carries two empty machines, and
+     * filling them meant walking to each one with a holder in hand. The holders come from the
+     * ME network, through {@code NetworkItems.extractOne}, hence through the AE2 energy and
+     * security rules. The prototype carries no NBT, so only a <b>blank</b> holder ever
+     * matches: a holder that already lists recipes stays in storage.
+     *
+     * <p>The {@code pullHolderFromNetwork} setting does not reach here. That setting governs
+     * the holder taken on its own while a recipe is saved. A click on a button is a decision
+     * the player has just made.
+     */
+    public void insertHolders(int dimension, BlockPos pos) {
+        IGrid grid = grid();
+        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+            return;
+        }
+        ProviderPairing.Group group =
+                ProviderPairing.groupOf(ProviderPairing.group(ProviderScanner.scan(grid)),
+                        dimension, pos);
+        Item blank = NetworkItems.findRecipeHolder();
+        if (group == null || blank == null) {
+            return;
+        }
+
+        int given = 0;
+        int missing = 0;
+        for (ProviderSnapshot snapshot : group.machines) {
+            IPackageProvidingMachine machine =
+                    ProviderScanner.find(grid, snapshot.dimension, snapshot.pos);
+            if (machine == null || !machine.getPatternStack().isEmpty()) {
+                continue;
+            }
+            ItemStack holder =
+                    NetworkItems.extractOne(grid, new ItemStack(blank), getActionSource());
+            if (holder.isEmpty()) {
+                // The network ran out. The machines already served keep theirs.
+                missing++;
+                continue;
+            }
+            machine.setPatternStack(holder);
+            given++;
+        }
+
+        if (given == 0) {
+            tell("gui.packagedautoterminals.no_blank_holder");
+        } else if (missing > 0) {
+            tell("gui.packagedautoterminals.applied_partial", given, missing);
+        } else {
+            tell(given == 1
+                            ? "gui.packagedautoterminals.applied_to_one"
+                            : "gui.packagedautoterminals.applied_to",
+                    given);
         }
         refreshNow();
     }

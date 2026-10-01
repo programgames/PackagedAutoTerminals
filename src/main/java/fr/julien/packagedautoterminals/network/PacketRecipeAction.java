@@ -39,6 +39,8 @@ public class PacketRecipeAction implements IMessage {
     public static final byte ACTION_CLEAR = 8;
     /** Scrolls the tab row. {@link #index} is 1 forward, 0 backward. */
     public static final byte ACTION_SCROLL_TABS = 9;
+    /** Takes a blank recipe holder out of the network for each machine of the group. */
+    public static final byte ACTION_INSERT_HOLDER = 10;
 
     public int dimension;
     public BlockPos pos = BlockPos.ORIGIN;
@@ -85,6 +87,8 @@ public class PacketRecipeAction implements IMessage {
                         container.newRecipe(message.dimension, message.pos);
                     } else if (message.action == ACTION_REMOVE_HOLDER) {
                         container.removeHolder(message.dimension, message.pos);
+                    } else if (message.action == ACTION_INSERT_HOLDER) {
+                        container.insertHolders(message.dimension, message.pos);
                     }
                     return;
                 }

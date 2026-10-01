@@ -128,6 +128,7 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int SEARCH_ICON_U = 330;
     private static final int SEARCH_ICON_SIZE = 8;
     private static final int EJECT_U = 342;
+    private static final int INSERT_U = 414;
     private static final int PENCIL_U = 356;
     private static final int CROSS_U = 370;
     private static final int ACTION_SIZE = 10;
@@ -245,7 +246,7 @@ public class GuiPatTerminal extends AEBaseGui {
         String previous = search == null ? "" : search.getText();
         search = new GuiTextField(0, fontRenderer,
                 guiLeft + ContainerPatTerminal.SEARCH_LEFT + 13,
-                guiTop + ContainerPatTerminal.SEARCH_TOP + 3,
+                guiTop + ContainerPatTerminal.SEARCH_TOP + 2,
                 // The text starts after the magnifier and stops before the cross, so it never
                 // runs under either one.
                 ContainerPatTerminal.SEARCH_WIDTH - 26, 8);
@@ -289,7 +290,7 @@ public class GuiPatTerminal extends AEBaseGui {
         fontRenderer.drawString(
                 trim(I18n.format("gui.packagedautoterminals.pat_terminal"),
                         ContainerPatTerminal.SEARCH_LEFT - 6 - LIST_LEFT),
-                LIST_LEFT, 5, COLOR_TEXT);
+                LIST_LEFT, 7, COLOR_TEXT);
 
         drawTabs();
         drawTools();
@@ -306,11 +307,13 @@ public class GuiPatTerminal extends AEBaseGui {
         // already taken by the tab and the search, and the game action bar is drawn below the
         // screen, hence out of sight.
         String message = currentMessage();
+        // Four pixels of air inside the status bar. The text used to start on its border.
+        int statusLeft = ContainerPatTerminal.STATUS_LEFT + 4;
         if (message != null) {
-            fontRenderer.drawString(trim(message, LIST_WIDTH), LIST_LEFT, summaryY,
-                    messageRefused ? COLOR_WARNING : COLOR_OK);
+            fontRenderer.drawString(trim(message, ContainerPatTerminal.STATUS_WIDTH - 8),
+                    statusLeft, summaryY, messageRefused ? COLOR_WARNING : COLOR_OK);
         } else {
-            fontRenderer.drawString(summary(), LIST_LEFT, summaryY, COLOR_TEXT);
+            fontRenderer.drawString(summary(), statusLeft, summaryY, COLOR_TEXT);
             drawResultCount(lines, summaryY);
         }
 
@@ -674,9 +677,13 @@ public class GuiPatTerminal extends AEBaseGui {
             if (hovered) {
                 // The buttons take the place of the chip. The state is in the tooltip anyway,
                 // and a row that grew a button would push every column sideways.
+                //
+                // One button, two directions. A group that lacks a holder wants one; a group
+                // that has them all can give them back. The arrow says which way it goes.
                 bindSheet();
                 drawModalRectWithCustomSizedTexture(stateRight - ACTION_SIZE, y + 4,
-                        EJECT_U, GLYPH_V, ACTION_SIZE, ACTION_SIZE, SHEET, SHEET);
+                        needsHolder(line.group) ? INSERT_U : EJECT_U, GLYPH_V,
+                        ACTION_SIZE, ACTION_SIZE, SHEET, SHEET);
             } else {
                 drawChip(state, stateRight, y,
                         ProviderPairing.missingRoleOf(line.group) != null);
@@ -773,11 +780,28 @@ public class GuiPatTerminal extends AEBaseGui {
         return x >= rightEdge - ACTION_SIZE && x < rightEdge ? BUTTON_REMOVE : -1;
     }
 
+    /**
+     * Does a machine of this group still wait for a recipe holder?
+     *
+     * <p>One machine without a holder is enough: the group cannot run until it has one, and
+     * giving is then more useful than taking back.
+     */
+    private boolean needsHolder(ProviderPairing.Group group) {
+        for (ProviderSnapshot machine : group.machines) {
+            if (!machine.holderPresent) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** What a button of the hovered row does, in one line. */
     private List<String> actionTooltip(Line line, int action) {
         List<String> lines = new ArrayList<>();
         if (action == BUTTON_EJECT) {
-            lines.add(I18n.format("gui.packagedautoterminals.remove_holder_hint"));
+            lines.add(I18n.format(needsHolder(line.group)
+                    ? "gui.packagedautoterminals.insert_holder_hint"
+                    : "gui.packagedautoterminals.remove_holder_hint"));
         } else if (action == BUTTON_EDIT) {
             lines.add(I18n.format("gui.packagedautoterminals.edit_hint"));
         } else {
@@ -913,7 +937,8 @@ public class GuiPatTerminal extends AEBaseGui {
                 ? "gui.packagedautoterminals.result"
                 : "gui.packagedautoterminals.results", found);
         fontRenderer.drawString(text,
-                LIST_LEFT + LIST_WIDTH - fontRenderer.getStringWidth(text), y, COLOR_DIM);
+                ContainerPatTerminal.STATUS_LEFT + ContainerPatTerminal.STATUS_WIDTH - 4
+                        - fontRenderer.getStringWidth(text), y, COLOR_DIM);
     }
 
     /** The click of a vanilla button, so a tab and a tool answer like the rest of the game. */
@@ -1080,7 +1105,9 @@ public class GuiPatTerminal extends AEBaseGui {
         if (clicked != null && clicked.group != null) {
             int action = actionUnder(clicked, mouseX - guiLeft, mouseY - guiTop);
             if (action == BUTTON_EJECT) {
-                send(clicked.anchor(), -1, PacketRecipeAction.ACTION_REMOVE_HOLDER);
+                send(clicked.anchor(), -1, needsHolder(clicked.group)
+                        ? PacketRecipeAction.ACTION_INSERT_HOLDER
+                        : PacketRecipeAction.ACTION_REMOVE_HOLDER);
                 return;
             }
             if (action == BUTTON_EDIT) {

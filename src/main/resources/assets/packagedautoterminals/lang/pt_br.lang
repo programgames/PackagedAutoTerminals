@@ -39,6 +39,7 @@ gui.packagedautoterminals.crafter_unused=sem receita
 gui.packagedautoterminals.orphan=%s: nenhum crafter nesta rede
 gui.packagedautoterminals.orphan_help=Uma receita deste tipo não pode ser executada.
 gui.packagedautoterminals.remove_holder_hint=Shift + clique esquerdo: enviar o suporte para a rede
+gui.packagedautoterminals.insert_holder_hint=Clique: retirar suportes vazios da rede
 gui.packagedautoterminals.no_holder_here=Esta máquina não contém nenhum suporte de receitas
 gui.packagedautoterminals.network_full=A rede não consegue armazenar o suporte
 gui.packagedautoterminals.summary_machine=%d máquina

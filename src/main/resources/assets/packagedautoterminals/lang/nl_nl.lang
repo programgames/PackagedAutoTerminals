@@ -39,6 +39,7 @@ gui.packagedautoterminals.crafter_unused=geen recept
 gui.packagedautoterminals.orphan=%s: geen crafter in dit netwerk
 gui.packagedautoterminals.orphan_help=Een recept van dit type kan niet worden uitgevoerd.
 gui.packagedautoterminals.remove_holder_hint=Shift + linksklik: de houder naar het netwerk sturen
+gui.packagedautoterminals.insert_holder_hint=Klik: lege houders uit het netwerk halen
 gui.packagedautoterminals.no_holder_here=Deze machine bevat geen recepthouder
 gui.packagedautoterminals.network_full=Het netwerk kan de houder niet opslaan
 gui.packagedautoterminals.summary_machine=%d machine

@@ -39,6 +39,7 @@ gui.packagedautoterminals.crafter_unused=no recipe
 gui.packagedautoterminals.orphan=%s: no crafter on this network
 gui.packagedautoterminals.orphan_help=A recipe of this type cannot be executed.
 gui.packagedautoterminals.remove_holder_hint=Shift + left click: send the holder to the network
+gui.packagedautoterminals.insert_holder_hint=Click: take blank recipe holders from the network
 gui.packagedautoterminals.no_holder_here=This machine holds no recipe holder
 gui.packagedautoterminals.network_full=The network cannot store the holder
 gui.packagedautoterminals.summary_machine=%d machine

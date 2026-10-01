@@ -39,6 +39,7 @@ gui.packagedautoterminals.crafter_unused=žádný recept
 gui.packagedautoterminals.orphan=%s: v této síti není žádný crafter
 gui.packagedautoterminals.orphan_help=Recept tohoto typu nelze provést.
 gui.packagedautoterminals.remove_holder_hint=Shift + levé tlačítko: poslat nosič do sítě
+gui.packagedautoterminals.insert_holder_hint=Klikni: vezmi prázdné nosiče ze sítě
 gui.packagedautoterminals.no_holder_here=Tento stroj neobsahuje žádný nosič receptů
 gui.packagedautoterminals.network_full=Síť nemůže nosič uložit
 gui.packagedautoterminals.summary_machine=%d stroj

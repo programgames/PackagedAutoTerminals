@@ -38,6 +38,7 @@ gui.packagedautoterminals.crafter_unused=无配方
 gui.packagedautoterminals.orphan=%s：该网络中没有合成器
 gui.packagedautoterminals.orphan_help=无法执行该类型的配方。
 gui.packagedautoterminals.remove_holder_hint=Shift+左键点击：将储存器发送到网络
+gui.packagedautoterminals.insert_holder_hint=点击：从网络取用空白储存器
 gui.packagedautoterminals.no_holder_here=该机器未安装样板包储存器
 gui.packagedautoterminals.network_full=网络无法存入储存器
 gui.packagedautoterminals.summary_machine=%d个机器

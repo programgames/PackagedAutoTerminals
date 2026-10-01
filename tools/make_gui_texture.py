@@ -52,7 +52,10 @@ FOOTER = 104
 
 LIST_LEFT = 8
 # Title band from 0 to 18, tab strip from 18 to 40, then the list.
-BAND_HEIGHT = 18
+# The band is twenty tall, not eighteen. The search field needs fourteen rows with its
+# border, and the frame bevel of the window takes the first three of the screen: at eighteen
+# the field had to start on the bevel, and its top edge sat outside the band.
+BAND_HEIGHT = 20
 # Two pixels of panel between the band and the strip, three between the strip and the list.
 # Without them the three bands read as one block, and the tabs looked glued to the title.
 TAB_STRIP_TOP = BAND_HEIGHT + 2
@@ -73,7 +76,7 @@ SCROLL_LEFT = 300
 SCROLL_WIDTH = 12
 
 SEARCH_LEFT = 150
-SEARCH_TOP = 3
+SEARCH_TOP = 5
 SEARCH_WIDTH = 146
 SEARCH_HEIGHT = 12
 
@@ -103,6 +106,7 @@ GLYPH_V = 90
 SEARCH_ICON_U = 330
 SEARCH_ICON_SIZE = 8
 EJECT_U = 342
+INSERT_U = 414
 PENCIL_U = 356
 CROSS_U = 370
 ACTION_SIZE = 10
@@ -307,6 +311,17 @@ def draw_eject(px, x0, y0):
     fill(px, x0, y0 + 9, ACTION_SIZE, 1, EDGE)
 
 
+def draw_insert(px, x0, y0):
+    """An arrow entering an open box: the recipe holders come from the network."""
+    shaft = {0: (4, 5), 1: (4, 5), 2: (4, 5), 3: (2, 7), 4: (3, 6), 5: (4, 5)}
+    for row, (left, right) in shaft.items():
+        fill(px, x0 + left, y0 + row, right - left + 1, 1, EDGE)
+    for row in range(6, 9):
+        fill(px, x0, y0 + row, 1, 1, EDGE)
+        fill(px, x0 + ACTION_SIZE - 1, y0 + row, 1, 1, EDGE)
+    fill(px, x0, y0 + 9, ACTION_SIZE, 1, EDGE)
+
+
 def draw_pencil(px, x0, y0):
     """Pencil: the row is edited."""
     for step in range(6):
@@ -368,6 +383,7 @@ def build_terminal():
     draw_tab(px, TAB_ON_U, TAB_ON_V, True)
     draw_magnifier(px, SEARCH_ICON_U, GLYPH_V)
     draw_eject(px, EJECT_U, GLYPH_V)
+    draw_insert(px, INSERT_U, GLYPH_V)
     draw_pencil(px, PENCIL_U, GLYPH_V)
     draw_cross(px, CROSS_U, GLYPH_V)
     draw_sort(px, SORT_U, GLYPH_V)

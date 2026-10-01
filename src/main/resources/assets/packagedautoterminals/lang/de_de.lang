@@ -39,6 +39,7 @@ gui.packagedautoterminals.crafter_unused=kein Rezept
 gui.packagedautoterminals.orphan=%s: kein Crafter in diesem Netzwerk
 gui.packagedautoterminals.orphan_help=Ein Rezept dieses Typs kann nicht ausgeführt werden.
 gui.packagedautoterminals.remove_holder_hint=Umschalt + Linksklick: Holder ins Netzwerk senden
+gui.packagedautoterminals.insert_holder_hint=Klick: leere Holder aus dem Netzwerk nehmen
 gui.packagedautoterminals.no_holder_here=Diese Maschine enthält keinen Recipe Holder
 gui.packagedautoterminals.network_full=Das Netzwerk kann den Holder nicht aufnehmen
 gui.packagedautoterminals.summary_machine=%d Maschine

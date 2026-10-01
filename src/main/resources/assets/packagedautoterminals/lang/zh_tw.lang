@@ -39,6 +39,7 @@ gui.packagedautoterminals.crafter_unused=無配方
 gui.packagedautoterminals.orphan=%s：這個網路中沒有合成器
 gui.packagedautoterminals.orphan_help=這個類型的配方無法執行。
 gui.packagedautoterminals.remove_holder_hint=Shift + 左鍵點擊：將儲存器送回網路
+gui.packagedautoterminals.insert_holder_hint=點擊：自網路取用空白儲存器
 gui.packagedautoterminals.no_holder_here=這台機器沒有配方儲存器
 gui.packagedautoterminals.network_full=網路無法存入儲存器
 gui.packagedautoterminals.summary_machine=%d台機器
