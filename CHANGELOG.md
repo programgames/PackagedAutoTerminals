@@ -54,6 +54,18 @@ a machine with no recipe holder is served from the ME network.
 
 ### Changed
 
+- **The Machines tab says something useful on each row.** It read "idle" on every line, which
+  taught the player nothing: `TileCrafter.isBusy` answers true while a craft runs or while
+  items sit in the input slots, a craft lasts a handful of ticks, and the terminal samples
+  that state once a second. A row now shows, in this order, "inactive" when the machine has no
+  channel, "busy" when it really is, "no recipe" when no encoded recipe of the network targets
+  it, and otherwise the number of recipes it can run. The first and the third are drawn in the
+  warning colour, because the player can act on them. A machine that no recipe targets is the
+  mirror of the orphan report above the list.
+- **The footer of the Machines tab counted the wrong machines.** The same line was drawn on
+  both tabs, and it always counted the Packagers, the Unpackagers and the Packaging Providers.
+  It announced twenty two machines under a list of eleven crafters. On the Machines tab it now
+  counts the crafters.
 - **The terminal list is built once per change, not once per frame.** `drawFG` called
   `buildLines`, which regroups the machines by comparing their recipes two by two, then formats
   every row. On a network of fifty machines carrying twenty recipes each, the screen paid for

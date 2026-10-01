@@ -3,9 +3,11 @@ package fr.julien.packagedautoterminals.client.gui;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import appeng.client.gui.AEBaseGui;
@@ -262,7 +264,7 @@ public class GuiPatTerminal extends AEBaseGui {
             fontRenderer.drawString(trim(message, LIST_WIDTH), LIST_LEFT, summaryY,
                     messageRefused ? COLOR_WARNING : COLOR_OK);
         } else {
-            fontRenderer.drawString(networkSummary(), LIST_LEFT, summaryY, COLOR_TEXT);
+            fontRenderer.drawString(summary(), LIST_LEFT, summaryY, COLOR_TEXT);
             drawResultCount(lines, summaryY);
         }
 
@@ -344,12 +346,8 @@ public class GuiPatTerminal extends AEBaseGui {
 
         if (line.crafter != null) {
             drawItem(LIST_LEFT + 2, y + 1, line.crafter.icon);
-            String state = I18n.format(!line.crafter.active
-                    ? "gui.packagedautoterminals.inactive"
-                    : (line.crafter.busy
-                            ? "gui.packagedautoterminals.busy"
-                            : "gui.packagedautoterminals.idle"));
-            drawRight(state, y, COLOR_DIM);
+            String state = crafterState(line);
+            drawRight(state, y, crafterStateColor(line));
             fontRenderer.drawString(
                     trim(line.crafter.name, budget(LIST_LEFT + 22, state, LIST_LEFT + LIST_WIDTH - 4)),
                     LIST_LEFT + 22, y + TEXT_OFFSET, COLOR_TEXT);
@@ -490,6 +488,40 @@ public class GuiPatTerminal extends AEBaseGui {
      */
     private int budget(int left, String right, int rightEdge) {
         return rightEdge - fontRenderer.getStringWidth(right) - 6 - left;
+    }
+
+    /**
+     * The right-hand text of a crafter row.
+     *
+     * <p>It used to read "idle" almost always, which taught the player nothing.
+     * {@code TileCrafter.isBusy} answers true while a craft runs, or while items sit in the
+     * input slots, and a craft lasts a handful of ticks. The terminal samples that state once
+     * a second, so a healthy network read "idle" from top to bottom.
+     *
+     * <p>The row now says what the player can act on. A machine with no channel does nothing,
+     * in silence. A machine that no encoded recipe targets is hardware placed for nothing,
+     * which is the mirror of the orphan report above the list. Everything else is a count.
+     */
+    private String crafterState(Line line) {
+        if (!line.crafter.active) {
+            return I18n.format("gui.packagedautoterminals.inactive");
+        }
+        if (line.crafter.busy) {
+            return I18n.format("gui.packagedautoterminals.busy");
+        }
+        if (line.crafterRecipes == 0) {
+            return I18n.format("gui.packagedautoterminals.crafter_unused");
+        }
+        return I18n.format(line.crafterRecipes == 1
+                ? "gui.packagedautoterminals.recipe"
+                : "gui.packagedautoterminals.recipes", line.crafterRecipes);
+    }
+
+    /** Red when the player has something to fix, dim otherwise. */
+    private int crafterStateColor(Line line) {
+        return !line.crafter.active || (!line.crafter.busy && line.crafterRecipes == 0)
+                ? COLOR_WARNING
+                : COLOR_DIM;
     }
 
     /**
@@ -845,7 +877,25 @@ public class GuiPatTerminal extends AEBaseGui {
                 "gui.packagedautoterminals.machine_absent", machine.getDisplayName());
     }
 
-    /** Readable network summary: providing machines and encoded recipes. */
+    /**
+     * Readable summary of what the open tab shows.
+     *
+     * <p>FIXED: the same line was drawn on both tabs, and it always counted the Packagers,
+     * the Unpackagers and the Packaging Providers. On the Machines tab it therefore announced
+     * twenty two machines under a list of eleven crafters, which are not the same machines at
+     * all.
+     */
+    private String summary() {
+        if (machinesView) {
+            int crafters = terminalContainer.machines.size();
+            return I18n.format(crafters == 1
+                    ? "gui.packagedautoterminals.summary_machine"
+                    : "gui.packagedautoterminals.summary_machines", crafters);
+        }
+        return networkSummary();
+    }
+
+    /** Providing machines and encoded recipes, for the Patterns tab. */
     private String networkSummary() {
         // Recipes are counted **per group**, not per machine. A pair carries the same recipe
         // on both sides: counting it twice reported four recipes where the list showed
@@ -929,6 +979,24 @@ public class GuiPatTerminal extends AEBaseGui {
                 }
             }
         }
+
+        // How many encoded recipes each kind of machine can run. The table is the one the
+        // orphan report reads: a recipe type names the class of the machine that runs it.
+        // Recipes are counted once per group, as everywhere else: a pair carries the same
+        // recipe on both sides.
+        Map<String, Integer> recipesByMachine = new HashMap<>();
+        for (ProviderPairing.Group group
+                : ProviderPairing.group(terminalContainer.providers)) {
+            for (IRecipeInfo recipe : group.recipes) {
+                IRecipeType type = recipe.getRecipeType();
+                if (!CrafterTypes.isDiagnosable(type)) {
+                    continue;
+                }
+                String machineClass = CrafterTypes.machineClassFor(type);
+                Integer known = recipesByMachine.get(machineClass);
+                recipesByMachine.put(machineClass, known == null ? 1 : known + 1);
+            }
+        }
         for (String type : reported) {
             lines.add(Line.warning(I18n.format("gui.packagedautoterminals.orphan", type)));
         }
@@ -941,10 +1009,13 @@ public class GuiPatTerminal extends AEBaseGui {
             if (!query.isEmpty() && !matchesText(query, machine.name)) {
                 continue;
             }
+            Line line = Line.crafter(machine);
+            Integer count = recipesByMachine.get(machine.machineClass);
+            line.crafterRecipes = count == null ? 0 : count;
             if (CrafterTypes.isRouter(machine.machineClass)) {
-                routers.add(Line.crafter(machine));
+                routers.add(line);
             } else {
-                crafters.add(Line.crafter(machine));
+                crafters.add(line);
             }
         }
 
@@ -1096,6 +1167,13 @@ public class GuiPatTerminal extends AEBaseGui {
         final MachineSnapshot crafter;
         final String warning;
         boolean section;
+        /**
+         * Encoded recipes of the network that this machine can run.
+         *
+         * <p>It is computed while the rows are built, and not while they are drawn. The count
+         * walks the groups, and the drawing runs on every frame.
+         */
+        int crafterRecipes;
 
         static Line group(ProviderPairing.Group group) {
             return new Line(group, null, -1, null, null);
