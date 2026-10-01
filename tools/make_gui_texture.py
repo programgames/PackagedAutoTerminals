@@ -32,6 +32,13 @@ NONE = (0, 0, 0, 0)
 # shadow, which on a light background reads as a second, offset letter.
 FIELD = (26, 26, 26, 255)
 
+# Title band, one shade under the panel, and tab strip. The band separates the chrome from
+# the list: before it, the title, the search and the counts floated on the panel with nothing
+# telling them apart.
+BAND = (186, 186, 186, 255)
+TAB_OFF = (166, 166, 166, 255)
+STATUS = (210, 210, 210, 255)
+
 SLOT_PITCH = 18
 HOTBAR_GAP = 58
 
@@ -41,25 +48,35 @@ WIDTH = 320
 # The list is drawn for the maximum row count. The game only shows what the screen height
 # allows, and picks the bottom of the sheet up right below.
 MAX_ROWS = 16
-FOOTER = 100
+FOOTER = 104
 
 LIST_LEFT = 8
-LIST_TOP = 22
+# Title band from 0 to 18, tab strip from 18 to 40, then the list.
+BAND_HEIGHT = 18
+TAB_STRIP_TOP = BAND_HEIGHT
+TAB_HEIGHT = 22
+TAB_WIDTH = 92
+LIST_TOP = TAB_STRIP_TOP + TAB_HEIGHT + 2
 LIST_WIDTH = 288
 ROW_HEIGHT = 18
 LIST_HEIGHT = MAX_ROWS * ROW_HEIGHT
 HEIGHT = LIST_TOP + LIST_HEIGHT + FOOTER
 
+# Status bar: a shallow recess under the list, carrying the counts.
+STATUS_LEFT = LIST_LEFT
+STATUS_WIDTH = 304
+STATUS_HEIGHT = 12
+
 SCROLL_LEFT = 300
 SCROLL_WIDTH = 12
 
 SEARCH_LEFT = 150
-SEARCH_TOP = 4
+SEARCH_TOP = 3
 SEARCH_WIDTH = 146
 SEARCH_HEIGHT = 12
 
 TERMINAL_INVENTORY_LEFT = 79
-TERMINAL_INVENTORY_TOP = LIST_TOP + LIST_HEIGHT + 16
+TERMINAL_INVENTORY_TOP = LIST_TOP + LIST_HEIGHT + 22
 
 # "Locate" icon, stored right of the screen, in the free area of the sheet.
 # It is a map pin, and no longer an eye: an eye says "look", a pin says "here it is".
@@ -71,6 +88,13 @@ LOCATE_SIZE = 12
 CHEVRON_U = 330
 CHEVRON_V = 20
 CHEVRON_SIZE = 8
+
+# The two states of a tab, stored right of the screen. The screen blits the one it needs,
+# which is how the AE2 tab buttons work.
+TAB_OFF_U = 330
+TAB_OFF_V = 40
+TAB_ON_U = 330
+TAB_ON_V = 40 + TAB_HEIGHT + 2
 
 # --- Editor -----------------------------------------------------------------------
 # The sheet is 512 by 512: the screen exceeds 256 pixels in both directions.
@@ -216,6 +240,28 @@ def draw_package(px, x0, y0):
                  y0 + ay + (by - ay) * step // steps, 1, 1, ICON)
 
 
+def draw_tab(px, x0, y0, active):
+    """One tab of the strip, in its two states.
+
+    The active one takes the colour of the panel and a raised bevel, so it reads as the sheet
+    in front. The inactive one is a shade darker and keeps a dark line under it, so it reads
+    as a sheet behind. That is the vanilla way, and the way AE2 draws its own tabs.
+    """
+    body = PANEL if active else TAB_OFF
+    fill(px, x0, y0, TAB_WIDTH, TAB_HEIGHT, body)
+    # Outer edge, on three sides. The bottom stays open on the active tab.
+    fill(px, x0, y0, TAB_WIDTH, 1, EDGE)
+    fill(px, x0, y0, 1, TAB_HEIGHT, EDGE)
+    fill(px, x0 + TAB_WIDTH - 1, y0, 1, TAB_HEIGHT, EDGE)
+    # Inner bevel: light where the light comes from, shadow opposite.
+    fill(px, x0 + 1, y0 + 1, TAB_WIDTH - 2, 1, WHITE)
+    fill(px, x0 + 1, y0 + 1, 1, TAB_HEIGHT - 2, WHITE)
+    fill(px, x0 + TAB_WIDTH - 2, y0 + 2, 1, TAB_HEIGHT - 3, SHADOW)
+    if not active:
+        fill(px, x0, y0 + TAB_HEIGHT - 1, TAB_WIDTH, 1, EDGE)
+        fill(px, x0 + 1, y0 + TAB_HEIGHT - 2, TAB_WIDTH - 2, 1, SHADOW)
+
+
 def build_terminal():
     px = sheet(SHEET, SHEET)
     frame(px, WIDTH, HEIGHT)
@@ -223,9 +269,18 @@ def build_terminal():
     draw_pin(px, LOCATE_U, LOCATE_V)
     draw_chevron_right(px, CHEVRON_U, CHEVRON_V)
     draw_chevron_down(px, CHEVRON_U + 10, CHEVRON_V)
+    draw_tab(px, TAB_OFF_U, TAB_OFF_V, False)
+    draw_tab(px, TAB_ON_U, TAB_ON_V, True)
+
+    # The title band, one shade under the panel, closed by a shadow line.
+    fill(px, 3, 3, WIDTH - 6, BAND_HEIGHT - 3, BAND)
+    fill(px, 3, BAND_HEIGHT - 1, WIDTH - 6, 1, SHADOW)
+    fill(px, 3, BAND_HEIGHT, WIDTH - 6, 1, WHITE)
+
     recess(px, SEARCH_LEFT, SEARCH_TOP, SEARCH_WIDTH, SEARCH_HEIGHT, FIELD)
     recess(px, LIST_LEFT, LIST_TOP, LIST_WIDTH, LIST_HEIGHT, LIST)
     recess(px, SCROLL_LEFT, LIST_TOP, SCROLL_WIDTH, LIST_HEIGHT, SLOT)
+    recess(px, STATUS_LEFT, LIST_TOP + LIST_HEIGHT + 4, STATUS_WIDTH, STATUS_HEIGHT, STATUS)
     player_inventory(px, TERMINAL_INVENTORY_LEFT, TERMINAL_INVENTORY_TOP)
     return px
 

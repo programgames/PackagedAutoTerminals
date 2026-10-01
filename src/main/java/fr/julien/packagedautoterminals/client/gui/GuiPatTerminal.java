@@ -17,20 +17,22 @@ import fr.julien.packagedautoterminals.client.BlockHighlighter;
 import fr.julien.packagedautoterminals.common.CrafterTypes;
 import fr.julien.packagedautoterminals.common.Feedback;
 import fr.julien.packagedautoterminals.common.MachineSnapshot;
+import fr.julien.packagedautoterminals.common.NetworkItems;
 import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.common.ProviderPairing;
 import fr.julien.packagedautoterminals.common.ProviderRole;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.common.SearchQuery;
+import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.common.TerminalContext;
-import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
@@ -119,11 +121,28 @@ public class GuiPatTerminal extends AEBaseGui {
      */
     private static final int GROUP_MACHINE_LEFT = LOCATE_LEFT - 20;
 
-    private static final int BUTTON_VIEW = 0;
+    /** The two states of a tab, stored right of the screen on the sheet. */
+    private static final int TAB_OFF_U = 330;
+    private static final int TAB_OFF_V = 40;
+    private static final int TAB_ON_U = 330;
+    private static final int TAB_ON_V = TAB_OFF_V + ContainerPatTerminal.TAB_HEIGHT + 2;
+
+    /**
+     * State chip: a tinted plate behind the right-hand text of a row.
+     *
+     * <p>Plain grey text had to be read word by word. A chip gives the eye a shape to catch,
+     * and a colour that says whether the player has something to do. Thermal and Mekanism
+     * both use the same device.
+     */
+    private static final int CHIP_FILL = 0x26000000;
+    private static final int CHIP_EDGE = 0x3D000000;
+    private static final int CHIP_WARNING_FILL = 0x2EA02020;
+    private static final int CHIP_WARNING_EDGE = 0x55902020;
 
     private final ContainerPatTerminal terminalContainer;
+    /** The two tab icons, resolved on first use. */
+    private ItemStack[] tabIcons;
     private GuiTextField search;
-    private GuiButton viewButton;
     /** False: patterns tab. True: machines tab. */
     private boolean machinesView;
     /**
@@ -201,13 +220,6 @@ public class GuiPatTerminal extends AEBaseGui {
         search.setFocused(true);
 
         buttonList.clear();
-        if (PatConfig.machinesTab) {
-            // The button starts at 4, and not at 2: the panel bevel takes the first three
-            // pixels of the screen, and the top edge of the button was cut by it.
-            viewButton = new PatButton(BUTTON_VIEW, guiLeft + LIST_LEFT, guiTop + 4, 84, 14, "");
-            buttonList.add(viewButton);
-            updateViewButton();
-        }
 
         getScrollBar()
                 .setLeft(ContainerPatTerminal.SCROLL_LEFT)
@@ -235,22 +247,17 @@ public class GuiPatTerminal extends AEBaseGui {
 
     @Override
     public void drawFG(int offsetX, int offsetY, int mouseX, int mouseY) {
-        // Without the Machines tab, the button does not exist: the title takes its place.
-        if (!PatConfig.machinesTab) {
-            // The space reaches the search field, not the width of the old button: that
-            // button does not exist in this mode.
-            fontRenderer.drawString(
-                    trim(I18n.format("gui.packagedautoterminals.pat_terminal"),
-                            ContainerPatTerminal.SEARCH_LEFT - 6 - LIST_LEFT),
-                    LIST_LEFT, 6, COLOR_TEXT);
-        }
+        // The title now lives in the band, and stays there whatever the open tab. It used to
+        // disappear the moment the Machines button took its place.
+        fontRenderer.drawString(
+                trim(I18n.format("gui.packagedautoterminals.pat_terminal"),
+                        ContainerPatTerminal.SEARCH_LEFT - 6 - LIST_LEFT),
+                LIST_LEFT, 5, COLOR_TEXT);
 
-        // Inventory label, and network summary. The summary speaks to the player; the packet
-        // size, which means nothing to anyone, goes into the tooltip. It serves to settle
-        // revision R2.
-        // The summary takes the whole line. The "Inventory" label is gone: it took half the
-        // space, and taught nobody anything.
-        int summaryY = ContainerPatTerminal.PLAYER_INVENTORY_TOP - 11;
+        drawTabs();
+
+        // The counts sit in the status bar, a shallow recess under the list.
+        int summaryY = ContainerPatTerminal.STATUS_TOP + 2;
 
         // The rows are built before the summary: the result counter depends on them.
         List<Line> lines = lines();
@@ -326,6 +333,111 @@ public class GuiPatTerminal extends AEBaseGui {
      * The defect only hit the **first** icon of the frame: the first `drawItem` resets the
      * colour to white, and every later icon then drew correctly.
      */
+    /** Left edge of a tab, by its index. */
+    private static int tabLeft(int index) {
+        return LIST_LEFT + index * (ContainerPatTerminal.TAB_WIDTH + ContainerPatTerminal.TAB_GAP);
+    }
+
+    /** How many tabs the screen shows. The Machines tab can be turned off in the config. */
+    private static int tabCount() {
+        return PatConfig.machinesTab ? 2 : 1;
+    }
+
+    /**
+     * Icon of a tab: a recipe holder for the patterns, a crafter for the machines.
+     *
+     * <p>Both are resolved once. One walks the item registry, the other reads the recipe type
+     * registry, and the strip is drawn on every frame.
+     */
+    private ItemStack tabIcon(int index) {
+        if (tabIcons == null) {
+            Item holder = NetworkItems.findRecipeHolder();
+            tabIcons = new ItemStack[] {
+                holder == null ? ItemStack.EMPTY : new ItemStack(holder),
+                CrafterTypes.iconFor(ContainerPatEditor.defaultRecipeType()),
+            };
+        }
+        return tabIcons[index];
+    }
+
+    private static String tabName(int index) {
+        return I18n.format(index == 0
+                ? "gui.packagedautoterminals.tab_patterns"
+                : "gui.packagedautoterminals.tab_machines");
+    }
+
+    /**
+     * The tab strip.
+     *
+     * <p>A single button used to toggle the two views, and the title disappeared behind it.
+     * Two tabs say what exists, which one is open, and leave the title alone. That is the AE2
+     * device, and the vanilla one.
+     */
+    private void drawTabs() {
+        for (int index = 0; index < tabCount(); index++) {
+            boolean active = (index == 1) == machinesView;
+            int left = tabLeft(index);
+            bindSheet();
+            drawModalRectWithCustomSizedTexture(left, ContainerPatTerminal.TAB_STRIP_TOP,
+                    active ? TAB_ON_U : TAB_OFF_U, active ? TAB_ON_V : TAB_OFF_V,
+                    ContainerPatTerminal.TAB_WIDTH, ContainerPatTerminal.TAB_HEIGHT,
+                    SHEET, SHEET);
+
+            ItemStack icon = tabIcon(index);
+            int textLeft = left + 8;
+            if (!icon.isEmpty()) {
+                drawItem(left + 6, ContainerPatTerminal.TAB_STRIP_TOP + 3, icon);
+                textLeft = left + 26;
+            }
+            fontRenderer.drawString(
+                    trim(tabName(index), left + ContainerPatTerminal.TAB_WIDTH - 6 - textLeft),
+                    textLeft, ContainerPatTerminal.TAB_STRIP_TOP + 8,
+                    active ? COLOR_TEXT : COLOR_DIM);
+        }
+    }
+
+    /** Index of the tab under these relative coordinates, or -1. */
+    private int tabUnder(int x, int y) {
+        if (y < ContainerPatTerminal.TAB_STRIP_TOP
+                || y >= ContainerPatTerminal.TAB_STRIP_TOP + ContainerPatTerminal.TAB_HEIGHT) {
+            return -1;
+        }
+        for (int index = 0; index < tabCount(); index++) {
+            int left = tabLeft(index);
+            if (x >= left && x < left + ContainerPatTerminal.TAB_WIDTH) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * A state chip, right aligned, with its text inside.
+     *
+     * <p>PITFALL, already paid for twice in this project: {@code drawRect} leaves the colour
+     * of {@code GlStateManager} set to the one it was given, and ends with {@code disableBlend}.
+     * The next textured draw then disappears, or draws its transparent pixels black. The chip
+     * therefore puts both back before it returns.
+     */
+    private void drawChip(String text, int right, int y, boolean warning) {
+        int width = fontRenderer.getStringWidth(text);
+        int left = right - width - 8;
+        int top = y + 2;
+        int bottom = y + 16;
+        drawRect(left, top, right, bottom, warning ? CHIP_WARNING_FILL : CHIP_FILL);
+        int edge = warning ? CHIP_WARNING_EDGE : CHIP_EDGE;
+        drawRect(left, top, right, top + 1, edge);
+        drawRect(left, bottom - 1, right, bottom, edge);
+        drawRect(left, top, left + 1, bottom, edge);
+        drawRect(right - 1, top, right, bottom, edge);
+        fontRenderer.drawString(text, left + 4, y + TEXT_OFFSET,
+                warning ? COLOR_WARNING : COLOR_TEXT);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+    }
+
     private void bindSheet() {
         bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -347,9 +459,11 @@ public class GuiPatTerminal extends AEBaseGui {
         if (line.crafter != null) {
             drawItem(LIST_LEFT + 2, y + 1, line.crafter.icon);
             String state = crafterState(line);
-            drawRight(state, y, crafterStateColor(line));
+            boolean warning = crafterStateColor(line) == COLOR_WARNING;
+            drawChip(state, LIST_LEFT + LIST_WIDTH - 4, y, warning);
             fontRenderer.drawString(
-                    trim(line.crafter.name, budget(LIST_LEFT + 22, state, LIST_LEFT + LIST_WIDTH - 4)),
+                    trim(line.crafter.name,
+                            budget(LIST_LEFT + 22, state, LIST_LEFT + LIST_WIDTH - 10)),
                     LIST_LEFT + 22, y + TEXT_OFFSET, COLOR_TEXT);
             return;
         }
@@ -376,11 +490,10 @@ public class GuiPatTerminal extends AEBaseGui {
 
             String state = groupState(line.group);
             fontRenderer.drawString(
-                    trim(groupTitle(line.group), budget(GROUP_TEXT, state, stateRight)),
+                    trim(groupTitle(line.group), budget(GROUP_TEXT, state, stateRight - 6)),
                     GROUP_TEXT, y + TEXT_OFFSET, COLOR_TEXT);
-            fontRenderer.drawString(state,
-                    stateRight - fontRenderer.getStringWidth(state), y + TEXT_OFFSET,
-                    COLOR_DIM);
+            drawChip(state, stateRight, y,
+                    ProviderPairing.missingRoleOf(line.group) != null);
 
             if (!machine.isEmpty()) {
                 drawItem(GROUP_MACHINE_LEFT, y + 1, machine);
@@ -618,24 +731,6 @@ public class GuiPatTerminal extends AEBaseGui {
                 : "gui.packagedautoterminals.recipes", count);
     }
 
-    private void updateViewButton() {
-        if (viewButton != null) {
-            viewButton.displayString = I18n.format(machinesView
-                    ? "gui.packagedautoterminals.tab_machines"
-                    : "gui.packagedautoterminals.tab_patterns");
-        }
-    }
-
-    @Override
-    protected void actionPerformed(GuiButton button) throws IOException {
-        if (button.id == BUTTON_VIEW) {
-            machinesView = !machinesView;
-            updateViewButton();
-            return;
-        }
-        super.actionPerformed(button);
-    }
-
     @Override
     public void updateScreen() {
         super.updateScreen();
@@ -674,6 +769,19 @@ public class GuiPatTerminal extends AEBaseGui {
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        int tab = tabUnder(mouseX - guiLeft, mouseY - guiTop);
+        if (tab >= 0) {
+            boolean wanted = tab == 1;
+            if (wanted != machinesView) {
+                machinesView = wanted;
+                // GuiScrollbar has no setter for the position. Collapsing the range to
+                // zero clamps it, and drawFG gives the bar its real range on the next frame.
+                getScrollBar().setRange(0, 0, 2);
+                mc.getSoundHandler().playSound(net.minecraft.client.audio.PositionedSoundRecord
+                        .getMasterRecord(net.minecraft.init.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            }
+            return;
+        }
         // E3: the cross comes before the field, otherwise the click would only move the caret.
         if (hasQuery() && overClear(mouseX - guiLeft, mouseY - guiTop)) {
             search.setText("");

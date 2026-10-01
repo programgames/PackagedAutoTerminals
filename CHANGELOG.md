@@ -54,6 +54,14 @@ a machine with no recipe holder is served from the ME network.
 
 ### Changed
 
+- **The terminal gets a title band, a tab strip and a status bar.** A single button used to
+  toggle the two views, and the title disappeared behind it. Two tabs now carry an item icon
+  and a label, the open one raised and the other sunken, the way AE2 draws its own. The title
+  stays in a band of its own, with the search field. The counts moved into a shallow recess
+  under the list, instead of floating on the panel. The screen grows from 338 to 362 pixels
+  tall; `GuiScaleFit` already handles a small window.
+- **The state of a row is a chip, not grey text.** A tinted plate with a border, red when the
+  player has something to fix. It gives the eye a shape to catch instead of a word to read.
 - **The Machines tab says something useful on each row.** It read "idle" on every line, which
   taught the player nothing: `TileCrafter.isBusy` answers true while a craft runs or while
   items sit in the input slots, a craft lasts a handful of ticks, and the terminal samples

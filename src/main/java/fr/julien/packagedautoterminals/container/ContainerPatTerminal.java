@@ -46,14 +46,22 @@ public class ContainerPatTerminal extends AEBaseContainer {
     public static final int ROWS = 12;
     /** Rows drawn in the sheet. Used to locate the bottom of the screen. */
     public static final int SHEET_ROWS = 16;
-    /** Height of the screen footer: label, inventory, margin. */
-    public static final int FOOTER = 100;
+    /** Height of the screen footer: status bar, inventory, margin. */
+    public static final int FOOTER = 104;
+    /** Title band: it carries the screen name and the search field. */
+    public static final int BAND_HEIGHT = 18;
+    /** Tab strip, right under the band. */
+    public static final int TAB_STRIP_TOP = BAND_HEIGHT;
+    public static final int TAB_HEIGHT = 22;
+    public static final int TAB_WIDTH = 92;
+    /** Gap between two tabs. */
+    public static final int TAB_GAP = 2;
     /** Height of one row, in pixels. */
     public static final int ROW_HEIGHT = 18;
     /** Left edge of the list area. */
     public static final int LIST_LEFT = 8;
-    /** Top of the list area. */
-    public static final int LIST_TOP = 22;
+    /** Top of the list area, under the band and the tab strip. */
+    public static final int LIST_TOP = TAB_STRIP_TOP + TAB_HEIGHT + 2;
     /** Width of the list area. */
     public static final int LIST_WIDTH = 288;
     /** Screen height, derived from the row count. */
@@ -63,10 +71,14 @@ public class ContainerPatTerminal extends AEBaseContainer {
     /** Horizontal offset of the inventory, to centre it in the widened screen. */
     public static final int PLAYER_INVENTORY_OFFSET_X = 71;
     /** Top of the player inventory. */
-    public static final int PLAYER_INVENTORY_TOP = LIST_TOP + ROWS * ROW_HEIGHT + 16;
+    public static final int PLAYER_INVENTORY_TOP = LIST_TOP + ROWS * ROW_HEIGHT + 22;
+    /** Status bar: the counts, in a shallow recess under the list. */
+    public static final int STATUS_TOP = LIST_TOP + ROWS * ROW_HEIGHT + 4;
+    public static final int STATUS_HEIGHT = 12;
+    public static final int STATUS_WIDTH = 304;
     /** Search field, on the title line. */
     public static final int SEARCH_LEFT = 150;
-    public static final int SEARCH_TOP = 4;
+    public static final int SEARCH_TOP = 3;
     public static final int SEARCH_WIDTH = 146;
     public static final int SEARCH_HEIGHT = 12;
 
