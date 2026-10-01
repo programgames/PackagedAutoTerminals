@@ -211,7 +211,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
      */
     public void removeRecipe(int dimension, BlockPos pos, int index) {
         IGrid grid = grid();
-        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+        if (grid == null || !allowed()) {
             return;
         }
 
@@ -246,7 +246,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
      */
     public void newRecipe(int dimension, BlockPos pos) {
         IGrid grid = grid();
-        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+        if (grid == null || !allowed()) {
             return;
         }
         // One scan serves the whole command. It used to walk the grid four times for a single
@@ -255,6 +255,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
         List<ProviderSnapshot> all = ProviderScanner.scan(grid);
         ProviderSnapshot target = snapshotAt(all, dimension, pos);
         if (target == null) {
+            tell("gui.packagedautoterminals.machine_gone");
             return;
         }
 
@@ -316,7 +317,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
      */
     public void removeHolder(int dimension, BlockPos pos) {
         IGrid grid = grid();
-        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+        if (grid == null || !allowed()) {
             return;
         }
 
@@ -347,7 +348,11 @@ public class ContainerPatTerminal extends AEBaseContainer {
             removed++;
         }
 
-        if (refused) {
+        if (refused && removed > 0) {
+            // The count used to be thrown away, and the player read "the network is full"
+            // while half of their machines had in fact been emptied.
+            tell("gui.packagedautoterminals.holders_partial", removed, group.machines.size() - removed);
+        } else if (refused) {
             tell("gui.packagedautoterminals.network_full");
         } else if (removed == 0) {
             tell("gui.packagedautoterminals.no_holder_here");
@@ -375,7 +380,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
      */
     public void insertHolders(int dimension, BlockPos pos) {
         IGrid grid = grid();
-        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+        if (grid == null || !allowed()) {
             return;
         }
         ProviderPairing.Group group =
@@ -418,6 +423,85 @@ public class ContainerPatTerminal extends AEBaseContainer {
         refreshNow();
     }
 
+    /**
+     * May this player change the machines of this network?
+     *
+     * <p>A refusal used to return without a word. On a server, a player without the BUILD
+     * permission clicked a row, pressed Save, pressed delete, and nothing happened and
+     * nothing was said; they read it as a broken mod.
+     */
+    private boolean allowed() {
+        if (hasAccess(SecurityPermissions.BUILD, false)) {
+            return true;
+        }
+        tell("gui.packagedautoterminals.no_permission");
+        return false;
+    }
+
+    /**
+     * Copies every recipe that sits on one side of the group into the machines that lack it.
+     *
+     * <p>This is the gesture the mod was built for, and it was missing. PackagedAuto needs the
+     * same recipe in the Packager and in the Unpackager; the terminal knew how to tell the
+     * player that a recipe was on one side only, and the only way to fix it was to open that
+     * recipe and press Save, once per recipe. A pair that gained a new Unpackager therefore
+     * cost twenty openings.
+     *
+     * <p>The recipes to copy are chosen from the snapshot, before any write: a machine served
+     * by the first copy must not change the verdict on the next one.
+     */
+    public void repairGroup(int dimension, BlockPos pos) {
+        IGrid grid = grid();
+        if (grid == null || !allowed()) {
+            return;
+        }
+        ProviderPairing.Group group =
+                ProviderPairing.groupOf(ProviderPairing.group(ProviderScanner.scan(grid)),
+                        dimension, pos);
+        if (group == null) {
+            tell("gui.packagedautoterminals.machine_gone");
+            return;
+        }
+
+        List<IRecipeInfo> uneven = new ArrayList<>();
+        for (IRecipeInfo recipe : group.recipes) {
+            if (!group.isComplete(recipe)) {
+                uneven.add(recipe);
+            }
+        }
+        if (uneven.isEmpty()) {
+            tell("gui.packagedautoterminals.group_already_even");
+            return;
+        }
+
+        int copied = 0;
+        int full = 0;
+        int withoutHolder = 0;
+        for (IRecipeInfo recipe : uneven) {
+            // A null old recipe means "add it where it is missing": applyTo leaves a machine
+            // that already carries it untouched, and still honours the twenty recipe cap.
+            RecipeWriter.Result result =
+                    RecipeWriter.apply(grid, getActionSource(), group.machines, null, recipe);
+            copied += result.changed;
+            full += result.full;
+            withoutHolder += result.withoutHolder;
+        }
+
+        if (copied == 0) {
+            tell("gui.packagedautoterminals.write_failed");
+        } else if (withoutHolder > 0) {
+            tell("gui.packagedautoterminals.applied_partial", copied, withoutHolder);
+        } else if (full > 0) {
+            tell("gui.packagedautoterminals.applied_partial_full", copied, full);
+        } else {
+            tell(copied == 1
+                            ? "gui.packagedautoterminals.applied_to_one"
+                            : "gui.packagedautoterminals.applied_to",
+                    copied);
+        }
+        refreshNow();
+    }
+
     /** Message shown inside the screen, not in the action bar. */
     private void tell(String key, Object... arguments) {
         feedback = Feedback.pack(key, arguments);
@@ -432,11 +516,12 @@ public class ContainerPatTerminal extends AEBaseContainer {
      */
     public void openEditor(int dimension, BlockPos pos, int index) {
         IGrid grid = grid();
-        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+        if (grid == null || !allowed()) {
             return;
         }
         List<ProviderSnapshot> all = ProviderScanner.scan(grid);
         if (snapshotAt(all, dimension, pos) == null) {
+            tell("gui.packagedautoterminals.machine_gone");
             return;
         }
         openEditor(ProviderPairing.groupOf(ProviderPairing.group(all), dimension, pos),

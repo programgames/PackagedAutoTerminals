@@ -129,6 +129,7 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int SEARCH_ICON_SIZE = 8;
     private static final int EJECT_U = 342;
     private static final int INSERT_U = 414;
+    private static final int REPAIR_U = 428;
     private static final int PENCIL_U = 356;
     private static final int CROSS_U = 370;
     private static final int ACTION_SIZE = 10;
@@ -682,11 +683,10 @@ public class GuiPatTerminal extends AEBaseGui {
                 // that has them all can give them back. The arrow says which way it goes.
                 bindSheet();
                 drawModalRectWithCustomSizedTexture(stateRight - ACTION_SIZE, y + 4,
-                        needsHolder(line.group) ? INSERT_U : EJECT_U, GLYPH_V,
+                        groupButton(line.group), GLYPH_V,
                         ACTION_SIZE, ACTION_SIZE, SHEET, SHEET);
             } else {
-                drawChip(state, stateRight, y,
-                        ProviderPairing.missingRoleOf(line.group) != null);
+                drawChip(state, stateRight, y, groupTroubled(line.group));
             }
 
             if (!machine.isEmpty()) {
@@ -795,13 +795,40 @@ public class GuiPatTerminal extends AEBaseGui {
         return false;
     }
 
+    /**
+     * The glyph of the one button a group row carries, and what it will do.
+     *
+     * <p>Three jobs share one place, in the order of what the group needs first. A group whose
+     * two sides have drifted apart wants them made equal. A group whose machines wait for a
+     * recipe holder wants one. Anything else can give its holders back.
+     */
+    private int groupButton(ProviderPairing.Group group) {
+        if (unevenCount(group) > 0) {
+            return REPAIR_U;
+        }
+        return needsHolder(group) ? INSERT_U : EJECT_U;
+    }
+
+    /** Which packet the one button of a group row sends. */
+    private byte groupButtonAction(ProviderPairing.Group group) {
+        if (unevenCount(group) > 0) {
+            return PacketRecipeAction.ACTION_REPAIR_GROUP;
+        }
+        return needsHolder(group)
+                ? PacketRecipeAction.ACTION_INSERT_HOLDER
+                : PacketRecipeAction.ACTION_REMOVE_HOLDER;
+    }
+
     /** What a button of the hovered row does, in one line. */
     private List<String> actionTooltip(Line line, int action) {
         List<String> lines = new ArrayList<>();
         if (action == BUTTON_EJECT) {
-            lines.add(I18n.format(needsHolder(line.group)
-                    ? "gui.packagedautoterminals.insert_holder_hint"
-                    : "gui.packagedautoterminals.remove_holder_hint"));
+            int glyph = groupButton(line.group);
+            lines.add(I18n.format(glyph == REPAIR_U
+                    ? "gui.packagedautoterminals.repair_hint"
+                    : (glyph == INSERT_U
+                            ? "gui.packagedautoterminals.insert_holder_hint"
+                            : "gui.packagedautoterminals.remove_holder_hint")));
         } else if (action == BUTTON_EDIT) {
             lines.add(I18n.format("gui.packagedautoterminals.edit_hint"));
         } else {
@@ -996,20 +1023,65 @@ public class GuiPatTerminal extends AEBaseGui {
         return I18n.format("gui.packagedautoterminals.group_of", group.size());
     }
 
-    /** State of a group: recipe count, or missing role. */
+    /**
+     * State of a group, from the most serious fault to the plain count.
+     *
+     * <p>The row used to show the recipe count and nothing else once both roles were there.
+     * A Packager that had lost its channel, a machine whose recipe holder someone had taken
+     * out, and a pair whose two sides had drifted apart all read as a healthy "6 recipes"
+     * while nothing ran. Each of those three now takes the chip, in red.
+     */
     private String groupState(ProviderPairing.Group group) {
-        if (group.recipes.isEmpty()) {
-            return I18n.format("gui.packagedautoterminals.no_recipe_yet");
-        }
         ProviderRole missing = ProviderPairing.missingRoleOf(group);
         if (missing != null) {
             return I18n.format("gui.packagedautoterminals.missing_"
                     + missing.name().toLowerCase(Locale.ROOT));
         }
+        if (hasInactive(group)) {
+            return I18n.format("gui.packagedautoterminals.inactive");
+        }
+        if (group.recipes.isEmpty()) {
+            return I18n.format("gui.packagedautoterminals.no_recipe_yet");
+        }
+        if (needsHolder(group)) {
+            return I18n.format("gui.packagedautoterminals.no_holder");
+        }
+        int uneven = unevenCount(group);
+        if (uneven > 0) {
+            return I18n.format("gui.packagedautoterminals.group_uneven", uneven);
+        }
         int count = group.recipes.size();
         return I18n.format(count == 1
                 ? "gui.packagedautoterminals.recipe"
                 : "gui.packagedautoterminals.recipes", count);
+    }
+
+    /** Does a machine of the group sit without a channel? It then runs nothing, in silence. */
+    private boolean hasInactive(ProviderPairing.Group group) {
+        for (ProviderSnapshot machine : group.machines) {
+            if (!machine.active) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Recipes of the group that only one of its machines carries. */
+    private int unevenCount(ProviderPairing.Group group) {
+        int uneven = 0;
+        for (IRecipeInfo recipe : group.recipes) {
+            if (!group.isComplete(recipe)) {
+                uneven++;
+            }
+        }
+        return uneven;
+    }
+
+    /** Is the chip of this group a fault, hence drawn in the warning colour? */
+    private boolean groupTroubled(ProviderPairing.Group group) {
+        return ProviderPairing.missingRoleOf(group) != null
+                || hasInactive(group)
+                || (!group.recipes.isEmpty() && (needsHolder(group) || unevenCount(group) > 0));
     }
 
     @Override
@@ -1105,9 +1177,7 @@ public class GuiPatTerminal extends AEBaseGui {
         if (clicked != null && clicked.group != null) {
             int action = actionUnder(clicked, mouseX - guiLeft, mouseY - guiTop);
             if (action == BUTTON_EJECT) {
-                send(clicked.anchor(), -1, needsHolder(clicked.group)
-                        ? PacketRecipeAction.ACTION_INSERT_HOLDER
-                        : PacketRecipeAction.ACTION_REMOVE_HOLDER);
+                send(clicked.anchor(), -1, groupButtonAction(clicked.group));
                 return;
             }
             if (action == BUTTON_EDIT) {
@@ -1174,12 +1244,31 @@ public class GuiPatTerminal extends AEBaseGui {
      * <p>Without the close, the player would not see the world, hence nothing at all.
      */
     private void locate(ProviderPairing.Group group) {
+        int dimension = group.machines.get(0).dimension;
+        if (dimension != mc.player.world.provider.getDimension()) {
+            // The highlighter only draws in the world the player stands in, which is right.
+            // Closing the screen on nothing at all is not: the button read as broken.
+            say("gui.packagedautoterminals.other_dimension", true);
+            return;
+        }
         List<BlockPos> positions = new ArrayList<>();
         for (ProviderSnapshot machine : group.machines) {
             positions.add(machine.pos);
         }
-        BlockHighlighter.highlight(group.machines.get(0).dimension, positions);
+        BlockHighlighter.highlight(dimension, positions);
         mc.player.closeScreen();
+    }
+
+    /**
+     * Shows a message that the server never sent.
+     *
+     * <p>Every other message of this screen travels from the server through {@code feedback}.
+     * A few refusals are decided here, on the client, and they need the same line.
+     */
+    private void say(String key, boolean refusal) {
+        message = I18n.format(key);
+        messageExpiry = System.currentTimeMillis() + MESSAGE_DURATION;
+        messageRefused = refusal;
     }
 
     private void send(ProviderSnapshot anchor, int index, byte action) {
@@ -1229,10 +1318,28 @@ public class GuiPatTerminal extends AEBaseGui {
         if (line.isGroupHeader()) {
             lines.add(groupTitle(line.group));
             for (ProviderSnapshot machine : line.group.machines) {
+                // The state of each machine, which the row cannot hold. A machine without a
+                // channel runs nothing, and a machine without a recipe holder takes nothing:
+                // both used to be invisible on this tab.
+                String fault = "";
+                if (!machine.active) {
+                    fault = TextFormatting.RED + " ("
+                            + I18n.format("gui.packagedautoterminals.inactive") + ")";
+                } else if (!machine.holderPresent) {
+                    fault = TextFormatting.RED + " ("
+                            + I18n.format("gui.packagedautoterminals.no_holder") + ")";
+                }
                 lines.add(TextFormatting.GRAY + machine.name + " : "
                         + I18n.format("gui.packagedautoterminals.position",
                                 machine.pos.getX(), machine.pos.getY(), machine.pos.getZ(),
-                                machine.dimension));
+                                machine.dimension) + fault);
+            }
+            int uneven = unevenCount(line.group);
+            if (uneven > 0) {
+                lines.add(TextFormatting.RED
+                        + I18n.format("gui.packagedautoterminals.group_uneven", uneven));
+                lines.add(TextFormatting.GRAY
+                        + I18n.format("gui.packagedautoterminals.repair_hint"));
             }
             ProviderRole missing = ProviderPairing.missingRoleOf(line.group);
             if (missing != null) {
@@ -1242,6 +1349,11 @@ public class GuiPatTerminal extends AEBaseGui {
                         "gui.packagedautoterminals.missing_group_help",
                         I18n.format("gui.packagedautoterminals.role_"
                                 + missing.name().toLowerCase(Locale.ROOT))));
+                // The terminal lists what the AE2 grid holds, and a machine in a chunk that
+                // Minecraft has unloaded leaves that grid. The block is still in the world,
+                // and the screen cannot see it. Saying so costs one line and saves a hunt.
+                lines.add(TextFormatting.GRAY
+                        + I18n.format("gui.packagedautoterminals.missing_chunk_help"));
             }
             IRecipeType machineType = groupMachineType(line.group);
             if (machineType != null) {

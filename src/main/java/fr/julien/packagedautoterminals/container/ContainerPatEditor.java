@@ -520,7 +520,7 @@ public class ContainerPatEditor extends AEBaseContainer {
             return false;
         }
         IGrid grid = terminal.grid();
-        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+        if (grid == null || !allowed()) {
             return false;
         }
 
@@ -528,6 +528,9 @@ public class ContainerPatEditor extends AEBaseContainer {
         ProviderPairing.Group group =
                 ProviderPairing.groupOf(ProviderPairing.group(all), dimension, pos);
         if (group == null) {
+            // The machine was broken while this screen was open. Pressing Save used to do
+            // nothing at all, and say nothing either.
+            tell("gui.packagedautoterminals.machine_gone");
             return false;
         }
 
@@ -615,14 +618,28 @@ public class ContainerPatEditor extends AEBaseContainer {
      */
     public void renameGroup(String name) {
         IGrid grid = terminal.grid();
-        if (grid == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+        if (grid == null || !allowed()) {
             return;
         }
-        ProviderPairing.Group group =
-                ProviderPairing.groupOf(ProviderPairing.group(ProviderScanner.scan(grid)),
-                        dimension, pos);
+        List<ProviderPairing.Group> groups = ProviderPairing.group(ProviderScanner.scan(grid));
+        ProviderPairing.Group group = ProviderPairing.groupOf(groups, dimension, pos);
         if (group == null) {
+            tell("gui.packagedautoterminals.machine_gone");
             return;
+        }
+
+        // A name is the explicit link between two groups, so two groups that share one are
+        // joined into a single row, and every later write reaches all of their machines.
+        // That is the feature, and nothing used to warn the player before it happened.
+        String clean = GroupNames.sanitize(name);
+        boolean merges = false;
+        if (!clean.isEmpty()) {
+            for (ProviderPairing.Group other : groups) {
+                if (other != group && clean.equals(other.customName())) {
+                    merges = true;
+                    break;
+                }
+            }
         }
 
         // One storage for the whole server: GroupNames.get hands back the overworld
@@ -631,8 +648,10 @@ public class ContainerPatEditor extends AEBaseContainer {
         for (ProviderSnapshot machine : group.machines) {
             names.set(machine.dimension, machine.pos, name);
         }
-        groupName = GroupNames.sanitize(name);
-        tell("gui.packagedautoterminals.renamed");
+        groupName = clean;
+        tell(merges
+                ? "gui.packagedautoterminals.name_merges"
+                : "gui.packagedautoterminals.renamed");
     }
 
     /**
@@ -671,6 +690,20 @@ public class ContainerPatEditor extends AEBaseContainer {
     public boolean dirty;
     /** Tab requested while unsaved work was in progress. */
     private int pendingTab = Integer.MIN_VALUE;
+
+    /**
+     * May this player change the machines of this network?
+     *
+     * <p>A refusal used to return without a word, so a player without the BUILD permission
+     * pressed Save and read nothing at all.
+     */
+    private boolean allowed() {
+        if (hasAccess(SecurityPermissions.BUILD, false)) {
+            return true;
+        }
+        tell("gui.packagedautoterminals.no_permission");
+        return false;
+    }
 
     /** Message shown inside the screen, not in the action bar. */
     private void tell(String key, Object... arguments) {
@@ -806,8 +839,12 @@ public class ContainerPatEditor extends AEBaseContainer {
             return;
         }
         IGrid grid = grid();
+        if (grid == null || !allowed()) {
+            return;
+        }
         ProviderPairing.Group group = currentGroup();
-        if (grid == null || group == null || !hasAccess(SecurityPermissions.BUILD, false)) {
+        if (group == null) {
+            tell("gui.packagedautoterminals.machine_gone");
             return;
         }
         // Same rule as save: the recipe is named, never its position.

@@ -41,6 +41,8 @@ public class PacketRecipeAction implements IMessage {
     public static final byte ACTION_SCROLL_TABS = 9;
     /** Takes a blank recipe holder out of the network for each machine of the group. */
     public static final byte ACTION_INSERT_HOLDER = 10;
+    /** Copies every recipe of the group into the machines of the group that lack it. */
+    public static final byte ACTION_REPAIR_GROUP = 11;
 
     public int dimension;
     public BlockPos pos = BlockPos.ORIGIN;
@@ -89,6 +91,8 @@ public class PacketRecipeAction implements IMessage {
                         container.removeHolder(message.dimension, message.pos);
                     } else if (message.action == ACTION_INSERT_HOLDER) {
                         container.insertHolders(message.dimension, message.pos);
+                    } else if (message.action == ACTION_REPAIR_GROUP) {
+                        container.repairGroup(message.dimension, message.pos);
                     }
                     return;
                 }

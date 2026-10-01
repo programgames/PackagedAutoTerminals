@@ -152,7 +152,15 @@ public final class RecipeWriter {
             if (index < 0) {
                 return Outcome.UNCHANGED;
             }
-            recipes.remove(index);
+            // Every copy goes, not the first one.
+            //
+            // A recipe holder can list the same recipe twice, and the terminal shows the
+            // distinct ones. Removing one copy left the row on screen, so the player clicked
+            // delete again, and again, with nothing telling them why.
+            while (index >= 0) {
+                recipes.remove(index);
+                index = indexOf(recipes, oldRecipe);
+            }
         } else if (index >= 0) {
             recipes.set(index, newRecipe);
         } else {

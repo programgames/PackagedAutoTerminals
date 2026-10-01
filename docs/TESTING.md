@@ -26,6 +26,7 @@
 | K — Wireless universal terminal (AE2WUT) | 🆕 never tested |
 | L — Opening key | 🆕 never tested |
 | M — Reading and editing comfort | 🆕 never tested |
+| N — The cases nobody had thought of | 🆕 never tested |
 
 Fixes born from these runs: name frame raised to 16 pixels, buttons placed under the preview,
 single feedback message trimmed to the frame, grouping by the name given by the player, text
@@ -653,6 +654,101 @@ In `run/config/packagedautoterminals.cfg`, set `machinesTab` to `false`.
 Copy `build/libs/packagedautoterminals-1.12.2-0.1.0.jar` into
 `H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`.
 → The instance starts, and the terminal works with your AE2UEL fork.
+
+---
+
+## N — The cases nobody had thought of 🆕
+
+> Written on 2026-10-01, after reading the code against the need it serves: edit, change and
+> remove a recipe without walking to the machine.
+
+### N1 — Repair a pair that has drifted apart
+
+1. Encode three recipes in a Packager that has no partner.
+2. Place an Unpackager beside it, with no recipe holder.
+3. Open the terminal. The group joins the two machines, and the chip reads
+   `3 on one side only`, in red.
+4. Hover the row. The button shows two turning arrows.
+5. Click it.
+
+**Expected**: the three recipes reach the Unpackager at once, the chip returns to
+`3 recipes`, and a blank recipe holder leaves the ME network for the Unpackager.
+
+### N2 — A machine without a channel
+
+1. Cut the channel of the Packager of a working pair, by pulling the cable.
+2. Open the terminal.
+
+**Expected**: the chip of the group reads `inactive`, in red, and the tooltip names the
+machine that lost it. Before this release the row read `6 recipes`, and nothing ran.
+
+### N3 — A machine without its recipe holder
+
+1. Take the recipe holder out of one machine of a pair, by hand.
+2. Open the terminal.
+
+**Expected**: the chip reads `no holder`, in red, and the tooltip names that machine. Hover
+the row: the button shows an arrow entering a box, and a click serves the machine from the
+network.
+
+### N4 — A refusal that used to be silent
+
+1. On a server, revoke the **build** permission of a player in an ME Security Terminal.
+2. Open the terminal with that player and click a group row, then press Save in the editor.
+
+**Expected**: `You are not allowed to build on this network`, in red. Before this release
+nothing happened and nothing was said.
+
+### N5 — The machine is broken while the editor is open
+
+1. Open the editor on a recipe.
+2. With a second player, or in creative, break the machine.
+3. Press Save.
+
+**Expected**: `That machine is no longer on the network`. Before this release the button did
+nothing at all.
+
+### N6 — The same name on two groups
+
+1. Name a pair `ingots`.
+2. Name a second, unrelated pair `ingots` as well.
+
+**Expected**: the second rename answers `Another group carries this name: the two will
+merge`, and the list then shows one row of four machines. The merge is the feature; the
+warning is new.
+
+### N7 — The pin on another dimension
+
+1. Join two networks across dimensions with an ME Quantum Bridge.
+2. Click the pin of a group whose machines sit in the other dimension.
+
+**Expected**: `These machines are in another dimension`, and the screen stays open. Before
+this release the screen closed on nothing.
+
+### N8 — A duplicate recipe in one holder
+
+1. With a Package Recipe Encoder, write the same recipe twice into one holder.
+2. Put the holder back and remove that recipe from the terminal.
+
+**Expected**: one click removes both copies and the row leaves the list. Before this release
+the row stayed, and the player had to click again.
+
+### N9 — Writing while the machine works ⚠ unverified
+
+> This one has no fix behind it. It is here to be answered, not to be confirmed.
+
+`TilePackager.setPatternStack` writes slot 10 of the inventory and touches neither
+`isWorking`, nor `remainingProgress`, nor `currentPattern`. A craft that is running therefore
+keeps the pattern it started with, while the list under it changes. Read in the bytecode of
+PackagedAuto 1.0.24.73.
+
+1. Set up a Packager that packages continuously, with a long chain to keep it busy.
+2. While it works, change that very recipe from the terminal, then save.
+3. Watch the ME network for a few minutes.
+
+**Expected**, and to be proven: no item is lost, no package is left half built, and the next
+craft uses the new recipe. If anything is lost, the terminal must refuse to write into a busy
+machine, and `IPackageCraftingMachine.isBusy` is the test to use.
 
 ---
 

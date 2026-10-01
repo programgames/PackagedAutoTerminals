@@ -107,6 +107,7 @@ SEARCH_ICON_U = 330
 SEARCH_ICON_SIZE = 8
 EJECT_U = 342
 INSERT_U = 414
+REPAIR_U = 428
 PENCIL_U = 356
 CROSS_U = 370
 ACTION_SIZE = 10
@@ -322,6 +323,23 @@ def draw_insert(px, x0, y0):
     fill(px, x0, y0 + 9, ACTION_SIZE, 1, EDGE)
 
 
+def draw_repair(px, x0, y0):
+    """Two arrows turning the same way: the two sides of the group are made equal."""
+    top = {0: (3, 6), 1: (2, 7)}
+    for row, (left, right) in top.items():
+        fill(px, x0 + left, y0 + row, right - left + 1, 1, EDGE)
+    bottom = {8: (3, 6), 9: (2, 7)}
+    for row, (left, right) in bottom.items():
+        fill(px, x0 + left, y0 + row, right - left + 1, 1, EDGE)
+    # The two shafts, one going down on the right, one going up on the left.
+    fill(px, x0 + 7, y0 + 1, 1, 4, EDGE)
+    fill(px, x0 + 2, y0 + 5, 1, 4, EDGE)
+    # The heads, one at each end.
+    for step in range(3):
+        fill(px, x0 + 5 + step, y0 + 2 + step, 1, 1, EDGE)
+        fill(px, x0 + 4 - step, y0 + 7 - step, 1, 1, EDGE)
+
+
 def draw_pencil(px, x0, y0):
     """Pencil: the row is edited."""
     for step in range(6):
@@ -384,6 +402,7 @@ def build_terminal():
     draw_magnifier(px, SEARCH_ICON_U, GLYPH_V)
     draw_eject(px, EJECT_U, GLYPH_V)
     draw_insert(px, INSERT_U, GLYPH_V)
+    draw_repair(px, REPAIR_U, GLYPH_V)
     draw_pencil(px, PENCIL_U, GLYPH_V)
     draw_cross(px, CROSS_U, GLYPH_V)
     draw_sort(px, SORT_U, GLYPH_V)

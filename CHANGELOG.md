@@ -12,6 +12,12 @@ a machine with no recipe holder is served from the ME network.
 
 ### Added
 
+- **One gesture makes the two sides of a group equal again.** PackagedAuto needs the same
+  recipe in the Packager and in the Unpackager, and the terminal knew how to say that a recipe
+  sat on one side only. Fixing it meant opening that recipe and pressing Save, once per
+  recipe: a pair that gained a new Unpackager cost twenty openings. The button of a hovered
+  group row now shows two turning arrows when the sides have drifted apart, and one click
+  copies every missing recipe where it belongs.
 - **One button puts the recipe holders in, and takes them out.** Hovering a group row shows
   an arrow: it points into the box while a machine of the group waits for a holder, and out
   of it once they all have one. A new pair used to mean walking to both machines with a
@@ -34,6 +40,29 @@ a machine with no recipe holder is served from the ME network.
 
 ### Fixed
 
+- **A group row said nothing about the three faults that stop it.** It showed the recipe count
+  and nothing else once both roles were there. A Packager that had lost its channel, a machine
+  whose recipe holder someone had taken out, and a pair whose two sides had drifted apart all
+  read as a healthy "6 recipes" while nothing ran. Each one now takes the chip, in red, and
+  the tooltip names the machine at fault.
+- **Every refusal of a permission was silent.** Eight checks of `SecurityPermissions.BUILD`
+  returned without a word. On a server a player without that permission clicked a row, pressed
+  Save, pressed delete, and nothing happened and nothing was said.
+- **Saving after the machine was broken was silent too.** `save`, `renameGroup` and
+  `deleteCurrent` returned without a message when the group had left the network.
+- **A partial return of the recipe holders hid its own count.** When the network refused one
+  holder, the terminal said only "the network cannot store the holder", while half of the
+  machines had in fact been emptied.
+- **Removing a recipe listed twice in one holder took two clicks.** `RecipeWriter` removed the
+  first copy only, and the terminal shows the distinct recipes, so the row stayed with nothing
+  telling the player why.
+- **Nothing warned that naming two groups alike joins them.** The name is the explicit link
+  between two groups, and the merge is the feature; the rename now says so before it happens.
+- **The missing role message did not mention unloaded chunks.** The terminal lists what the
+  AE2 grid holds, and a machine in a chunk Minecraft has unloaded leaves that grid while the
+  block stays in the world. The message now says so.
+- **The pin closed the screen on nothing when the machines were in another dimension.** It now
+  says where they are and stays open.
 - **A full group could no longer be edited at all.** A left click on the group row sends
   `ACTION_NEW`, and `ContainerPatTerminal.newRecipe` refused to open the editor once the group
   held twenty recipes. The editor is the only screen that deletes a recipe, so the player
