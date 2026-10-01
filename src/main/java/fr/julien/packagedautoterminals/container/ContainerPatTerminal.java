@@ -50,18 +50,23 @@ public class ContainerPatTerminal extends AEBaseContainer {
     public static final int FOOTER = 104;
     /** Title band: it carries the screen name and the search field. */
     public static final int BAND_HEIGHT = 18;
-    /** Tab strip, right under the band. */
-    public static final int TAB_STRIP_TOP = BAND_HEIGHT;
+    /**
+     * Tab strip, under the band.
+     *
+     * <p>Two pixels of panel separate it from the band, and three from the list. Without them
+     * the three bands read as one block, and the tabs looked glued to the title.
+     */
+    public static final int TAB_STRIP_TOP = BAND_HEIGHT + 2;
     public static final int TAB_HEIGHT = 22;
     public static final int TAB_WIDTH = 92;
-    /** Gap between two tabs. */
-    public static final int TAB_GAP = 2;
+    /** Gap between two tabs. Two pixels read as one wide tab cut in half. */
+    public static final int TAB_GAP = 4;
     /** Height of one row, in pixels. */
     public static final int ROW_HEIGHT = 18;
     /** Left edge of the list area. */
     public static final int LIST_LEFT = 8;
     /** Top of the list area, under the band and the tab strip. */
-    public static final int LIST_TOP = TAB_STRIP_TOP + TAB_HEIGHT + 2;
+    public static final int LIST_TOP = TAB_STRIP_TOP + TAB_HEIGHT + 3;
     /** Width of the list area. */
     public static final int LIST_WIDTH = 288;
     /** Screen height, derived from the row count. */

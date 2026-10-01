@@ -495,15 +495,20 @@ public class GuiPatTerminal extends AEBaseGui {
                     ContainerPatTerminal.TAB_WIDTH, ContainerPatTerminal.TAB_HEIGHT,
                     SHEET, SHEET);
 
+            // Eight pixels of air on the left, six between the icon and the label, eight
+            // after it. The icon used to sit four pixels from the bevel, and the label four
+            // from the icon, so the tab read as full even when it was mostly empty.
             ItemStack icon = tabIcon(index);
-            int textLeft = left + 8;
+            int textLeft = left + 10;
             if (!icon.isEmpty()) {
-                drawItem(left + 6, ContainerPatTerminal.TAB_STRIP_TOP + 3, icon);
-                textLeft = left + 26;
+                drawItem(left + 8, ContainerPatTerminal.TAB_STRIP_TOP + 3, icon);
+                textLeft = left + 30;
             }
             fontRenderer.drawString(
-                    trim(tabName(index), left + ContainerPatTerminal.TAB_WIDTH - 6 - textLeft),
-                    textLeft, ContainerPatTerminal.TAB_STRIP_TOP + 8,
+                    trim(tabName(index), left + ContainerPatTerminal.TAB_WIDTH - 8 - textLeft),
+                    textLeft,
+                    // An eight pixel line centred in a twenty two pixel tab.
+                    ContainerPatTerminal.TAB_STRIP_TOP + 7,
                     active ? COLOR_TEXT : COLOR_DIM);
         }
     }

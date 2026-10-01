@@ -53,10 +53,12 @@ FOOTER = 104
 LIST_LEFT = 8
 # Title band from 0 to 18, tab strip from 18 to 40, then the list.
 BAND_HEIGHT = 18
-TAB_STRIP_TOP = BAND_HEIGHT
+# Two pixels of panel between the band and the strip, three between the strip and the list.
+# Without them the three bands read as one block, and the tabs looked glued to the title.
+TAB_STRIP_TOP = BAND_HEIGHT + 2
 TAB_HEIGHT = 22
 TAB_WIDTH = 92
-LIST_TOP = TAB_STRIP_TOP + TAB_HEIGHT + 2
+LIST_TOP = TAB_STRIP_TOP + TAB_HEIGHT + 3
 LIST_WIDTH = 288
 ROW_HEIGHT = 18
 LIST_HEIGHT = MAX_ROWS * ROW_HEIGHT

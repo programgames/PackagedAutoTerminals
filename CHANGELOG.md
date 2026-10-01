@@ -59,7 +59,10 @@ a machine with no recipe holder is served from the ME network.
   and a label, the open one raised and the other sunken, the way AE2 draws its own. The title
   stays in a band of its own, with the search field. The counts moved into a shallow recess
   under the list, instead of floating on the panel. The screen grows from 338 to 362 pixels
-  tall; `GuiScaleFit` already handles a small window.
+  tall; `GuiScaleFit` already handles a small window. Two pixels of panel separate the band
+  from the strip and three separate the strip from the list, four separate the two tabs, and
+  the icon and the label of a tab each keep their air. Without that the three bands read as
+  one block and the two tabs read as one wide tab cut in half.
 - **The search field says what it is for, and whether it is listening.** A magnifier sits
   inside it, and a light ring surrounds it while it has focus. It was a plain dark rectangle.
 - **The list shows its own hierarchy.** A rule closes each group header, a guide runs in front

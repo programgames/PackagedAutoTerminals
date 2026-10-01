@@ -10,8 +10,8 @@ SHEET = Image.open(
 ).convert('RGBA')
 
 WIDTH, ROWS, ROW_H = 320, 12, 18
-BAND, TAB_TOP, TAB_H, TAB_W, TAB_GAP = 18, 18, 22, 92, 2
-LIST_TOP = TAB_TOP + TAB_H + 2
+BAND, TAB_TOP, TAB_H, TAB_W, TAB_GAP = 18, 20, 22, 92, 4
+LIST_TOP = TAB_TOP + TAB_H + 3
 LIST_LEFT, LIST_WIDTH = 8, 288
 FOOTER = 104
 HEIGHT = LIST_TOP + ROWS * ROW_H + FOOTER
@@ -59,9 +59,9 @@ for index, (name, active) in enumerate([('Patterns', True), ('Machines', False)]
     u, v = (330, 64) if active else (330, 40)
     screen.alpha_composite(SHEET.crop((u, v, u + TAB_W, v + TAB_H)), (left, TAB_TOP))
     # The item icon is drawn by the game; a plain square stands in for it here.
-    draw.rectangle([left + 6, TAB_TOP + 3, left + 21, TAB_TOP + 18],
+    draw.rectangle([left + 8, TAB_TOP + 3, left + 23, TAB_TOP + 18],
                    fill=(0x6b, 0x5f, 0x4a) if index == 0 else (0x4a, 0x5f, 0x6b))
-    text(left + 26, TAB_TOP + 8, name, TEXT if active else DIM)
+    text(left + 30, TAB_TOP + 7, name, TEXT if active else DIM)
 
 # --- the tool buttons, right of the strip ------------------------------------------
 TOOL_SIZE = 12
