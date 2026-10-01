@@ -96,6 +96,23 @@ TAB_OFF_V = 40
 TAB_ON_U = 330
 TAB_ON_V = 40 + TAB_HEIGHT + 2
 
+# Small glyphs, on one line under the tabs.
+GLYPH_V = 90
+SEARCH_ICON_U = 330
+SEARCH_ICON_SIZE = 8
+EJECT_U = 342
+PENCIL_U = 356
+CROSS_U = 370
+ACTION_SIZE = 10
+SORT_U = 384
+FILTER_U = 400
+TOOL_SIZE = 12
+
+# The drawing of an empty screen, larger, under the glyphs.
+EMPTY_U = 330
+EMPTY_V = 108
+EMPTY_SIZE = 32
+
 # --- Editor -----------------------------------------------------------------------
 # The sheet is 512 by 512: the screen exceeds 256 pixels in both directions.
 EDITOR_SHEET = 512
@@ -262,6 +279,77 @@ def draw_tab(px, x0, y0, active):
         fill(px, x0 + 1, y0 + TAB_HEIGHT - 2, TAB_WIDTH - 2, 1, SHADOW)
 
 
+def draw_magnifier(px, x0, y0):
+    """Magnifier, eight by eight: a ring and a handle. It says what the field is for."""
+    ring = [(2, 0), (3, 0), (1, 1), (4, 1), (0, 2), (5, 2), (0, 3), (5, 3),
+            (1, 4), (4, 4), (2, 5), (3, 5)]
+    for x, y in ring:
+        fill(px, x0 + x, y0 + y, 1, 1, ICON)
+    for step in range(3):
+        fill(px, x0 + 4 + step, y0 + 4 + step, 1, 1, ICON)
+
+
+def draw_eject(px, x0, y0):
+    """An arrow leaving an open box: the recipe holder goes back to the network."""
+    arrow = {0: (4, 5), 1: (3, 6), 2: (2, 7), 3: (4, 5), 4: (4, 5), 5: (4, 5)}
+    for row, (left, right) in arrow.items():
+        fill(px, x0 + left, y0 + row, right - left + 1, 1, EDGE)
+    for row in range(6, 9):
+        fill(px, x0, y0 + row, 1, 1, EDGE)
+        fill(px, x0 + ACTION_SIZE - 1, y0 + row, 1, 1, EDGE)
+    fill(px, x0, y0 + 9, ACTION_SIZE, 1, EDGE)
+
+
+def draw_pencil(px, x0, y0):
+    """Pencil: the row is edited."""
+    for step in range(6):
+        fill(px, x0 + 2 + step, y0 + 6 - step, 2, 1, EDGE)
+    fill(px, x0 + 1, y0 + 7, 2, 2, EDGE)
+    fill(px, x0 + 1, y0 + 9, 1, 1, ICON)
+
+
+def draw_cross(px, x0, y0):
+    """Cross: the row is removed."""
+    for step in range(7):
+        fill(px, x0 + 2 + step, y0 + 1 + step, 1, 1, EDGE)
+        fill(px, x0 + 8 - step, y0 + 1 + step, 1, 1, EDGE)
+
+
+def draw_sort(px, x0, y0):
+    """Three bars of falling length, next to a down arrow: the sort order."""
+    fill(px, x0 + 1, y0 + 2, 6, 1, EDGE)
+    fill(px, x0 + 1, y0 + 5, 4, 1, EDGE)
+    fill(px, x0 + 1, y0 + 8, 2, 1, EDGE)
+    fill(px, x0 + 9, y0 + 1, 1, 8, EDGE)
+    for step in range(3):
+        fill(px, x0 + 7 + step, y0 + 8 - step, 1, 1, EDGE)
+        fill(px, x0 + 11 - step, y0 + 8 - step, 1, 1, EDGE)
+
+
+def draw_filter(px, x0, y0):
+    """An exclamation mark inside a frame: show only what needs attention."""
+    fill(px, x0 + 1, y0 + 1, TOOL_SIZE - 2, 1, EDGE)
+    fill(px, x0 + 1, y0 + TOOL_SIZE - 2, TOOL_SIZE - 2, 1, EDGE)
+    fill(px, x0 + 1, y0 + 1, 1, TOOL_SIZE - 2, EDGE)
+    fill(px, x0 + TOOL_SIZE - 2, y0 + 1, 1, TOOL_SIZE - 2, EDGE)
+    fill(px, x0 + 5, y0 + 3, 2, 4, EDGE)
+    fill(px, x0 + 5, y0 + 8, 2, 2, EDGE)
+
+
+def draw_empty_glyph(px, x0, y0):
+    """A large package outline, for the screen that lists nothing."""
+    points = [(11, 3), (21, 3), (28, 11), (28, 21), (16, 29), (4, 21), (4, 11)]
+    for index in range(len(points)):
+        ax, ay = points[index]
+        bx, by = points[(index + 1) % len(points)]
+        steps = max(abs(bx - ax), abs(by - ay), 1)
+        for step in range(steps + 1):
+            fill(px, x0 + ax + (bx - ax) * step // steps,
+                 y0 + ay + (by - ay) * step // steps, 1, 1, ICON)
+    # The seam of the lid, so the shape reads as a package and not as a stone.
+    fill(px, x0 + 6, y0 + 10, 20, 1, ICON)
+
+
 def build_terminal():
     px = sheet(SHEET, SHEET)
     frame(px, WIDTH, HEIGHT)
@@ -271,6 +359,13 @@ def build_terminal():
     draw_chevron_down(px, CHEVRON_U + 10, CHEVRON_V)
     draw_tab(px, TAB_OFF_U, TAB_OFF_V, False)
     draw_tab(px, TAB_ON_U, TAB_ON_V, True)
+    draw_magnifier(px, SEARCH_ICON_U, GLYPH_V)
+    draw_eject(px, EJECT_U, GLYPH_V)
+    draw_pencil(px, PENCIL_U, GLYPH_V)
+    draw_cross(px, CROSS_U, GLYPH_V)
+    draw_sort(px, SORT_U, GLYPH_V)
+    draw_filter(px, FILTER_U, GLYPH_V)
+    draw_empty_glyph(px, EMPTY_U, EMPTY_V)
 
     # The title band, one shade under the panel, closed by a shadow line.
     fill(px, 3, 3, WIDTH - 6, BAND_HEIGHT - 3, BAND)

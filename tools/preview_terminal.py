@@ -63,10 +63,27 @@ for index, (name, active) in enumerate([('Patterns', True), ('Machines', False)]
                    fill=(0x6b, 0x5f, 0x4a) if index == 0 else (0x4a, 0x5f, 0x6b))
     text(left + 26, TAB_TOP + 8, name, TEXT if active else DIM)
 
+# --- the tool buttons, right of the strip ------------------------------------------
+TOOL_SIZE = 12
+
+
+def tool_left(index):
+    return LIST_LEFT + LIST_WIDTH + 8 - (index + 1) * (TOOL_SIZE + 6)
+
+
+tool_top = TAB_TOP + (TAB_H - TOOL_SIZE) // 2
+plate = Image.new('RGBA', (TOOL_SIZE + 4, TOOL_SIZE + 4), (0, 0, 0, 0x50))
+screen.alpha_composite(plate, (tool_left(0) - 2, tool_top - 2))
+screen.alpha_composite(SHEET.crop((400, 90, 412, 102)), (tool_left(0), tool_top))
+screen.alpha_composite(SHEET.crop((384, 90, 396, 102)), (tool_left(1), tool_top))
+
 # --- the title band ----------------------------------------------------------------
 text(LIST_LEFT, 5, 'PackagedAuto Terminal', TEXT)
-text(153, 6, 'iron', FIELD_TEXT)
+screen.alpha_composite(SHEET.crop((330, 90, 338, 98)), (153, 5))
+text(165, 6, 'iron', FIELD_TEXT)
 text(288, 5, 'x', FIELD_TEXT)
+# The ring that says the field is listening.
+draw.rectangle([149, 2, 296, 16], outline=(0xFF, 0xFF, 0xFF, 0x90))
 
 # --- the rows ----------------------------------------------------------------------
 rows = [
@@ -87,10 +104,20 @@ for index, (kind, label, state, warning) in enumerate(rows):
         screen.alpha_composite(band, (LIST_LEFT, y))
     if kind == 'section':
         text(LIST_LEFT + 4, y + 5, label, TEXT)
+        start = LIST_LEFT + 8 + int(width_of(label))
+        draw.rectangle([start, y + 9, LIST_LEFT + LIST_WIDTH - 4, y + 9], fill=(0, 0, 0, 0x22))
         continue
     if kind == 'recipe':
+        draw.rectangle([LIST_LEFT + 15, y, LIST_LEFT + 15, y + ROW_H], fill=(0, 0, 0, 0x22))
         text(LIST_LEFT + 40, y + 5, label, TEXT)
-        text(LIST_LEFT + LIST_WIDTH - 20 - int(width_of(state)), y + 5, state, DIM)
+        if index == 2:
+            # The hovered row shows its two buttons instead of the far right of the name.
+            right = LIST_LEFT + LIST_WIDTH - 4
+            text(right - 28 - int(width_of(state)), y + 5, state, DIM)
+            screen.alpha_composite(SHEET.crop((356, 90, 366, 100)), (right - 24, y + 4))
+            screen.alpha_composite(SHEET.crop((370, 90, 380, 100)), (right - 10, y + 4))
+        else:
+            text(LIST_LEFT + LIST_WIDTH - 4 - int(width_of(state)), y + 5, state, DIM)
         continue
     icon_x = LIST_LEFT + (12 if kind == 'group' else 2)
     draw.rectangle([icon_x, y + 1, icon_x + 15, y + 16], fill=(0x55, 0x55, 0x60))
@@ -99,6 +126,8 @@ for index, (kind, label, state, warning) in enumerate(rows):
                       (LIST_LEFT + 2, y + 12)], fill=TEXT)
         text(LIST_LEFT + 32, y + 5, label, TEXT)
         chip(LIST_LEFT + LIST_WIDTH - 40, y, state, warning)
+        draw.rectangle([LIST_LEFT + 2, y + ROW_H - 1, LIST_LEFT + LIST_WIDTH - 2,
+                        y + ROW_H - 1], fill=(0, 0, 0, 0x22))
         draw.rectangle([LIST_LEFT + LIST_WIDTH - 34, y + 1,
                         LIST_LEFT + LIST_WIDTH - 19, y + 16], fill=(0x55, 0x60, 0x55))
         screen.alpha_composite(SHEET.crop((330, 4, 342, 16)),

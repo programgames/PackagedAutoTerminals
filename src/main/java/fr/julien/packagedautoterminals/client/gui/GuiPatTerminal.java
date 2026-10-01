@@ -2,6 +2,8 @@ package fr.julien.packagedautoterminals.client.gui;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -121,6 +123,29 @@ public class GuiPatTerminal extends AEBaseGui {
      */
     private static final int GROUP_MACHINE_LEFT = LOCATE_LEFT - 20;
 
+    /** Small glyphs, on one line of the sheet under the tabs. */
+    private static final int GLYPH_V = 90;
+    private static final int SEARCH_ICON_U = 330;
+    private static final int SEARCH_ICON_SIZE = 8;
+    private static final int EJECT_U = 342;
+    private static final int PENCIL_U = 356;
+    private static final int CROSS_U = 370;
+    private static final int ACTION_SIZE = 10;
+    private static final int SORT_U = 384;
+    private static final int FILTER_U = 400;
+    private static final int TOOL_SIZE = 12;
+    /** The drawing shown when the list holds nothing. */
+    private static final int EMPTY_U = 330;
+    private static final int EMPTY_V = 108;
+    private static final int EMPTY_SIZE = 32;
+
+    /** Separator under a group header, and guide in front of its recipes. */
+    private static final int COLOR_RULE = 0x22000000;
+    /** Ring around the search field while it has focus. */
+    private static final int COLOR_FOCUS = 0x90FFFFFF;
+    /** Plate under a tool button that is turned on. */
+    private static final int COLOR_TOOL_ON = 0x50000000;
+
     /** The two states of a tab, stored right of the screen on the sheet. */
     private static final int TAB_OFF_U = 330;
     private static final int TAB_OFF_V = 40;
@@ -139,9 +164,21 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int CHIP_WARNING_FILL = 0x2EA02020;
     private static final int CHIP_WARNING_EDGE = 0x55902020;
 
+    /** Sort orders of the list, in the order the button cycles through them. */
+    private static final int SORT_NAME = 0;
+    private static final int SORT_MACHINE = 1;
+    private static final int SORT_RECIPES = 2;
+    private static final int SORT_COUNT = 3;
+
     private final ContainerPatTerminal terminalContainer;
     /** The two tab icons, resolved on first use. */
     private ItemStack[] tabIcons;
+    /** Order of the rows. The tool button cycles it. */
+    private int sortMode = SORT_NAME;
+    /** Show only the rows the player has to act on. */
+    private boolean onlyProblems;
+    /** Row under the pointer, in the visible window. Negative when there is none. */
+    private int hoveredRow = -1;
     private GuiTextField search;
     /** False: patterns tab. True: machines tab. */
     private boolean machinesView;
@@ -207,11 +244,11 @@ public class GuiPatTerminal extends AEBaseGui {
         // background is therefore dark, and the text light, as in AE2.
         String previous = search == null ? "" : search.getText();
         search = new GuiTextField(0, fontRenderer,
-                guiLeft + ContainerPatTerminal.SEARCH_LEFT + 3,
+                guiLeft + ContainerPatTerminal.SEARCH_LEFT + 13,
                 guiTop + ContainerPatTerminal.SEARCH_TOP + 3,
-                // E3: the width always leaves ten pixels for the cross, so the typed text
-                // never runs underneath it.
-                ContainerPatTerminal.SEARCH_WIDTH - 16, 8);
+                // The text starts after the magnifier and stops before the cross, so it never
+                // runs under either one.
+                ContainerPatTerminal.SEARCH_WIDTH - 26, 8);
         search.setEnableBackgroundDrawing(false);
         search.setMaxStringLength(64);
         search.setTextColor(COLOR_FIELD_TEXT);
@@ -255,6 +292,8 @@ public class GuiPatTerminal extends AEBaseGui {
                 LIST_LEFT, 5, COLOR_TEXT);
 
         drawTabs();
+        drawTools();
+        drawSearchDecoration();
 
         // The counts sit in the status bar, a shallow recess under the list.
         int summaryY = ContainerPatTerminal.STATUS_TOP + 2;
@@ -281,19 +320,8 @@ public class GuiPatTerminal extends AEBaseGui {
         }
 
         if (lines.isEmpty()) {
-            // The message is wrapped to the frame width: otherwise it spills over the
-            // scrollbar, then out of the screen.
-            // Two causes, two messages: the network is empty, or the search returns nothing.
-            // Mixing them up sent the player checking their cables for nothing.
-            boolean filtered = search != null && !search.getText().trim().isEmpty();
-            List<String> wrapped = fontRenderer.listFormattedStringToWidth(
-                    I18n.format(filtered
-                            ? "gui.packagedautoterminals.no_result"
-                            : "gui.packagedautoterminals.empty"), LIST_WIDTH - 10);
-            for (int row = 0; row < wrapped.size(); row++) {
-                fontRenderer.drawString(wrapped.get(row), LIST_LEFT + 4,
-                        LIST_TOP + TEXT_OFFSET + row * 10, COLOR_DIM);
-            }
+            drawEmptyScreen();
+            drawToolTooltip(mouseX - offsetX, mouseY - offsetY);
             return;
         }
 
@@ -315,24 +343,108 @@ public class GuiPatTerminal extends AEBaseGui {
         }
 
         for (int row = 0; row < ROWS && first + row < lines.size(); row++) {
-            drawLine(lines.get(first + row), LIST_TOP + row * ROW_HEIGHT);
+            drawLine(lines.get(first + row), LIST_TOP + row * ROW_HEIGHT, row == hoverRow);
         }
 
+        drawToolTooltip(mouseX - offsetX, mouseY - offsetY);
         if (hoverRow >= 0 && first + hoverRow < lines.size()) {
+            Line line = lines.get(first + hoverRow);
+            int action = actionUnder(line, mouseX - offsetX, mouseY - offsetY);
             drawTooltip(mouseX - offsetX, mouseY - offsetY,
-                    tooltipFor(lines.get(first + hoverRow)));
+                    action < 0 ? tooltipFor(line) : actionTooltip(line, action));
         }
     }
 
     /**
-     * Binds the sheet, and resets the colour multiplier to opaque white.
+     * The magnifier, and the ring that says the field has focus.
      *
-     * <p>PITFALL: `Gui.drawRect` leaves `GlStateManager.color` set to the colour it was given.
-     * The striping uses COLOR_STRIPE, whose alpha is 0x14, hence 0.078. The alpha test of the
-     * game discards every fragment below 0.1, so the next textured draw disappeared entirely.
-     * The defect only hit the **first** icon of the frame: the first `drawItem` resets the
-     * colour to white, and every later icon then drew correctly.
+     * <p>A dark rectangle said neither what the field was for nor whether it was listening.
      */
+    private void drawSearchDecoration() {
+        bindSheet();
+        drawModalRectWithCustomSizedTexture(ContainerPatTerminal.SEARCH_LEFT + 3,
+                ContainerPatTerminal.SEARCH_TOP + 2, SEARCH_ICON_U, GLYPH_V,
+                SEARCH_ICON_SIZE, SEARCH_ICON_SIZE, SHEET, SHEET);
+        if (search != null && search.isFocused()) {
+            int left = ContainerPatTerminal.SEARCH_LEFT - 1;
+            int top = ContainerPatTerminal.SEARCH_TOP - 1;
+            int right = left + ContainerPatTerminal.SEARCH_WIDTH + 2;
+            int bottom = top + ContainerPatTerminal.SEARCH_HEIGHT + 2;
+            drawRect(left, top, right, top + 1, COLOR_FOCUS);
+            drawRect(left, bottom - 1, right, bottom, COLOR_FOCUS);
+            drawRect(left, top, left + 1, bottom, COLOR_FOCUS);
+            drawRect(right - 1, top, right, bottom, COLOR_FOCUS);
+            resetDrawState();
+        }
+    }
+
+    /** Left edge of a tool button, by its index, counted from the right of the strip. */
+    private static int toolLeft(int index) {
+        return LIST_LEFT + LIST_WIDTH + 8 - (index + 1) * (TOOL_SIZE + 6);
+    }
+
+    private static int toolTop() {
+        return ContainerPatTerminal.TAB_STRIP_TOP + (ContainerPatTerminal.TAB_HEIGHT - TOOL_SIZE) / 2;
+    }
+
+    /**
+     * The two tool buttons of the strip: the sort order, and the filter.
+     *
+     * <p>On a network of twenty machines, reading every row to find the one that is wrong
+     * costs more than the terminal saves. These two buttons do that reading.
+     */
+    private void drawTools() {
+        int top = toolTop();
+        if (onlyProblems) {
+            drawRect(toolLeft(0) - 2, top - 2, toolLeft(0) + TOOL_SIZE + 2, top + TOOL_SIZE + 2,
+                    COLOR_TOOL_ON);
+            resetDrawState();
+        }
+        bindSheet();
+        drawModalRectWithCustomSizedTexture(toolLeft(0), top, FILTER_U, GLYPH_V,
+                TOOL_SIZE, TOOL_SIZE, SHEET, SHEET);
+        drawModalRectWithCustomSizedTexture(toolLeft(1), top, SORT_U, GLYPH_V,
+                TOOL_SIZE, TOOL_SIZE, SHEET, SHEET);
+    }
+
+    /** What the tool button under the pointer does. Nothing is drawn when there is none. */
+    private void drawToolTooltip(int x, int y) {
+        int tool = toolUnder(x, y);
+        if (tool < 0) {
+            return;
+        }
+        List<String> lines = new ArrayList<>();
+        lines.add(tool == 0
+                ? I18n.format("gui.packagedautoterminals.filter_problems")
+                : sortLabel());
+        drawTooltip(x, y, lines);
+    }
+
+    /** Index of the tool button under these relative coordinates, or -1. */
+    private int toolUnder(int x, int y) {
+        int top = toolTop();
+        if (y < top || y >= top + TOOL_SIZE) {
+            return -1;
+        }
+        for (int index = 0; index < 2; index++) {
+            if (x >= toolLeft(index) && x < toolLeft(index) + TOOL_SIZE) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    /** Name of the order the sort button is on. */
+    private String sortLabel() {
+        if (sortMode == SORT_MACHINE) {
+            return I18n.format("gui.packagedautoterminals.sort_machine");
+        }
+        if (sortMode == SORT_RECIPES) {
+            return I18n.format("gui.packagedautoterminals.sort_recipes");
+        }
+        return I18n.format("gui.packagedautoterminals.sort_name");
+    }
+
     /** Left edge of a tab, by its index. */
     private static int tabLeft(int index) {
         return LIST_LEFT + index * (ContainerPatTerminal.TAB_WIDTH + ContainerPatTerminal.TAB_GAP);
@@ -432,12 +544,18 @@ public class GuiPatTerminal extends AEBaseGui {
         drawRect(right - 1, top, right, bottom, edge);
         fontRenderer.drawString(text, left + 4, y + TEXT_OFFSET,
                 warning ? COLOR_WARNING : COLOR_TEXT);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
-                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        resetDrawState();
     }
 
+    /**
+     * Binds the sheet, and resets the colour multiplier to opaque white.
+     *
+     * <p>PITFALL: `Gui.drawRect` leaves `GlStateManager.color` set to the colour it was given.
+     * The striping uses COLOR_STRIPE, whose alpha is 0x14, hence 0.078. The alpha test of the
+     * game discards every fragment below 0.1, so the next textured draw disappeared entirely.
+     * The defect only hit the **first** icon of the frame: the first `drawItem` resets the
+     * colour to white, and every later icon then drew correctly.
+     */
     private void bindSheet() {
         bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -449,10 +567,66 @@ public class GuiPatTerminal extends AEBaseGui {
                 GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
     }
 
-    private void drawLine(Line line, int y) {
+    /**
+     * What the screen shows when it lists nothing.
+     *
+     * <p>Two causes, two messages: the network holds no machine, or the search matches none.
+     * Mixing them up sent the player checking their cables for nothing. Each one now carries
+     * a second line that says what to do next, under a faded drawing.
+     */
+    private void drawEmptyScreen() {
+        boolean filtered = onlyProblems
+                || (search != null && !search.getText().trim().isEmpty());
+        int middle = LIST_LEFT + LIST_WIDTH / 2;
+        int top = LIST_TOP + (ROWS * ROW_HEIGHT) / 2 - 34;
+
+        bindSheet();
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 0.45F);
+        drawModalRectWithCustomSizedTexture(middle - EMPTY_SIZE / 2, top,
+                EMPTY_U, EMPTY_V, EMPTY_SIZE, EMPTY_SIZE, SHEET, SHEET);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
+        drawCentred(I18n.format(filtered
+                ? "gui.packagedautoterminals.no_result"
+                : "gui.packagedautoterminals.empty"), middle, top + EMPTY_SIZE + 8, COLOR_TEXT);
+        drawCentred(I18n.format(filtered
+                ? "gui.packagedautoterminals.no_result_hint"
+                : "gui.packagedautoterminals.empty_hint"),
+                middle, top + EMPTY_SIZE + 22, COLOR_DIM);
+    }
+
+    /** One line of text, centred on an abscissa, trimmed to the list. */
+    private void drawCentred(String text, int middle, int y, int color) {
+        String shown = trim(text, LIST_WIDTH - 16);
+        fontRenderer.drawString(shown, middle - fontRenderer.getStringWidth(shown) / 2, y, color);
+    }
+
+    /**
+     * Puts the drawing state back after a {@code drawRect}.
+     *
+     * <p>PITFALL, paid for twice in this project: {@code drawRect} leaves the colour of
+     * {@code GlStateManager} set to the one it was given, and ends with {@code disableBlend}.
+     * The next textured draw then vanishes, or paints its transparent pixels black.
+     */
+    private void resetDrawState() {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+    }
+
+    private void drawLine(Line line, int y, boolean hovered) {
         if (line.warning != null) {
-            fontRenderer.drawString(trim(line.warning, LIST_WIDTH - 8), LIST_LEFT + 4,
-                    y + TEXT_OFFSET, line.section ? COLOR_TEXT : COLOR_WARNING);
+            String text = trim(line.warning, LIST_WIDTH - 8);
+            fontRenderer.drawString(text, LIST_LEFT + 4, y + TEXT_OFFSET,
+                    line.section ? COLOR_TEXT : COLOR_WARNING);
+            if (line.section) {
+                // A rule from the end of the title to the right edge. It closes the heading,
+                // and the eye then reads the rows under it as one block.
+                int from = LIST_LEFT + 8 + fontRenderer.getStringWidth(text);
+                drawRect(from, y + 9, LIST_LEFT + LIST_WIDTH - 4, y + 10, COLOR_RULE);
+                resetDrawState();
+            }
             return;
         }
 
@@ -492,8 +666,16 @@ public class GuiPatTerminal extends AEBaseGui {
             fontRenderer.drawString(
                     trim(groupTitle(line.group), budget(GROUP_TEXT, state, stateRight - 6)),
                     GROUP_TEXT, y + TEXT_OFFSET, COLOR_TEXT);
-            drawChip(state, stateRight, y,
-                    ProviderPairing.missingRoleOf(line.group) != null);
+            if (hovered) {
+                // The buttons take the place of the chip. The state is in the tooltip anyway,
+                // and a row that grew a button would push every column sideways.
+                bindSheet();
+                drawModalRectWithCustomSizedTexture(stateRight - ACTION_SIZE, y + 4,
+                        EJECT_U, GLYPH_V, ACTION_SIZE, ACTION_SIZE, SHEET, SHEET);
+            } else {
+                drawChip(state, stateRight, y,
+                        ProviderPairing.missingRoleOf(line.group) != null);
+            }
 
             if (!machine.isEmpty()) {
                 drawItem(GROUP_MACHINE_LEFT, y + 1, machine);
@@ -503,8 +685,17 @@ public class GuiPatTerminal extends AEBaseGui {
             bindSheet();
             drawModalRectWithCustomSizedTexture(LOCATE_LEFT, y + 3, LOCATE_U, LOCATE_V,
                     LOCATE_SIZE, LOCATE_SIZE, SHEET, SHEET);
+            // A rule under the header: the rows below belong to it.
+            drawRect(LIST_LEFT + 2, y + ROW_HEIGHT - 1, LIST_LEFT + LIST_WIDTH - 2,
+                    y + ROW_HEIGHT, COLOR_RULE);
+            resetDrawState();
             return;
         }
+
+        // A guide from the group header down to its last recipe. The chevron used to be the
+        // only sign that these rows belonged to the row above.
+        drawRect(LIST_LEFT + 15, y, LIST_LEFT + 16, y + ROW_HEIGHT, COLOR_RULE);
+        resetDrawState();
 
         List<ItemStack> outputs = line.recipe.getOutputs();
         if (!outputs.isEmpty()) {
@@ -523,11 +714,71 @@ public class GuiPatTerminal extends AEBaseGui {
 
         // The type name, and not the machine icon: the machine now sits on the group row.
         String typeName = type.getLocalizedNameShort();
-        drawRight(typeName, y, complete ? COLOR_DIM : COLOR_WARNING);
-        int textWidth = budget(textLeft, typeName, rightEdge);
+        int nameRight = hovered ? rightEdge - 2 * (ACTION_SIZE + 4) : rightEdge;
+        fontRenderer.drawString(typeName,
+                nameRight - fontRenderer.getStringWidth(typeName), y + TEXT_OFFSET,
+                complete ? COLOR_DIM : COLOR_WARNING);
+        int textWidth = budget(textLeft, typeName, nameRight);
 
         fontRenderer.drawString(trim(output, textWidth), textLeft, y + TEXT_OFFSET,
                 complete ? COLOR_TEXT : COLOR_WARNING);
+
+        if (hovered) {
+            // Edit and remove, the two gestures the row answers. They were written nowhere on
+            // the screen: the player had to read the wiki to learn them.
+            bindSheet();
+            drawModalRectWithCustomSizedTexture(rightEdge - 2 * ACTION_SIZE - 4, y + 4,
+                    PENCIL_U, GLYPH_V, ACTION_SIZE, ACTION_SIZE, SHEET, SHEET);
+            drawModalRectWithCustomSizedTexture(rightEdge - ACTION_SIZE, y + 4,
+                    CROSS_U, GLYPH_V, ACTION_SIZE, ACTION_SIZE, SHEET, SHEET);
+        }
+    }
+
+    /** Action buttons of a row. They only exist while the pointer is on it. */
+    private static final int BUTTON_EJECT = 0;
+    private static final int BUTTON_EDIT = 1;
+    private static final int BUTTON_REMOVE = 2;
+
+    /**
+     * Which action button sits under these relative coordinates, or -1.
+     *
+     * <p>The caller must already know that the pointer is on this row.
+     */
+    private int actionUnder(Line line, int x, int y) {
+        int row = rowUnder(x, y);
+        if (row < 0) {
+            return -1;
+        }
+        int top = LIST_TOP + row * ROW_HEIGHT + 4;
+        if (y < top || y >= top + ACTION_SIZE) {
+            return -1;
+        }
+        int rightEdge = LIST_LEFT + LIST_WIDTH - 4;
+        if (line.isGroupHeader()) {
+            ItemStack machine = CrafterTypes.iconFor(groupMachineType(line.group));
+            int stateRight = machine.isEmpty() ? LOCATE_LEFT - 4 : GROUP_MACHINE_LEFT - 4;
+            return x >= stateRight - ACTION_SIZE && x < stateRight ? BUTTON_EJECT : -1;
+        }
+        if (line.recipe == null) {
+            return -1;
+        }
+        if (x >= rightEdge - 2 * ACTION_SIZE - 4 && x < rightEdge - ACTION_SIZE - 4) {
+            return BUTTON_EDIT;
+        }
+        return x >= rightEdge - ACTION_SIZE && x < rightEdge ? BUTTON_REMOVE : -1;
+    }
+
+    /** What a button of the hovered row does, in one line. */
+    private List<String> actionTooltip(Line line, int action) {
+        List<String> lines = new ArrayList<>();
+        if (action == BUTTON_EJECT) {
+            lines.add(I18n.format("gui.packagedautoterminals.remove_holder_hint"));
+        } else if (action == BUTTON_EDIT) {
+            lines.add(I18n.format("gui.packagedautoterminals.edit_hint"));
+        } else {
+            lines.add(I18n.format("gui.packagedautoterminals.delete_hint"));
+        }
+        return lines;
     }
 
     /**
@@ -660,17 +911,17 @@ public class GuiPatTerminal extends AEBaseGui {
                 LIST_LEFT + LIST_WIDTH - fontRenderer.getStringWidth(text), y, COLOR_DIM);
     }
 
+    /** The click of a vanilla button, so a tab and a tool answer like the rest of the game. */
+    private void clickSound() {
+        mc.getSoundHandler().playSound(net.minecraft.client.audio.PositionedSoundRecord
+                .getMasterRecord(net.minecraft.init.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+    }
+
     /** Does the search carry any text? */
     private boolean hasQuery() {
         return search != null && !search.getText().isEmpty();
     }
 
-    /** Text aligned to the right of the list area. */
-    private void drawRight(String text, int y, int color) {
-        fontRenderer.drawString(text,
-                LIST_LEFT + LIST_WIDTH - 4 - fontRenderer.getStringWidth(text),
-                y + TEXT_OFFSET, color);
-    }
 
     /**
      * Server message, shown below the title line.
@@ -769,6 +1020,18 @@ public class GuiPatTerminal extends AEBaseGui {
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        int tool = toolUnder(mouseX - guiLeft, mouseY - guiTop);
+        if (tool >= 0) {
+            if (tool == 0) {
+                onlyProblems = !onlyProblems;
+            } else {
+                sortMode = (sortMode + 1) % SORT_COUNT;
+            }
+            getScrollBar().setRange(0, 0, 2);
+            clickSound();
+            return;
+        }
+
         int tab = tabUnder(mouseX - guiLeft, mouseY - guiTop);
         if (tab >= 0) {
             boolean wanted = tab == 1;
@@ -777,8 +1040,7 @@ public class GuiPatTerminal extends AEBaseGui {
                 // GuiScrollbar has no setter for the position. Collapsing the range to
                 // zero clamps it, and drawFG gives the bar its real range on the next frame.
                 getScrollBar().setRange(0, 0, 2);
-                mc.getSoundHandler().playSound(net.minecraft.client.audio.PositionedSoundRecord
-                        .getMasterRecord(net.minecraft.init.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                clickSound();
             }
             return;
         }
@@ -808,6 +1070,24 @@ public class GuiPatTerminal extends AEBaseGui {
             }
             return;
         }
+        // The buttons of the hovered row come before the row itself: both answer the same
+        // click, and the button is the one the player aimed at.
+        if (clicked != null && clicked.group != null) {
+            int action = actionUnder(clicked, mouseX - guiLeft, mouseY - guiTop);
+            if (action == BUTTON_EJECT) {
+                send(clicked.anchor(), -1, PacketRecipeAction.ACTION_REMOVE_HOLDER);
+                return;
+            }
+            if (action == BUTTON_EDIT) {
+                send(clicked.anchor(), clicked.recipeIndex, PacketRecipeAction.ACTION_EDIT);
+                return;
+            }
+            if (action == BUTTON_REMOVE) {
+                send(clicked.anchor(), clicked.recipeIndex, PacketRecipeAction.ACTION_REMOVE);
+                return;
+            }
+        }
+
         if (clicked != null && clicked.group != null) {
             ProviderSnapshot anchor = clicked.anchor();
             if (mouseButton == 0 && clicked.isGroupHeader()) {
@@ -1047,7 +1327,7 @@ public class GuiPatTerminal extends AEBaseGui {
     private List<Line> lines() {
         String key = terminalContainer.revision
                 + "|" + (search == null ? "" : search.getText())
-                + "|" + machinesView
+                + "|" + machinesView + "|" + sortMode + "|" + onlyProblems
                 + "|" + expanded.size() + ":" + expanded.hashCode();
         if (cachedLines == null || !key.equals(cacheKey)) {
             cachedLines = buildLines();
@@ -1120,12 +1400,18 @@ public class GuiPatTerminal extends AEBaseGui {
             Line line = Line.crafter(machine);
             Integer count = recipesByMachine.get(machine.machineClass);
             line.crafterRecipes = count == null ? 0 : count;
+            if (onlyProblems && machine.active && line.crafterRecipes > 0) {
+                continue;
+            }
             if (CrafterTypes.isRouter(machine.machineClass)) {
                 routers.add(line);
             } else {
                 crafters.add(line);
             }
         }
+
+        sortCrafters(crafters);
+        sortCrafters(routers);
 
         if (!crafters.isEmpty()) {
             lines.add(Line.section(I18n.format("gui.packagedautoterminals.section_crafters")));
@@ -1149,7 +1435,14 @@ public class GuiPatTerminal extends AEBaseGui {
         List<Line> lines = new ArrayList<>();
         boolean searching = !query.isEmpty();
 
-        for (ProviderPairing.Group group : ProviderPairing.group(terminalContainer.providers)) {
+        List<ProviderPairing.Group> groups =
+                ProviderPairing.group(terminalContainer.providers);
+        sortGroups(groups);
+
+        for (ProviderPairing.Group group : groups) {
+            if (onlyProblems && !hasProblem(group)) {
+                continue;
+            }
             boolean titleMatches = query.isEmpty()
                     || (query.types.isEmpty() && query.mods.isEmpty()
                             && matchesText(query, groupTitle(group)));
@@ -1176,6 +1469,76 @@ public class GuiPatTerminal extends AEBaseGui {
             }
         }
         return lines;
+    }
+
+    /**
+     * Does this group need the player?
+     *
+     * <p>Three cases, and only three: a role is missing, a machine has no channel, or a
+     * recipe sits on one side of the pair only. A group with no recipe at all is a group the
+     * player has not started yet, which is not a fault.
+     */
+    private boolean hasProblem(ProviderPairing.Group group) {
+        if (ProviderPairing.missingRoleOf(group) != null) {
+            return true;
+        }
+        for (ProviderSnapshot machine : group.machines) {
+            if (!machine.active) {
+                return true;
+            }
+        }
+        for (IRecipeInfo recipe : group.recipes) {
+            if (!group.isComplete(recipe)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Orders the groups.
+     *
+     * <p>By name is the order a player reads. By machine gathers the groups that feed the same
+     * crafter, which is how a factory is laid out. By recipe count puts the busiest first.
+     * Every order ends on the name, so the list never shuffles between two refreshes.
+     */
+    private void sortGroups(List<ProviderPairing.Group> groups) {
+        final int mode = sortMode;
+        Collections.sort(groups, new Comparator<ProviderPairing.Group>() {
+            @Override
+            public int compare(ProviderPairing.Group left, ProviderPairing.Group right) {
+                if (mode == SORT_RECIPES && left.recipes.size() != right.recipes.size()) {
+                    return right.recipes.size() - left.recipes.size();
+                }
+                if (mode == SORT_MACHINE) {
+                    int order = machineName(left).compareToIgnoreCase(machineName(right));
+                    if (order != 0) {
+                        return order;
+                    }
+                }
+                return groupTitle(left).compareToIgnoreCase(groupTitle(right));
+            }
+        });
+    }
+
+    /** Name of the crafting machine of a group, or an empty string when it has none. */
+    private String machineName(ProviderPairing.Group group) {
+        ItemStack machine = CrafterTypes.iconFor(groupMachineType(group));
+        return machine.isEmpty() ? "" : machine.getDisplayName();
+    }
+
+    /** Orders the crafters. By machine reads as by name here: the machine is the name. */
+    private void sortCrafters(List<Line> crafters) {
+        final int mode = sortMode;
+        Collections.sort(crafters, new Comparator<Line>() {
+            @Override
+            public int compare(Line left, Line right) {
+                if (mode == SORT_RECIPES && left.crafterRecipes != right.crafterRecipes) {
+                    return right.crafterRecipes - left.crafterRecipes;
+                }
+                return left.crafter.name.compareToIgnoreCase(right.crafter.name);
+            }
+        });
     }
 
     /** Does a recipe satisfy **all** the criteria? */

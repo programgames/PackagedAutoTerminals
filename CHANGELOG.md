@@ -60,6 +60,21 @@ a machine with no recipe holder is served from the ME network.
   stays in a band of its own, with the search field. The counts moved into a shallow recess
   under the list, instead of floating on the panel. The screen grows from 338 to 362 pixels
   tall; `GuiScaleFit` already handles a small window.
+- **The search field says what it is for, and whether it is listening.** A magnifier sits
+  inside it, and a light ring surrounds it while it has focus. It was a plain dark rectangle.
+- **The list shows its own hierarchy.** A rule closes each group header, a guide runs in front
+  of the recipes of an open group, and a rule follows each section title of the Machines tab.
+  The chevron used to be the only sign that a row belonged to the row above.
+- **An empty screen teaches instead of stating.** A faded package, the reason, and a second
+  line that says what to do next. There was one grey sentence.
+- **The gestures of a row are drawn on the row.** Hovering a group shows a button that sends
+  its recipe holders back to the network; hovering a recipe shows a pencil and a cross. The
+  three gestures existed, and only the wiki named them. The buttons take the place of the
+  state chip while the pointer is on the row, so no column moves.
+- **A sort order and a filter.** Two buttons at the right of the tab strip: one cycles through
+  name, machine and recipe count, the other keeps only the rows that need the player. On a
+  network of twenty machines, reading every row to find the wrong one cost more than the
+  terminal saves.
 - **The state of a row is a chip, not grey text.** A tinted plate with a border, red when the
   player has something to fix. It gives the eye a shape to catch instead of a word to read.
 - **The Machines tab says something useful on each row.** It read "idle" on every line, which
