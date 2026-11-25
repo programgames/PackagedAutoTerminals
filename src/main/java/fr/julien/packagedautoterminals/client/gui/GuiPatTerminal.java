@@ -60,11 +60,11 @@ import thelm.packagedauto.api.MiscUtil;
  */
 public class GuiPatTerminal extends AEBaseGui {
 
-    private static final int ROWS = ContainerPatTerminal.ROWS;
-    private static final int ROW_HEIGHT = ContainerPatTerminal.ROW_HEIGHT;
-    private static final int LIST_LEFT = ContainerPatTerminal.LIST_LEFT;
-    private static final int LIST_TOP = ContainerPatTerminal.LIST_TOP;
-    private static final int LIST_WIDTH = ContainerPatTerminal.LIST_WIDTH;
+    private static final int ROWS = TerminalLayout.ROWS;
+    private static final int ROW_HEIGHT = TerminalLayout.ROW_HEIGHT;
+    private static final int LIST_LEFT = TerminalLayout.LIST_LEFT;
+    private static final int LIST_TOP = TerminalLayout.LIST_TOP;
+    private static final int LIST_WIDTH = TerminalLayout.LIST_WIDTH;
 
     /** Text offset, to centre an 8 pixel line inside an 18 pixel row. */
     private static final int TEXT_OFFSET = 5;
@@ -100,8 +100,8 @@ public class GuiPatTerminal extends AEBaseGui {
 
     /** E3: cross that clears the search, inside the field. */
     private static final int CLEAR_LEFT =
-            ContainerPatTerminal.SEARCH_LEFT + ContainerPatTerminal.SEARCH_WIDTH - 12;
-    private static final int CLEAR_TOP = ContainerPatTerminal.SEARCH_TOP + 2;
+            TerminalLayout.SEARCH_LEFT + TerminalLayout.SEARCH_WIDTH - 12;
+    private static final int CLEAR_TOP = TerminalLayout.SEARCH_TOP + 2;
     private static final int CLEAR_SIZE = 9;
 
     /** "Locate" pin: position on the sheet, and size. */
@@ -156,7 +156,7 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int TAB_OFF_U = 330;
     private static final int TAB_OFF_V = 40;
     private static final int TAB_ON_U = 330;
-    private static final int TAB_ON_V = TAB_OFF_V + ContainerPatTerminal.TAB_HEIGHT + 2;
+    private static final int TAB_ON_V = TAB_OFF_V + TerminalLayout.TAB_HEIGHT + 2;
 
     /**
      * State chip: a tinted plate behind the right-hand text of a row.
@@ -227,8 +227,8 @@ public class GuiPatTerminal extends AEBaseGui {
     public GuiPatTerminal(InventoryPlayer inventory, TerminalContext terminal) {
         super(new ContainerPatTerminal(inventory, terminal));
         this.terminalContainer = (ContainerPatTerminal) inventorySlots;
-        this.xSize = ContainerPatTerminal.WIDTH;
-        this.ySize = ContainerPatTerminal.HEIGHT;
+        this.xSize = TerminalLayout.WIDTH;
+        this.ySize = TerminalLayout.HEIGHT;
         setScrollBar(new GuiScrollbar());
     }
 
@@ -261,11 +261,11 @@ public class GuiPatTerminal extends AEBaseGui {
         // background is therefore dark, and the text light, as in AE2.
         String previous = search == null ? "" : search.getText();
         search = new GuiTextField(0, fontRenderer,
-                guiLeft + ContainerPatTerminal.SEARCH_LEFT + 13,
-                guiTop + ContainerPatTerminal.SEARCH_TOP + 2,
+                guiLeft + TerminalLayout.SEARCH_LEFT + 13,
+                guiTop + TerminalLayout.SEARCH_TOP + 2,
                 // The text starts after the magnifier and stops before the cross, so it never
                 // runs under either one.
-                ContainerPatTerminal.SEARCH_WIDTH - 26, 8);
+                TerminalLayout.SEARCH_WIDTH - 26, 8);
         search.setEnableBackgroundDrawing(false);
         search.setMaxStringLength(64);
         search.setTextColor(COLOR_FIELD_TEXT);
@@ -276,7 +276,7 @@ public class GuiPatTerminal extends AEBaseGui {
         buttonList.clear();
 
         getScrollBar()
-                .setLeft(ContainerPatTerminal.SCROLL_LEFT)
+                .setLeft(TerminalLayout.SCROLL_LEFT)
                 .setTop(LIST_TOP)
                 .setHeight(ROWS * ROW_HEIGHT);
     }
@@ -289,14 +289,14 @@ public class GuiPatTerminal extends AEBaseGui {
     @Override
     public void drawBG(int offsetX, int offsetY, int mouseX, int mouseY) {
         bindTexture(Reference.MOD_ID, "guis/pat_terminal.png");
-        int listBottom = ContainerPatTerminal.LIST_TOP + ROWS * ROW_HEIGHT;
-        int sheetBottom = ContainerPatTerminal.LIST_TOP
-                + ContainerPatTerminal.SHEET_ROWS * ROW_HEIGHT;
+        int listBottom = TerminalLayout.LIST_TOP + ROWS * ROW_HEIGHT;
+        int sheetBottom = TerminalLayout.LIST_TOP
+                + TerminalLayout.SHEET_ROWS * ROW_HEIGHT;
 
         drawModalRectWithCustomSizedTexture(offsetX, offsetY, 0, 0, xSize, listBottom,
                 SHEET, SHEET);
         drawModalRectWithCustomSizedTexture(offsetX, offsetY + listBottom, 0, sheetBottom,
-                xSize, ContainerPatTerminal.FOOTER, SHEET, SHEET);
+                xSize, TerminalLayout.FOOTER, SHEET, SHEET);
     }
 
     @Override
@@ -305,7 +305,7 @@ public class GuiPatTerminal extends AEBaseGui {
         // disappear the moment the Machines button took its place.
         fontRenderer.drawString(
                 trim(I18n.format("gui.packagedautoterminals.pat_terminal"),
-                        ContainerPatTerminal.SEARCH_LEFT - 6 - LIST_LEFT),
+                        TerminalLayout.SEARCH_LEFT - 6 - LIST_LEFT),
                 LIST_LEFT, 7, COLOR_TEXT);
 
         drawTabs();
@@ -313,7 +313,7 @@ public class GuiPatTerminal extends AEBaseGui {
         drawSearchDecoration();
 
         // The counts sit in the status bar, a shallow recess under the list.
-        int summaryY = ContainerPatTerminal.STATUS_TOP + 2;
+        int summaryY = TerminalLayout.STATUS_TOP + 2;
 
         // The rows are built before the summary: the result counter depends on them.
         List<Line> lines = lines();
@@ -324,9 +324,9 @@ public class GuiPatTerminal extends AEBaseGui {
         // screen, hence out of sight.
         String message = currentMessage();
         // Four pixels of air inside the status bar. The text used to start on its border.
-        int statusLeft = ContainerPatTerminal.STATUS_LEFT + 4;
+        int statusLeft = TerminalLayout.STATUS_LEFT + 4;
         if (message != null) {
-            fontRenderer.drawString(trim(message, ContainerPatTerminal.STATUS_WIDTH - 8),
+            fontRenderer.drawString(trim(message, TerminalLayout.STATUS_WIDTH - 8),
                     statusLeft, summaryY, messageRefused ? COLOR_WARNING : COLOR_OK);
         } else {
             fontRenderer.drawString(cachedSummary, statusLeft, summaryY, COLOR_TEXT);
@@ -381,14 +381,14 @@ public class GuiPatTerminal extends AEBaseGui {
      */
     private void drawSearchDecoration() {
         bindSheet();
-        drawModalRectWithCustomSizedTexture(ContainerPatTerminal.SEARCH_LEFT + 3,
-                ContainerPatTerminal.SEARCH_TOP + 2, SEARCH_ICON_U, GLYPH_V,
+        drawModalRectWithCustomSizedTexture(TerminalLayout.SEARCH_LEFT + 3,
+                TerminalLayout.SEARCH_TOP + 2, SEARCH_ICON_U, GLYPH_V,
                 SEARCH_ICON_SIZE, SEARCH_ICON_SIZE, SHEET, SHEET);
         if (search != null && search.isFocused()) {
-            int left = ContainerPatTerminal.SEARCH_LEFT - 1;
-            int top = ContainerPatTerminal.SEARCH_TOP - 1;
-            int right = left + ContainerPatTerminal.SEARCH_WIDTH + 2;
-            int bottom = top + ContainerPatTerminal.SEARCH_HEIGHT + 2;
+            int left = TerminalLayout.SEARCH_LEFT - 1;
+            int top = TerminalLayout.SEARCH_TOP - 1;
+            int right = left + TerminalLayout.SEARCH_WIDTH + 2;
+            int bottom = top + TerminalLayout.SEARCH_HEIGHT + 2;
             drawRect(left, top, right, top + 1, COLOR_FOCUS);
             drawRect(left, bottom - 1, right, bottom, COLOR_FOCUS);
             drawRect(left, top, left + 1, bottom, COLOR_FOCUS);
@@ -403,7 +403,7 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     private static int toolTop() {
-        return ContainerPatTerminal.TAB_STRIP_TOP + (ContainerPatTerminal.TAB_HEIGHT - TOOL_SIZE) / 2;
+        return TerminalLayout.TAB_STRIP_TOP + (TerminalLayout.TAB_HEIGHT - TOOL_SIZE) / 2;
     }
 
     /**
@@ -460,10 +460,10 @@ public class GuiPatTerminal extends AEBaseGui {
     private void drawSearchTooltip(int mouseX, int mouseY) {
         int x = mouseX - guiLeft;
         int y = mouseY - guiTop;
-        if (x < ContainerPatTerminal.SEARCH_LEFT
-                || x >= ContainerPatTerminal.SEARCH_LEFT + ContainerPatTerminal.SEARCH_WIDTH
-                || y < ContainerPatTerminal.SEARCH_TOP
-                || y >= ContainerPatTerminal.SEARCH_TOP + ContainerPatTerminal.SEARCH_HEIGHT) {
+        if (x < TerminalLayout.SEARCH_LEFT
+                || x >= TerminalLayout.SEARCH_LEFT + TerminalLayout.SEARCH_WIDTH
+                || y < TerminalLayout.SEARCH_TOP
+                || y >= TerminalLayout.SEARCH_TOP + TerminalLayout.SEARCH_HEIGHT) {
             return;
         }
         List<String> lines = new ArrayList<>();
@@ -502,7 +502,7 @@ public class GuiPatTerminal extends AEBaseGui {
 
     /** Left edge of a tab, by its index. */
     private static int tabLeft(int index) {
-        return LIST_LEFT + index * (ContainerPatTerminal.TAB_WIDTH + ContainerPatTerminal.TAB_GAP);
+        return LIST_LEFT + index * (TerminalLayout.TAB_WIDTH + TerminalLayout.TAB_GAP);
     }
 
     /** How many tabs the screen shows. The server config can turn the Machines tab off. */
@@ -545,9 +545,9 @@ public class GuiPatTerminal extends AEBaseGui {
             boolean active = (index == 1) == machinesView;
             int left = tabLeft(index);
             bindSheet();
-            drawModalRectWithCustomSizedTexture(left, ContainerPatTerminal.TAB_STRIP_TOP,
+            drawModalRectWithCustomSizedTexture(left, TerminalLayout.TAB_STRIP_TOP,
                     active ? TAB_ON_U : TAB_OFF_U, active ? TAB_ON_V : TAB_OFF_V,
-                    ContainerPatTerminal.TAB_WIDTH, ContainerPatTerminal.TAB_HEIGHT,
+                    TerminalLayout.TAB_WIDTH, TerminalLayout.TAB_HEIGHT,
                     SHEET, SHEET);
 
             // Eight pixels of air on the left, six between the icon and the label, eight
@@ -556,27 +556,27 @@ public class GuiPatTerminal extends AEBaseGui {
             ItemStack icon = tabIcon(index);
             int textLeft = left + 10;
             if (!icon.isEmpty()) {
-                drawItem(left + 8, ContainerPatTerminal.TAB_STRIP_TOP + 3, icon);
+                drawItem(left + 8, TerminalLayout.TAB_STRIP_TOP + 3, icon);
                 textLeft = left + 30;
             }
             fontRenderer.drawString(
-                    trim(tabName(index), left + ContainerPatTerminal.TAB_WIDTH - 8 - textLeft),
+                    trim(tabName(index), left + TerminalLayout.TAB_WIDTH - 8 - textLeft),
                     textLeft,
                     // An eight pixel line centred in a twenty two pixel tab.
-                    ContainerPatTerminal.TAB_STRIP_TOP + 7,
+                    TerminalLayout.TAB_STRIP_TOP + 7,
                     active ? COLOR_TEXT : COLOR_DIM);
         }
     }
 
     /** Index of the tab under these relative coordinates, or -1. */
     private int tabUnder(int x, int y) {
-        if (y < ContainerPatTerminal.TAB_STRIP_TOP
-                || y >= ContainerPatTerminal.TAB_STRIP_TOP + ContainerPatTerminal.TAB_HEIGHT) {
+        if (y < TerminalLayout.TAB_STRIP_TOP
+                || y >= TerminalLayout.TAB_STRIP_TOP + TerminalLayout.TAB_HEIGHT) {
             return -1;
         }
         for (int index = 0; index < tabCount(); index++) {
             int left = tabLeft(index);
-            if (x >= left && x < left + ContainerPatTerminal.TAB_WIDTH) {
+            if (x >= left && x < left + TerminalLayout.TAB_WIDTH) {
                 return index;
             }
         }
@@ -993,7 +993,7 @@ public class GuiPatTerminal extends AEBaseGui {
                 ? "gui.packagedautoterminals.result"
                 : "gui.packagedautoterminals.results", found);
         fontRenderer.drawString(text,
-                ContainerPatTerminal.STATUS_LEFT + ContainerPatTerminal.STATUS_WIDTH - 4
+                TerminalLayout.STATUS_LEFT + TerminalLayout.STATUS_WIDTH - 4
                         - fontRenderer.getStringWidth(text), y, COLOR_DIM);
     }
 

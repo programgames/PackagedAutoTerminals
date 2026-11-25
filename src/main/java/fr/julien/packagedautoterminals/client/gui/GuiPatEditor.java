@@ -1124,17 +1124,18 @@ public class GuiPatEditor extends AEBaseGui {
      * <p>FIXED: this method placed the frame on a **single** row, with
      * {@code TAB_LEFT + slot * 18}. The row has held ten columns over two rows for a while. Any
      * tab past the tenth therefore drew its green frame far to the right, outside the screen.
-     * The placement now matches the one of {@code bindEditorSlots}.
+     * The frame now reads its position in the tab slot.
      */
     private void drawSelectedTab() {
-        int slot = editorContainer.currentTab < 0
+        int tab = editorContainer.currentTab < 0
                 ? editorContainer.recipeCount - editorContainer.tabOffset
                 : editorContainer.currentTab - editorContainer.tabOffset;
-        if (slot < 0 || slot >= ContainerPatEditor.TAB_COUNT) {
+        if (tab < 0 || tab >= ContainerPatEditor.TAB_COUNT) {
             return;
         }
-        int x = ContainerPatEditor.TAB_LEFT + (slot % ContainerPatEditor.TAB_COLUMNS) * 18;
-        int y = ContainerPatEditor.TAB_TOP + (slot / ContainerPatEditor.TAB_COLUMNS) * 18;
+        Slot slot = editorContainer.tabSlot(tab);
+        int x = slot.xPos;
+        int y = slot.yPos;
         drawRect(x - 1, y - 1, x + 17, y, COLOR_SELECTED);
         drawRect(x - 1, y + 16, x + 17, y + 17, COLOR_SELECTED);
         drawRect(x - 1, y, x, y + 16, COLOR_SELECTED);
@@ -1255,24 +1256,15 @@ public class GuiPatEditor extends AEBaseGui {
     private void drawDisabledSlots(EditorInventory editor) {
         boolean readOnlyOutput =
                 editor.recipeType != null && !editor.recipeType.canSetOutput();
-        for (int slot = 0; slot < EditorInventory.INPUT_SLOTS + EditorInventory.OUTPUT_SLOTS; slot++) {
-            if (editor.isEditable(slot)) {
+        for (Slot slot : editorContainer.inventorySlots) {
+            int index = slot.getSlotIndex();
+            if (!(slot instanceof SlotFake) || editor.isEditable(index)) {
                 continue;
             }
-            if (readOnlyOutput && slot >= EditorInventory.INPUT_SLOTS) {
+            if (readOnlyOutput && index >= EditorInventory.INPUT_SLOTS) {
                 continue;
             }
-            int x;
-            int y;
-            if (slot < EditorInventory.INPUT_SLOTS) {
-                x = ContainerPatEditor.GRID_LEFT + (slot % 9) * 18;
-                y = ContainerPatEditor.GRID_TOP + (slot / 9) * 18;
-            } else {
-                int output = slot - EditorInventory.INPUT_SLOTS;
-                x = ContainerPatEditor.OUTPUT_LEFT + (output % 3) * 18;
-                y = ContainerPatEditor.OUTPUT_TOP + (output / 3) * 18;
-            }
-            drawRect(x, y, x + 16, y + 16, COLOR_DISABLED);
+            drawRect(slot.xPos, slot.yPos, slot.xPos + 16, slot.yPos + 16, COLOR_DISABLED);
         }
     }
 }

@@ -254,6 +254,11 @@ public class ContainerPatEditor extends AEBaseContainer {
         }
     }
 
+    /** The slot of a tab. {@link #bindEditorSlots} places the tabs first. */
+    public Slot tabSlot(int tab) {
+        return getSlot(tab);
+    }
+
     /** Tab: it shows the output of a recipe, and is not handled like an item. */
     private static final class SlotTab extends AppEngSlot {
         SlotTab(IItemHandler inventory, int index, int x, int y) {
