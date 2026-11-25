@@ -428,8 +428,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 100 tests, serveur dédié OK. Corrige aussi un défaut ancien (depuis 7cee15e, pas T11) : passer d'un onglet crafting à un onglet processing effaçait les sorties côté client et laissait Save désactivé ; le type part maintenant avant les cases. Backlog : JEI, cases fantômes et molette envoient encore une case par paquet (recalcul par case) ; après Scale all, les cases partent deux fois."
     },
     {
       "id": "T20",

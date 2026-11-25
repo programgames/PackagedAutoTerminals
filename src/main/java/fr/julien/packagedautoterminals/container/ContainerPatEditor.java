@@ -42,6 +42,8 @@ import appeng.container.slot.AppEngSlot;
 import appeng.container.slot.SlotFake;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.wrapper.InvWrapper;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
  * Editor for one recipe, opened from the terminal.
@@ -301,13 +303,21 @@ public class ContainerPatEditor extends AEBaseContainer {
         }
     }
 
-    /** A tab switches recipes, and a preview slot ignores the click. */
+    /**
+     * A tab switches recipes, and a preview slot ignores the click.
+     *
+     * <p>The client runs this method too, as a prediction, from
+     * {@code PlayerControllerMP.windowClick}. Only the server switches the tab: it alone knows
+     * the recipes, and it sends the result.
+     */
     @Override
     public ItemStack slotClick(int slotId, int dragType, ClickType clickType, EntityPlayer player) {
         if (slotId >= 0 && slotId < inventorySlots.size()) {
             Slot slot = inventorySlots.get(slotId);
             if (slot instanceof SlotTab) {
-                selectTab(slot.getSlotIndex());
+                if (!player.world.isRemote) {
+                    selectTab(slot.getSlotIndex());
+                }
                 return ItemStack.EMPTY;
             }
             if (slot instanceof SlotResult) {
@@ -420,6 +430,32 @@ public class ContainerPatEditor extends AEBaseContainer {
     private void sendChanges() {
         recipeTypeId = editor.recipeType == null ? -1 : RecipeTypeRegistry.getId(editor.recipeType);
         super.detectAndSendChanges();
+        // The slots go after the type, never before: the client rebuilds the recipe on the slots
+        // it receives, and a stale type that cannot set outputs wipes the ones just sent.
+        if (sendAllSlots) {
+            sendAllSlots = false;
+            for (net.minecraft.inventory.IContainerListener listener : listeners) {
+                listener.sendAllContents(this, getInventory());
+            }
+        }
+    }
+
+    /** Set by {@link #load}: the next {@link #sendChanges} also sends every slot at once. */
+    private boolean sendAllSlots;
+
+    /**
+     * A full send rebuilds the recipe once on the client, not once per slot: a craft recipe
+     * searches the whole recipe registry.
+     */
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void setAll(List<ItemStack> stacks) {
+        editor.beginGroup();
+        try {
+            super.setAll(stacks);
+        } finally {
+            editor.endGroup();
+        }
     }
 
     @Override
@@ -1136,9 +1172,7 @@ public class ContainerPatEditor extends AEBaseContainer {
 
         // Full send: differential synchronisation left the grid empty on screen after a tab
         // change.
-        for (net.minecraft.inventory.IContainerListener listener : listeners) {
-            listener.sendAllContents(this, getInventory());
-        }
+        sendAllSlots = true;
     }
 
     /** Deletes the current recipe, in every machine of the group. */
