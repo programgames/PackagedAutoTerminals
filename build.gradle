@@ -55,8 +55,9 @@ minecraft {
     mappings = targetMappings
 
     // Injects the version into Reference.VERSION at build time. It lives only in
-    // gradle.properties.
-    replace '@MOD_VERSION@', project.version.toString()
+    // gradle.properties. No Minecraft prefix: FML compares this value with the keys of
+    // update.json, which tools/release.sh writes without the prefix.
+    replace '@MOD_VERSION@', project.modVersion.toString()
 }
 
 repositories {

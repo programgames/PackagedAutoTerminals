@@ -361,8 +361,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "DA-08."
+      "statut": "fait",
+      "note": "DA-08. Revue acceptée. Reference.VERSION = 0.1.0-beta.10 ; ComparableVersion : beta.9 < beta.10 < beta.11. Les jars beta.1 à beta.9 déjà publiés gardent le préfixe : seule la prochaine version profite du correctif. Backlog : mcmod.info garde le préfixe (affichage double dans la liste des mods)."
     },
     {
       "id": "T17",
