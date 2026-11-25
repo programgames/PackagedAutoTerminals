@@ -1,6 +1,7 @@
 package fr.julien.packagedautoterminals.common;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -29,6 +30,7 @@ public class ProviderPairingTest {
         snapshot.role = role;
         snapshot.pos = new BlockPos(nextX++, 64, 0);
         snapshot.name = role.name().toLowerCase();
+        snapshot.holderPresent = true;
         for (String recipe : recipes) {
             snapshot.recipes.add(new FakeRecipe(recipe));
         }
@@ -182,5 +184,49 @@ public class ProviderPairingTest {
 
         assertEquals(1, groups.size());
         assertEquals(1, groups.get(0).recipes.size());
+    }
+
+    @Test
+    public void aHealthyPairOffersNoFix() {
+        // The button of this row used to send every holder of the group back to the network.
+        List<ProviderPairing.Group> groups = group(
+                machine(ProviderRole.PACKAGER, "iron"),
+                machine(ProviderRole.UNPACKAGER, "iron"));
+
+        assertEquals(ProviderPairing.Fix.NONE, groups.get(0).fix());
+    }
+
+    @Test
+    public void aMachineWithoutHolderIsOfferedOne() {
+        ProviderSnapshot unpackager = machine(ProviderRole.UNPACKAGER);
+        unpackager.holderPresent = false;
+
+        List<ProviderPairing.Group> groups = group(machine(ProviderRole.PACKAGER), unpackager);
+
+        assertEquals(ProviderPairing.Fix.INSERT_HOLDERS, groups.get(0).fix());
+    }
+
+    @Test
+    public void aDriftedGroupHoldingBothRolesIsOfferedTheRepair() {
+        ProviderSnapshot packager = machine(ProviderRole.PACKAGER, "iron", "gold");
+        ProviderSnapshot unpackager = machine(ProviderRole.UNPACKAGER, "iron");
+        packager.customName = "ingots";
+        unpackager.customName = "ingots";
+
+        assertEquals(ProviderPairing.Fix.REPAIR, group(packager, unpackager).get(0).fix());
+    }
+
+    @Test
+    public void aSplitPairIsNotOfferedTheRepair() {
+        // Each row holds one role. The repair copies into the machines of its own row, which
+        // already carry the recipes, and it wrote nothing.
+        List<ProviderPairing.Group> groups = group(
+                machine(ProviderRole.PACKAGER, "iron", "gold"),
+                machine(ProviderRole.UNPACKAGER, "iron"));
+
+        assertEquals(2, groups.size());
+        assertFalse(groups.get(0).isComplete(new FakeRecipe("iron")));
+        assertEquals(ProviderPairing.Fix.NONE, groups.get(0).fix());
+        assertEquals(ProviderPairing.Fix.NONE, groups.get(1).fix());
     }
 }

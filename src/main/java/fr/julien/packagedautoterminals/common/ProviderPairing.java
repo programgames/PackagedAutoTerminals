@@ -28,6 +28,14 @@ public final class ProviderPairing {
 
     private ProviderPairing() {}
 
+    /**
+     * What the one button of a group row offers.
+     *
+     * <p>It only ever adds. A holder sent back to the network keeps its recipes, and the
+     * terminal only takes blank holders from the network: no button could put it in again.
+     */
+    public enum Fix { NONE, INSERT_HOLDERS, REPAIR }
+
     /** A group: the paired machines, and the union of their recipes. */
     public static final class Group {
 
@@ -109,6 +117,40 @@ public final class ProviderPairing {
         /** Distinct machines, for the tooltip. */
         public int size() {
             return machines.size();
+        }
+
+        /** Does a machine of this group still wait for a recipe holder? */
+        public boolean needsHolder() {
+            for (ProviderSnapshot machine : machines) {
+                if (!machine.holderPresent) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /** Recipes of the group that only one side carries. */
+        public int unevenCount() {
+            int uneven = 0;
+            for (IRecipeInfo recipe : recipes) {
+                if (!isComplete(recipe)) {
+                    uneven++;
+                }
+            }
+            return uneven;
+        }
+
+        /**
+         * The repair comes first, then the holders.
+         *
+         * <p>The repair copies a recipe into the machines of this group only. A group that
+         * holds a single role has no other side to copy to: the repair would write nothing.
+         */
+        public Fix fix() {
+            if (unevenCount() > 0 && missingRoleOf(this) == null) {
+                return Fix.REPAIR;
+            }
+            return needsHolder() ? Fix.INSERT_HOLDERS : Fix.NONE;
         }
     }
 

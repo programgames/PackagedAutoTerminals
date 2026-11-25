@@ -341,8 +341,13 @@ Place the second Unpackager, connected, with no recipe holder.
 same role.
 
 ### E6 — Group removal
-**Shift + left click** on the pair line.
-→ Both recipe holders come back into the ME terminal, with their recipes.
+1. Hover the line of a healthy pair.
+   → No button replaces the chip. A left click on the chip opens the editor on a new recipe,
+   like the rest of the row. No recipe holder leaves its machine.
+2. **Shift + left click** on the pair line.
+   → The message "Shift + left click again to send the holders to the network". Nothing moves.
+3. **Shift + left click** on the same line again, within three seconds.
+   → Both recipe holders come back into the ME terminal, with their recipes.
 
 ### E7 — Two pairs that share one recipe 🆕
 Encode the same recipe into two different pairs, then give each pair one recipe of its own.
@@ -351,7 +356,8 @@ machines into a single "Group of 4 machines".
 
 ### E8 — Diverging pair 🆕
 On a pair carrying two recipes, remove **one** of them from the Packager only.
-→ The two sides no longer carry the same recipes, so they split into two lines. Name them with
+→ The two sides no longer carry the same recipes, so they split into two lines. Hover either
+line: no repair button, and the tooltip says to give both rows the same name. Name them with
 the same name in the editor: they join again, and the missing recipe is flagged in red.
 
 ---

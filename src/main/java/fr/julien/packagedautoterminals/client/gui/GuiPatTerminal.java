@@ -131,7 +131,6 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int GLYPH_V = 90;
     private static final int SEARCH_ICON_U = 330;
     private static final int SEARCH_ICON_SIZE = 8;
-    private static final int EJECT_U = 342;
     private static final int INSERT_U = 414;
     private static final int REPAIR_U = 428;
     private static final int PENCIL_U = 356;
@@ -216,7 +215,10 @@ public class GuiPatTerminal extends AEBaseGui {
     private String message = "";
     private long messageExpiry;
     private boolean messageRefused;
-    /** A removal waits for a second click on the same recipe, while its message shows. */
+    /**
+     * A removal, of a recipe or of the holders of a group, waits for a second click on the
+     * same target, while its message shows. One instance for both: arming one disarms the other.
+     */
     private final SecondClick removal = new SecondClick(MESSAGE_DURATION);
 
     public GuiPatTerminal(InventoryPlayer inventory, TerminalContext terminal) {
@@ -697,12 +699,9 @@ public class GuiPatTerminal extends AEBaseGui {
             fontRenderer.drawString(
                     trim(groupTitle(line.group), budget(GROUP_TEXT, state, stateRight - 6)),
                     GROUP_TEXT, y + TEXT_OFFSET, COLOR_TEXT);
-            if (hovered) {
-                // The buttons take the place of the chip. The state is in the tooltip anyway,
+            if (hovered && line.group.fix() != ProviderPairing.Fix.NONE) {
+                // The button takes the place of the chip. The state is in the tooltip anyway,
                 // and a row that grew a button would push every column sideways.
-                //
-                // One button, two directions. A group that lacks a holder wants one; a group
-                // that has them all can give them back. The arrow says which way it goes.
                 bindSheet();
                 drawModalRectWithCustomSizedTexture(stateRight - ACTION_SIZE, y + 4,
                         groupButton(line.group), GLYPH_V,
@@ -769,7 +768,7 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /** Action buttons of a row. They only exist while the pointer is on it. */
-    private static final int BUTTON_EJECT = 0;
+    private static final int BUTTON_GROUP = 0;
     private static final int BUTTON_EDIT = 1;
     private static final int BUTTON_REMOVE = 2;
 
@@ -789,9 +788,12 @@ public class GuiPatTerminal extends AEBaseGui {
         }
         int rightEdge = LIST_LEFT + LIST_WIDTH - 4;
         if (line.isGroupHeader()) {
+            if (line.group.fix() == ProviderPairing.Fix.NONE) {
+                return -1;
+            }
             ItemStack machine = CrafterTypes.iconFor(groupMachineType(line.group));
             int stateRight = machine.isEmpty() ? LOCATE_LEFT - 4 : GROUP_MACHINE_LEFT - 4;
-            return x >= stateRight - ACTION_SIZE && x < stateRight ? BUTTON_EJECT : -1;
+            return x >= stateRight - ACTION_SIZE && x < stateRight ? BUTTON_GROUP : -1;
         }
         if (line.recipe == null) {
             return -1;
@@ -802,55 +804,25 @@ public class GuiPatTerminal extends AEBaseGui {
         return x >= rightEdge - ACTION_SIZE && x < rightEdge ? BUTTON_REMOVE : -1;
     }
 
-    /**
-     * Does a machine of this group still wait for a recipe holder?
-     *
-     * <p>One machine without a holder is enough: the group cannot run until it has one, and
-     * giving is then more useful than taking back.
-     */
-    private boolean needsHolder(ProviderPairing.Group group) {
-        for (ProviderSnapshot machine : group.machines) {
-            if (!machine.holderPresent) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * The glyph of the one button a group row carries, and what it will do.
-     *
-     * <p>Three jobs share one place, in the order of what the group needs first. A group whose
-     * two sides have drifted apart wants them made equal. A group whose machines wait for a
-     * recipe holder wants one. Anything else can give its holders back.
-     */
-    private int groupButton(ProviderPairing.Group group) {
-        if (unevenCount(group) > 0) {
-            return REPAIR_U;
-        }
-        return needsHolder(group) ? INSERT_U : EJECT_U;
+    /** The glyph of the one button a group row carries, when it carries one. */
+    private static int groupButton(ProviderPairing.Group group) {
+        return group.fix() == ProviderPairing.Fix.REPAIR ? REPAIR_U : INSERT_U;
     }
 
     /** Which packet the one button of a group row sends. */
-    private byte groupButtonAction(ProviderPairing.Group group) {
-        if (unevenCount(group) > 0) {
-            return PacketRecipeAction.ACTION_REPAIR_GROUP;
-        }
-        return needsHolder(group)
-                ? PacketRecipeAction.ACTION_INSERT_HOLDER
-                : PacketRecipeAction.ACTION_REMOVE_HOLDER;
+    private static byte groupButtonAction(ProviderPairing.Group group) {
+        return group.fix() == ProviderPairing.Fix.REPAIR
+                ? PacketRecipeAction.ACTION_REPAIR_GROUP
+                : PacketRecipeAction.ACTION_INSERT_HOLDER;
     }
 
     /** What a button of the hovered row does, in one line. */
     private List<String> actionTooltip(Line line, int action) {
         List<String> lines = new ArrayList<>();
-        if (action == BUTTON_EJECT) {
-            int glyph = groupButton(line.group);
-            lines.add(I18n.format(glyph == REPAIR_U
+        if (action == BUTTON_GROUP) {
+            lines.add(I18n.format(line.group.fix() == ProviderPairing.Fix.REPAIR
                     ? "gui.packagedautoterminals.repair_hint"
-                    : (glyph == INSERT_U
-                            ? "gui.packagedautoterminals.insert_holder_hint"
-                            : "gui.packagedautoterminals.remove_holder_hint")));
+                    : "gui.packagedautoterminals.insert_holder_hint"));
         } else if (action == BUTTON_EDIT) {
             lines.add(I18n.format("gui.packagedautoterminals.edit_hint"));
         } else {
@@ -1065,10 +1037,10 @@ public class GuiPatTerminal extends AEBaseGui {
         if (group.recipes.isEmpty()) {
             return I18n.format("gui.packagedautoterminals.no_recipe_yet");
         }
-        if (needsHolder(group)) {
+        if (group.needsHolder()) {
             return I18n.format("gui.packagedautoterminals.no_holder");
         }
-        int uneven = unevenCount(group);
+        int uneven = group.unevenCount();
         if (uneven > 0) {
             return I18n.format("gui.packagedautoterminals.group_uneven", uneven);
         }
@@ -1088,22 +1060,11 @@ public class GuiPatTerminal extends AEBaseGui {
         return false;
     }
 
-    /** Recipes of the group that only one of its machines carries. */
-    private int unevenCount(ProviderPairing.Group group) {
-        int uneven = 0;
-        for (IRecipeInfo recipe : group.recipes) {
-            if (!group.isComplete(recipe)) {
-                uneven++;
-            }
-        }
-        return uneven;
-    }
-
     /** Is the chip of this group a fault, hence drawn in the warning colour? */
     private boolean groupTroubled(ProviderPairing.Group group) {
         return ProviderPairing.missingRoleOf(group) != null
                 || hasInactive(group)
-                || (!group.recipes.isEmpty() && (needsHolder(group) || unevenCount(group) > 0));
+                || (!group.recipes.isEmpty() && (group.needsHolder() || group.unevenCount() > 0));
     }
 
     @Override
@@ -1181,7 +1142,7 @@ public class GuiPatTerminal extends AEBaseGui {
             return;
         }
         search.mouseClicked(mouseX, mouseY, mouseButton);
-        // Left click on a machine: new recipe.
+        // Left click on a machine: new recipe. Shift + left click, twice: send its holders back.
         // Right click on a recipe: edit it. Shift + right click, twice: delete it.
         Line clicked = machinesView ? null : lineUnder(mouseX - guiLeft, mouseY - guiTop);
         if (clicked != null && clicked.isGroupHeader()
@@ -1202,9 +1163,9 @@ public class GuiPatTerminal extends AEBaseGui {
         }
         // The buttons of the hovered row come before the row itself: both answer the same
         // click, and the button is the one the player aimed at.
-        if (clicked != null && clicked.group != null) {
+        if (clicked != null && clicked.group != null && mouseButton == 0) {
             int action = actionUnder(clicked, mouseX - guiLeft, mouseY - guiTop);
-            if (action == BUTTON_EJECT) {
+            if (action == BUTTON_GROUP) {
                 send(clicked.anchor(), -1, groupButtonAction(clicked.group));
                 return;
             }
@@ -1212,7 +1173,7 @@ public class GuiPatTerminal extends AEBaseGui {
                 sendRecipe(clicked, PacketRecipeAction.ACTION_EDIT);
                 return;
             }
-            if (action == BUTTON_REMOVE && mouseButton == 0) {
+            if (action == BUTTON_REMOVE) {
                 remove(clicked);
                 return;
             }
@@ -1221,9 +1182,11 @@ public class GuiPatTerminal extends AEBaseGui {
         if (clicked != null && clicked.group != null) {
             ProviderSnapshot anchor = clicked.anchor();
             if (mouseButton == 0 && clicked.isGroupHeader()) {
-                send(anchor, -1, isShiftKeyDown()
-                        ? PacketRecipeAction.ACTION_REMOVE_HOLDER
-                        : PacketRecipeAction.ACTION_NEW);
+                if (isShiftKeyDown()) {
+                    removeHolders(clicked);
+                } else {
+                    send(anchor, -1, PacketRecipeAction.ACTION_NEW);
+                }
                 return;
             }
             if (mouseButton == 1 && clicked.recipe != null) {
@@ -1316,6 +1279,15 @@ public class GuiPatTerminal extends AEBaseGui {
         }
     }
 
+    /** Sends the holders of the group back to the network on the second click. */
+    private void removeHolders(Line line) {
+        if (removal.confirms(keyOf(line.group), System.currentTimeMillis())) {
+            send(line.anchor(), -1, PacketRecipeAction.ACTION_REMOVE_HOLDER);
+        } else {
+            say("gui.packagedautoterminals.remove_holder_confirm", true);
+        }
+    }
+
     private void sendRecipe(Line line, byte action) {
         ProviderSnapshot anchor = line.anchor();
         PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(anchor.dimension, anchor.pos,
@@ -1381,10 +1353,12 @@ public class GuiPatTerminal extends AEBaseGui {
                                 machine.pos.getX(), machine.pos.getY(), machine.pos.getZ(),
                                 machine.dimension) + fault);
             }
-            int uneven = unevenCount(line.group);
+            int uneven = line.group.unevenCount();
             if (uneven > 0) {
                 lines.add(TextFormatting.RED
                         + I18n.format("gui.packagedautoterminals.group_uneven", uneven));
+            }
+            if (line.group.fix() == ProviderPairing.Fix.REPAIR) {
                 lines.add(TextFormatting.GRAY
                         + I18n.format("gui.packagedautoterminals.repair_hint"));
             }
@@ -1401,6 +1375,10 @@ public class GuiPatTerminal extends AEBaseGui {
                 // and the screen cannot see it. Saying so costs one line and saves a hunt.
                 lines.add(TextFormatting.GRAY
                         + I18n.format("gui.packagedautoterminals.missing_chunk_help"));
+                // A pair that drifted apart splits into two rows of one role each, and only a
+                // shared name joins them again.
+                lines.add(TextFormatting.GRAY
+                        + I18n.format("gui.packagedautoterminals.join_hint"));
             }
             IRecipeType machineType = groupMachineType(line.group);
             if (machineType != null) {
