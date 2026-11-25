@@ -21,7 +21,6 @@ config.packagedautoterminals.refresh_ticks=Интервал обновления
 config.packagedautoterminals.wut_mode_id=Id режима в Wireless Universal Terminal
 config.packagedautoterminals.machines_tab=Вкладка «Машины»
 config.packagedautoterminals.pull_holder=Брать носитель из сети
-config.packagedautoterminals.tooltip_stacks=Предметов в подсказке
 config.packagedautoterminals.wireless_power=Расход беспроводной энергии за тик
 config.packagedautoterminals.highlight_seconds=Длительность отметки, в секундах
 gui.packagedautoterminals.new_hint=Левый клик: новый рецепт

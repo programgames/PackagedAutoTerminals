@@ -21,7 +21,6 @@ config.packagedautoterminals.refresh_ticks=刷新间隔
 config.packagedautoterminals.wut_mode_id=无线通用终端模式ID
 config.packagedautoterminals.machines_tab=机器标签页
 config.packagedautoterminals.pull_holder=从网络取用储存器
-config.packagedautoterminals.tooltip_stacks=提示框内显示物品
 config.packagedautoterminals.wireless_power=无线每刻能耗
 gui.packagedautoterminals.new_hint=左键点击：新建配方
 gui.packagedautoterminals.no_blank_holder=网络中没有空白的样板包储存器

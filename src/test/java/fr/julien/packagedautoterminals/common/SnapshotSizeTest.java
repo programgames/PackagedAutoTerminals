@@ -119,7 +119,6 @@ public class SnapshotSizeTest {
         for (int pair = 0; pair < pairs; pair++) {
             for (ProviderRole role : new ProviderRole[] {ProviderRole.PACKAGER, ProviderRole.UNPACKAGER}) {
                 ProviderSnapshot machine = new ProviderSnapshot();
-                machine.id = providers.size();
                 machine.name = role == ProviderRole.PACKAGER ? "Packager" : "Unpackager";
                 machine.pos = new BlockPos(-1200 + pair, 64, 3400 + role.ordinal());
                 machine.active = true;

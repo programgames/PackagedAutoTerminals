@@ -33,7 +33,6 @@ public final class ProviderScanner {
         if (grid == null) {
             return found;
         }
-        int nextId = 0;
         for (Class<? extends IGridHost> machineClass : grid.getMachinesClasses()) {
             if (!IPackageProvidingMachine.class.isAssignableFrom(machineClass)) {
                 continue;
@@ -43,7 +42,7 @@ public final class ProviderScanner {
                 if (!(machine instanceof IPackageProvidingMachine)) {
                     continue;
                 }
-                found.add(describe(nextId++, node, (IPackageProvidingMachine) machine));
+                found.add(describe(node, (IPackageProvidingMachine) machine));
             }
         }
         return found;
@@ -79,9 +78,8 @@ public final class ProviderScanner {
         return null;
     }
 
-    private static ProviderSnapshot describe(int id, IGridNode node, IPackageProvidingMachine machine) {
+    private static ProviderSnapshot describe(IGridNode node, IPackageProvidingMachine machine) {
         ProviderSnapshot snapshot = new ProviderSnapshot();
-        snapshot.id = id;
         // Server side only, and never serialised. See the field.
         snapshot.machine = machine;
         snapshot.active = node.isActive();

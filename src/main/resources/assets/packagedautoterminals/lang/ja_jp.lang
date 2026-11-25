@@ -21,7 +21,6 @@ config.packagedautoterminals.refresh_ticks=更新間隔
 config.packagedautoterminals.wut_mode_id=Wireless Universal Terminalのモード ID
 config.packagedautoterminals.machines_tab=「機械」タブ
 config.packagedautoterminals.pull_holder=ネットワークからホルダーを取る
-config.packagedautoterminals.tooltip_stacks=ツールチップに表示するアイテム数
 config.packagedautoterminals.wireless_power=無線端末の消費エネルギー(1tickあたり)
 config.packagedautoterminals.highlight_seconds=マークの表示時間(秒)
 gui.packagedautoterminals.new_hint=左クリック: 新しいレシピ

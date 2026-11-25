@@ -21,7 +21,6 @@ config.packagedautoterminals.refresh_ticks=Odstęp odświeżania
 config.packagedautoterminals.wut_mode_id=Id trybu w Wireless Universal Terminal
 config.packagedautoterminals.machines_tab=Zakładka Maszyny
 config.packagedautoterminals.pull_holder=Pobieraj nośnik z sieci
-config.packagedautoterminals.tooltip_stacks=Przedmioty w podpowiedzi
 config.packagedautoterminals.wireless_power=Pobór energii bezprzewodowej na tick
 config.packagedautoterminals.highlight_seconds=Czas oznaczenia, w sekundach
 gui.packagedautoterminals.new_hint=Lewy przycisk: nowa receptura

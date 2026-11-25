@@ -29,7 +29,6 @@ public class PacketProviderList implements IMessage {
     public static final long CAP = 2_000_000L;
 
     public NBTTagCompound payload = new NBTTagCompound();
-    public int payloadBytes;
 
     public PacketProviderList() {}
 
@@ -68,7 +67,6 @@ public class PacketProviderList implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        payloadBytes = buf.readableBytes();
         payload = ByteBufUtils.readTag(buf);
     }
 

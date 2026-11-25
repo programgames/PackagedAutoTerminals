@@ -123,15 +123,6 @@ public class ContainerPatTerminal extends AEBaseContainer {
      */
     public int revision;
     /**
-     * Size of the last payload received, in bytes. Written by {@code ClientHandler}.
-     *
-     * <p>It is **not shown** anywhere yet, and an earlier comment claimed it was. It exists for
-     * the measurement revision **R2** asks for: R2 accepted the simple "resend everything" path
-     * until a figure proves it too costly, and no figure has been taken yet. Read it in a debugger
-     * on a network with many providers, or draw it in a tooltip for the length of the measurement.
-     */
-    public int lastPayloadBytes;
-    /**
      * Client side only. Counted bytes of the snapshot the server held back, or 0.
      *
      * <p>Past {@link PacketProviderList#CAP}, the server sends this size instead of the snapshot,

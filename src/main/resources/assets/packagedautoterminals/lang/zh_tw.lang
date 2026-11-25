@@ -21,7 +21,6 @@ config.packagedautoterminals.refresh_ticks=更新間隔
 config.packagedautoterminals.wut_mode_id=無線通用終端模式ID
 config.packagedautoterminals.machines_tab=機器分頁
 config.packagedautoterminals.pull_holder=自網路取用儲存器
-config.packagedautoterminals.tooltip_stacks=提示框內顯示的物品數
 config.packagedautoterminals.wireless_power=無線每刻能耗
 config.packagedautoterminals.highlight_seconds=標記持續時間（秒）
 gui.packagedautoterminals.new_hint=左鍵點擊：新增配方

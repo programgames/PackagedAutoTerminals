@@ -32,9 +32,10 @@ public class MachineClassNamesTest {
 
     @Test
     public void everyPackagedAutoClassNamedInATableExists() throws Exception {
-        Set<String> names = new HashSet<>(CrafterTypes.all().values());
-        names.addAll(privateNames(CrafterTypes.class, "ROUTERS"));
-        names.addAll(privateNames(ProviderRole.class, "BY_CLASS"));
+        Set<String> names = new HashSet<>(
+                strings(((Map<?, ?>) privateStatic(CrafterTypes.class, "MACHINE_BY_TYPE")).values()));
+        names.addAll(strings((Collection<?>) privateStatic(CrafterTypes.class, "ROUTERS")));
+        names.addAll(strings(((Map<?, ?>) privateStatic(ProviderRole.class, "BY_CLASS")).keySet()));
         names.removeAll(ABSENT_ADDONS);
 
         for (String name : names) {
@@ -42,12 +43,13 @@ public class MachineClassNamesTest {
         }
     }
 
-    /** The strings of a private static set, or the keys of a private static map. */
-    private static List<String> privateNames(Class<?> owner, String fieldName) throws Exception {
+    private static Object privateStatic(Class<?> owner, String fieldName) throws Exception {
         Field field = owner.getDeclaredField(fieldName);
         field.setAccessible(true);
-        Object value = field.get(null);
-        Collection<?> items = value instanceof Map ? ((Map<?, ?>) value).keySet() : (Collection<?>) value;
+        return field.get(null);
+    }
+
+    private static List<String> strings(Collection<?> items) {
         List<String> names = new ArrayList<>();
         for (Object item : items) {
             names.add((String) item);

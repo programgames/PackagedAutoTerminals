@@ -21,7 +21,6 @@ config.packagedautoterminals.refresh_ticks=Intervalo de atualização
 config.packagedautoterminals.wut_mode_id=Id de modo no Wireless Universal Terminal
 config.packagedautoterminals.machines_tab=Aba Máquinas
 config.packagedautoterminals.pull_holder=Retirar um suporte da rede
-config.packagedautoterminals.tooltip_stacks=Itens listados na dica
 config.packagedautoterminals.wireless_power=Energia sem fio por tick
 config.packagedautoterminals.highlight_seconds=Duração da marcação, em segundos
 gui.packagedautoterminals.new_hint=Clique esquerdo: nova receita

@@ -66,14 +66,6 @@ public final class PatConfig {
     public static boolean machinesTab = true;
 
     @Config.Comment({
-            "Maximum number of items listed in a recipe tooltip.",
-            "Beyond that, the tooltip shows how many are left."
-    })
-    @Config.RangeInt(min = 3, max = 32)
-    @Config.LangKey("config.packagedautoterminals.tooltip_stacks")
-    public static int tooltipStacks = 8;
-
-    @Config.Comment({
             "How long the machines stay marked in the world, in seconds.",
             "The mark is the tinted cube, its outline and the beam going up."
     })

@@ -7,7 +7,6 @@ import appeng.core.localization.GuiText;
 import appeng.items.tools.powered.powersink.AEBasePoweredItem;
 import appeng.util.ConfigManager;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
-import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.network.PacketOpenTerminal;
 import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
@@ -157,11 +156,6 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
     /** Cost of one opening, read by the container to draw the energy. */
     public static double powerPerOpen() {
         return POWER_PER_OPEN;
-    }
-
-    /** Mode id for AE2 Wireless Universal Terminal, adjustable in the config. */
-    public static byte wutMode() {
-        return (byte) PatConfig.wutModeId;
     }
 
     /**

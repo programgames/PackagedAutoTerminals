@@ -21,7 +21,6 @@ config.packagedautoterminals.refresh_ticks=Verversingsinterval
 config.packagedautoterminals.wut_mode_id=Modus-id in Wireless Universal Terminal
 config.packagedautoterminals.machines_tab=Tabblad Machines
 config.packagedautoterminals.pull_holder=Houder uit het netwerk halen
-config.packagedautoterminals.tooltip_stacks=Items in een tooltip
 config.packagedautoterminals.wireless_power=Draadloos verbruik per tick
 config.packagedautoterminals.highlight_seconds=Duur van de markering, in seconden
 gui.packagedautoterminals.new_hint=Linksklik: nieuw recept

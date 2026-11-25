@@ -21,7 +21,6 @@ config.packagedautoterminals.refresh_ticks=Refresh interval
 config.packagedautoterminals.wut_mode_id=Wireless Universal Terminal mode id
 config.packagedautoterminals.machines_tab=Machines tab
 config.packagedautoterminals.pull_holder=Take a holder from the network
-config.packagedautoterminals.tooltip_stacks=Items listed in a tooltip
 config.packagedautoterminals.wireless_power=Wireless power per tick
 config.packagedautoterminals.highlight_seconds=Mark duration, in seconds
 gui.packagedautoterminals.new_hint=Left click: new recipe

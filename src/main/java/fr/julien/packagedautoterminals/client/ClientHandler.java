@@ -35,7 +35,6 @@ public final class ClientHandler {
         container.machines = machines;
         container.machinesTab = message.payload.getBoolean("MachinesTab");
 
-        container.lastPayloadBytes = message.payloadBytes;
         container.tooBigBytes = message.payload.getLong("TooBig");
         // The screen watches this number to know that its rows are out of date.
         container.revision++;

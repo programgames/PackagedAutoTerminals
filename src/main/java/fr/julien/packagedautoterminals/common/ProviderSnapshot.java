@@ -21,8 +21,6 @@ import thelm.packagedauto.api.MiscUtil;
  */
 public class ProviderSnapshot {
 
-    /** Stable id for this GUI session. Used by the client commands. */
-    public int id;
     /** Display name of the machine. */
     public String name = "";
     /** Machine icon, provided by {@code IGridBlock.getMachineRepresentation()}. */
@@ -91,7 +89,6 @@ public class ProviderSnapshot {
 
     private NBTTagCompound writeToNBT() {
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setInteger("Id", id);
         tag.setString("Name", name);
         tag.setTag("Icon", icon.writeToNBT(new NBTTagCompound()));
         tag.setInteger("Dim", dimension);
@@ -105,7 +102,6 @@ public class ProviderSnapshot {
 
     private static ProviderSnapshot readFromNBT(NBTTagCompound tag) {
         ProviderSnapshot snapshot = new ProviderSnapshot();
-        snapshot.id = tag.getInteger("Id");
         snapshot.name = tag.getString("Name");
         snapshot.icon = new ItemStack(tag.getCompoundTag("Icon"));
         snapshot.dimension = tag.getInteger("Dim");

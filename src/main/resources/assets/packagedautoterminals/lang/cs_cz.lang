@@ -21,7 +21,6 @@ config.packagedautoterminals.refresh_ticks=Interval obnovení
 config.packagedautoterminals.wut_mode_id=Id režimu ve Wireless Universal Terminal
 config.packagedautoterminals.machines_tab=Karta Stroje
 config.packagedautoterminals.pull_holder=Brát nosič ze sítě
-config.packagedautoterminals.tooltip_stacks=Předměty v popisku
 config.packagedautoterminals.wireless_power=Bezdrátová spotřeba za tick
 config.packagedautoterminals.highlight_seconds=Doba označení, v sekundách
 gui.packagedautoterminals.new_hint=Levé tlačítko: nový recept

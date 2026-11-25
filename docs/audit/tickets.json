@@ -451,8 +451,8 @@
       "porte": "sens_unique",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "Porte à sens unique validée par Julien (QUESTIONS.md, question 5)."
+      "statut": "fait",
+      "note": "Porte à sens unique validée par Julien (QUESTIONS.md, question 5). Revue acceptée. 101 tests, checkLang 148 clés, grep_rc=1. PatConfigTest prouve qu'un ancien fichier avec une clé orpheline se charge. Backlog : Forge garde la clé orpheline dans le fichier, et l'écran de configuration par défaut la montre encore comme entrée brute sans effet ; PatConfigTest ne restaure pas FMLInjectionData.minecraftHome ; CHANGELOG ne note pas le retrait."
     },
     {
       "id": "T21",

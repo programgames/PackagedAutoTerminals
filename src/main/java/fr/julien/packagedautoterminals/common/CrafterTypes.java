@@ -1,6 +1,5 @@
 package fr.julien.packagedautoterminals.common;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -140,10 +139,5 @@ public final class CrafterTypes {
      */
     public static boolean isDiagnosable(IRecipeType type) {
         return type != null && type.hasMachine() && MACHINE_BY_TYPE.containsKey(type.getName());
-    }
-
-    /** Full table, read only. Useful for tests and for the startup log. */
-    public static Map<ResourceLocation, String> all() {
-        return Collections.unmodifiableMap(MACHINE_BY_TYPE);
     }
 }

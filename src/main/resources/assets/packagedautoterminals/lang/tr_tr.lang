@@ -21,7 +21,6 @@ config.packagedautoterminals.refresh_ticks=Yenileme aralığı
 config.packagedautoterminals.wut_mode_id=Wireless Universal Terminal mod kimliği
 config.packagedautoterminals.machines_tab=Makineler sekmesi
 config.packagedautoterminals.pull_holder=Ağdan taşıyıcı al
-config.packagedautoterminals.tooltip_stacks=İpucunda listelenen eşya
 config.packagedautoterminals.wireless_power=Tick başına kablosuz enerji
 config.packagedautoterminals.highlight_seconds=İşaret süresi, saniye
 gui.packagedautoterminals.new_hint=Sol tık: yeni tarif

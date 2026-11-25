@@ -28,10 +28,7 @@ public final class Reference {
     public static final String PACKAGED_AUTO = "packagedauto";
 
     /** Optional addons. Each integration is detected by its modid (decision D07). */
-    public static final String PACKAGED_EX_CRAFTING = "packagedexcrafting";
-    public static final String PACKAGED_AVARITIA = "packagedavaritia";
     public static final String PACKAGED_FLUID_CRAFTING = "packagedfluidcrafting";
-    public static final String PACKAGING_PROVIDER = "packagingprovider";
     public static final String AE2WUT = "ae2wut";
 
     private Reference() {}
