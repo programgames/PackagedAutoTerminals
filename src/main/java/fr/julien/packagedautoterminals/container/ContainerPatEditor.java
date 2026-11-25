@@ -1122,7 +1122,7 @@ public class ContainerPatEditor extends AEBaseContainer {
                 return;
             }
             tell("gui.packagedautoterminals.holders_written", changed);
-            load(-1);
+            keepAsNewRecipe();
             return;
         }
         IGrid grid = grid();
@@ -1152,7 +1152,19 @@ public class ContainerPatEditor extends AEBaseContainer {
                         ? "gui.packagedautoterminals.applied_to_one"
                         : "gui.packagedautoterminals.applied_to",
                 result.changed);
-        load(-1);
+        keepAsNewRecipe();
+    }
+
+    /**
+     * After a delete, the grid keeps the deleted recipe on the creation tab: Save writes it back.
+     * It is unsaved work, so leaving the tab asks first.
+     */
+    private void keepAsNewRecipe() {
+        index = -1;
+        currentTab = -1;
+        openedRecipe = null;
+        dirty = true;
+        pendingTab = Integer.MIN_VALUE;
     }
 
     /** Position of a recipe in a list, by equality. -1 when the list no longer carries it. */

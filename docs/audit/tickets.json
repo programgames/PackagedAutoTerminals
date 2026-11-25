@@ -203,8 +203,8 @@
         "T08"
       ],
       "taille": "M",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 83 tests, checkLang 143 clés. QA en jeu à faire. Backlog : après Delete, dirty=true bloque scaleAll (scale_unsaved) jusqu'au changement d'onglet ; CHANGELOG, TESTING D10 et curseforge-description.md ne décrivent pas encore les nouveaux gestes ; l'infobulle du crayon dit « Right click » alors que le clic gauche marche aussi."
     },
     {
       "id": "T10",

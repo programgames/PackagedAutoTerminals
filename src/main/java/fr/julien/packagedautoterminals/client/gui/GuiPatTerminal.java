@@ -2,6 +2,7 @@ package fr.julien.packagedautoterminals.client.gui;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -25,6 +26,7 @@ import fr.julien.packagedautoterminals.common.ProviderPairing;
 import fr.julien.packagedautoterminals.common.ProviderRole;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.common.SearchQuery;
+import fr.julien.packagedautoterminals.common.SecondClick;
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
@@ -214,6 +216,8 @@ public class GuiPatTerminal extends AEBaseGui {
     private String message = "";
     private long messageExpiry;
     private boolean messageRefused;
+    /** A removal waits for a second click on the same recipe, while its message shows. */
+    private final SecondClick removal = new SecondClick(MESSAGE_DURATION);
 
     public GuiPatTerminal(InventoryPlayer inventory, TerminalContext terminal) {
         super(new ContainerPatTerminal(inventory, terminal));
@@ -850,7 +854,7 @@ public class GuiPatTerminal extends AEBaseGui {
         } else if (action == BUTTON_EDIT) {
             lines.add(I18n.format("gui.packagedautoterminals.edit_hint"));
         } else {
-            lines.add(I18n.format("gui.packagedautoterminals.delete_hint"));
+            lines.add(I18n.format("gui.packagedautoterminals.delete_button_hint"));
         }
         return lines;
     }
@@ -1178,7 +1182,7 @@ public class GuiPatTerminal extends AEBaseGui {
         }
         search.mouseClicked(mouseX, mouseY, mouseButton);
         // Left click on a machine: new recipe.
-        // Right click on a recipe: edit it. Shift + right click: delete it.
+        // Right click on a recipe: edit it. Shift + right click, twice: delete it.
         Line clicked = machinesView ? null : lineUnder(mouseX - guiLeft, mouseY - guiTop);
         if (clicked != null && clicked.isGroupHeader()
                 && overLocate(mouseX - guiLeft, mouseY - guiTop)) {
@@ -1208,8 +1212,8 @@ public class GuiPatTerminal extends AEBaseGui {
                 sendRecipe(clicked, PacketRecipeAction.ACTION_EDIT);
                 return;
             }
-            if (action == BUTTON_REMOVE) {
-                sendRecipe(clicked, PacketRecipeAction.ACTION_REMOVE);
+            if (action == BUTTON_REMOVE && mouseButton == 0) {
+                remove(clicked);
                 return;
             }
         }
@@ -1223,9 +1227,11 @@ public class GuiPatTerminal extends AEBaseGui {
                 return;
             }
             if (mouseButton == 1 && clicked.recipe != null) {
-                sendRecipe(clicked, isShiftKeyDown()
-                        ? PacketRecipeAction.ACTION_REMOVE
-                        : PacketRecipeAction.ACTION_EDIT);
+                if (isShiftKeyDown()) {
+                    remove(clicked);
+                } else {
+                    sendRecipe(clicked, PacketRecipeAction.ACTION_EDIT);
+                }
                 return;
             }
         }
@@ -1298,6 +1304,16 @@ public class GuiPatTerminal extends AEBaseGui {
     private void send(ProviderSnapshot anchor, int index, byte action) {
         PatNetwork.CHANNEL.sendToServer(
                 new PacketRecipeAction(anchor.dimension, anchor.pos, index, action));
+    }
+
+    /** Removes the recipe of this row on the second click, so a stray click loses nothing. */
+    private void remove(Line line) {
+        if (removal.confirms(Arrays.asList(keyOf(line.group), line.recipe),
+                System.currentTimeMillis())) {
+            sendRecipe(line, PacketRecipeAction.ACTION_REMOVE);
+        } else {
+            say("gui.packagedautoterminals.delete_confirm", true);
+        }
     }
 
     private void sendRecipe(Line line, byte action) {
