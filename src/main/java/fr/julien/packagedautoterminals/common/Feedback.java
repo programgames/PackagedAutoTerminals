@@ -37,7 +37,8 @@ public final class Feedback {
      * the same kind of half done write.
      *
      * <p>The list is now exact, and lives in one place. **A new refusal key must be added here**,
-     * or it will be drawn as a success.
+     * or it will be drawn as a success. {@code FeedbackKeysTest} fails on any key sent by
+     * {@code tell} that is neither here nor in its own list of successes.
      *
      * <p>The two {@code applied_} entries are not refusals: the write did happen. They are listed
      * because they say that a machine was left behind, and the player has to act.
@@ -53,7 +54,11 @@ public final class Feedback {
                     "gui.packagedautoterminals.scale_invalid",
                     "gui.packagedautoterminals.scale_unsaved",
                     "gui.packagedautoterminals.no_holder_here",
+                    "gui.packagedautoterminals.no_blank_holder",
+                    "gui.packagedautoterminals.no_permission",
+                    "gui.packagedautoterminals.machine_gone",
                     "gui.packagedautoterminals.network_full",
+                    "gui.packagedautoterminals.holders_partial",
                     "gui.packagedautoterminals.group_full",
                     "gui.packagedautoterminals.write_failed",
                     "gui.packagedautoterminals.group_changed",

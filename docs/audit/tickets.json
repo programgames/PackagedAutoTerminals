@@ -69,8 +69,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 54 tests ; deux mutations font rougir FeedbackKeysTest. Backlog : repairGroup compte des écritures (recette × machine), pas des machines ; Javadoc de Feedback.java:43 dit « two applied_ entries » au lieu de trois."
     },
     {
       "id": "T04",

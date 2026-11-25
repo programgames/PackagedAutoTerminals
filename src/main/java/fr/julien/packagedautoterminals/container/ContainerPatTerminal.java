@@ -477,6 +477,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
         int copied = 0;
         int full = 0;
         int withoutHolder = 0;
+        int supplied = 0;
         for (IRecipeInfo recipe : uneven) {
             // A null old recipe means "add it where it is missing": applyTo leaves a machine
             // that already carries it untouched, and still honours the twenty recipe cap.
@@ -485,6 +486,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
             copied += result.changed;
             full += result.full;
             withoutHolder += result.withoutHolder;
+            supplied += result.supplied;
         }
 
         if (copied == 0) {
@@ -493,6 +495,8 @@ public class ContainerPatTerminal extends AEBaseContainer {
             tell("gui.packagedautoterminals.applied_partial", copied, withoutHolder);
         } else if (full > 0) {
             tell("gui.packagedautoterminals.applied_partial_full", copied, full);
+        } else if (supplied > 0) {
+            tell("gui.packagedautoterminals.applied_with_holder", copied, supplied);
         } else {
             tell(copied == 1
                             ? "gui.packagedautoterminals.applied_to_one"
