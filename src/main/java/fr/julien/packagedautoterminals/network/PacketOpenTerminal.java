@@ -1,8 +1,7 @@
 package fr.julien.packagedautoterminals.network;
 
-import appeng.api.AEApi;
-import appeng.api.features.ILocatable;
-import appeng.api.features.IWirelessTermHandler;
+import java.util.function.Predicate;
+
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.integration.wut.WutSupport;
 import fr.julien.packagedautoterminals.item.ItemWirelessPatTerminal;
@@ -63,95 +62,34 @@ public class PacketOpenTerminal implements IMessage {
         }
 
         private void open(EntityPlayerMP player) {
-            if (tryOurs(player) || tryUniversal(player)) {
+            int slot = find(player, stack -> stack.getItem() instanceof ItemWirelessPatTerminal);
+            if (slot < 0) {
+                // A universal terminal counts whatever its wheel says, and PatGuiHandler opens it
+                // only in our mode: the switch comes before the opening.
+                slot = find(player, WutSupport::hasOurMode);
+                if (slot >= 0) {
+                    WutSupport.switchToOurMode(player.inventory.getStackInSlot(slot));
+                }
+            }
+            if (slot < 0) {
+                player.sendStatusMessage(new TextComponentTranslation(
+                        "gui.packagedautoterminals.no_terminal"), true);
                 return;
             }
-            player.sendStatusMessage(
-                    new TextComponentTranslation("gui.packagedautoterminals.no_terminal"), true);
-        }
-
-        /** Our own wireless terminal. */
-        private boolean tryOurs(EntityPlayerMP player) {
-            for (int slot = 0; slot < MAIN_SIZE; slot++) {
-                ItemStack stack = player.inventory.getStackInSlot(slot);
-                if (stack.getItem() instanceof ItemWirelessPatTerminal && check(player, stack, slot)) {
-                    return true;
-                }
-            }
-            ItemStack offhand = player.inventory.getStackInSlot(OFFHAND);
-            return offhand.getItem() instanceof ItemWirelessPatTerminal
-                    && check(player, offhand, OFFHAND);
-        }
-
-        /**
-         * The AE2WUT universal terminal, when it absorbed our mode.
-         *
-         * <p>The current mode plays no part in the search. A player who presses our key
-         * wants our terminal, whatever their wheel is set to. The server therefore switches
-         * the mode before opening.
-         */
-        private boolean tryUniversal(EntityPlayerMP player) {
-            for (int slot = 0; slot < MAIN_SIZE; slot++) {
-                ItemStack stack = player.inventory.getStackInSlot(slot);
-                if (WutSupport.hasOurMode(stack) && check(player, stack, slot)) {
-                    WutSupport.switchToOurMode(stack);
-                    return true;
-                }
-            }
-            ItemStack offhand = player.inventory.getStackInSlot(OFFHAND);
-            if (WutSupport.hasOurMode(offhand) && check(player, offhand, OFFHAND)) {
-                WutSupport.switchToOurMode(offhand);
-                return true;
-            }
-            return false;
-        }
-
-        /**
-         * Three checks, then the opening. The order follows Cell Terminal and AE2.
-         *
-         * @return true when the item is **the right candidate**, even when a check fails.
-         *     Without that nuance, the search would continue past an unlinked terminal, and
-         *     the player would never learn why nothing opens.
-         */
-        private boolean check(EntityPlayerMP player, ItemStack stack, int slot) {
-            IWirelessTermHandler handler =
-                    AEApi.instance().registries().wireless().getWirelessTerminalHandler(stack);
-            if (handler == null) {
-                return false;
-            }
-
-            String key = handler.getEncryptionKey(stack);
-            if (key.isEmpty()) {
-                refuse(player, "gui.packagedautoterminals.not_linked");
-                return true;
-            }
-
-            // The station lookup needs the key as a number, and a malformed key throws here.
-            ILocatable station;
-            try {
-                station = AEApi.instance().registries().locatable()
-                        .getLocatableBy(Long.parseLong(key));
-            } catch (NumberFormatException malformed) {
-                refuse(player, "gui.packagedautoterminals.not_linked");
-                return true;
-            }
-            if (station == null) {
-                refuse(player, "gui.packagedautoterminals.not_linked");
-                return true;
-            }
-
-            if (!handler.hasPower(player, ItemWirelessPatTerminal.powerPerOpen(), stack)) {
-                refuse(player, "gui.packagedautoterminals.no_power");
-                return true;
-            }
-
+            // The search stops at the first candidate, even one that PatGuiHandler refuses: the
+            // player then reads why it does not open.
             player.openGui(PackagedAutoTerminals.instance, PatGuiHandler.WIRELESS,
                     player.world, slot, 0, 0);
-            return true;
         }
 
-        private void refuse(EntityPlayerMP player, String key) {
-            player.sendStatusMessage(new TextComponentTranslation(key), true);
+        /** First slot of the main inventory, then the offhand, that holds a wanted item, or -1. */
+        private static int find(EntityPlayerMP player, Predicate<ItemStack> wanted) {
+            for (int slot = 0; slot < MAIN_SIZE; slot++) {
+                if (wanted.test(player.inventory.getStackInSlot(slot))) {
+                    return slot;
+                }
+            }
+            return wanted.test(player.inventory.getStackInSlot(OFFHAND)) ? OFFHAND : -1;
         }
     }
 }

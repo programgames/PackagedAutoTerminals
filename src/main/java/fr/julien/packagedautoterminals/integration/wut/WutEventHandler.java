@@ -1,15 +1,11 @@
 package fr.julien.packagedautoterminals.integration.wut;
 
-import appeng.api.AEApi;
-import appeng.api.features.IWirelessTermHandler;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
-import fr.julien.packagedautoterminals.item.ItemWirelessPatTerminal;
 import fr.julien.packagedautoterminals.network.PacketOpenTerminal;
 import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
@@ -48,22 +44,6 @@ public final class WutEventHandler {
         event.setCancellationResult(EnumActionResult.SUCCESS);
 
         EntityPlayer player = event.getEntityPlayer();
-
-        IWirelessTermHandler handler =
-                AEApi.instance().registries().wireless().getWirelessTerminalHandler(stack);
-        if (handler == null) {
-            return;
-        }
-        if (handler.getEncryptionKey(stack).isEmpty()) {
-            player.sendStatusMessage(
-                    new TextComponentTranslation("gui.packagedautoterminals.not_linked"), true);
-            return;
-        }
-        if (!handler.hasPower(player, ItemWirelessPatTerminal.powerPerOpen(), stack)) {
-            player.sendStatusMessage(
-                    new TextComponentTranslation("gui.packagedautoterminals.no_power"), true);
-            return;
-        }
 
         // Same fix as ItemWirelessPatTerminal, and it mattered more here: the event is already
         // cancelled above, so a universal terminal used from the offhand opened neither our

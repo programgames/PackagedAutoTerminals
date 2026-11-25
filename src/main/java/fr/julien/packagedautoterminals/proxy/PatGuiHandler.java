@@ -102,9 +102,9 @@ public class PatGuiHandler implements IGuiHandler {
         if (context == null) {
             return null;
         }
-        if (context.deniesBuild(player)) {
-            player.sendStatusMessage(new TextComponentTranslation(
-                    "gui.packagedautoterminals.no_permission"), true);
+        String refusal = context.openingRefusal(player);
+        if (refusal != null) {
+            player.sendStatusMessage(new TextComponentTranslation(refusal), true);
             return null;
         }
         if (!isEditor(id)) {
@@ -165,10 +165,9 @@ public class PatGuiHandler implements IGuiHandler {
     /**
      * Builds the AE2 wireless screen object.
      *
-     * <p>An unlinked terminal opens no screen. AE2UEL 0.56.5 builds the object anyway: its
-     * constructor catches the {@code NumberFormatException} of an empty key and leaves the grid
-     * {@code null}. The screen would then open and close at once, on the first
-     * {@code refusal}.
+     * <p>AE2UEL 0.56.5 builds it even for an unlinked terminal: its constructor catches the
+     * {@code NumberFormatException} of an empty key and leaves the grid {@code null}. The server
+     * then refuses the opening through {@link TerminalContext#openingRefusal}.
      *
      * <p>Two items can open this screen: ours, and the Wireless Universal Terminal set to
      * our mode. The handler therefore comes from the AE2 registry, not from a cast to our
@@ -186,7 +185,7 @@ public class PatGuiHandler implements IGuiHandler {
         }
         IWirelessTermHandler handler =
                 AEApi.instance().registries().wireless().getWirelessTerminalHandler(stack);
-        if (handler == null || handler.getEncryptionKey(stack).isEmpty()) {
+        if (handler == null) {
             return null;
         }
         return TerminalContext.ofWireless(

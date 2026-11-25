@@ -115,7 +115,8 @@ server checks slot by slot.
 
 The wired terminal opens from its part. The wireless terminal opens from a right click, from
 the key (`PacketOpenTerminal`), or from AE2WUT (`WutEventHandler`). Every path ends in
-`PatGuiHandler.getServerGuiElement`, which refuses a player without the BUILD permission.
+`PatGuiHandler.getServerGuiElement`, which asks `TerminalContext.openingRefusal`: the BUILD
+permission, and for the wireless terminal the link, the range and the energy.
 Holder mode needs no network: a sneak right click with the wireless terminal, or a button of
 the terminal, opens it.
 

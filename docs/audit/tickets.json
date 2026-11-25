@@ -631,8 +631,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 110 tests ; serveur dédié OK. Corrige aussi L8 : la touche n'ouvrait rien au premier appui avec un terminal universel réglé sur un autre mode. Backlog : station détruite pendant que l'éditeur sans fil est ouvert → Retour affiche not_linked et l'éditeur reste ouvert (ajouter la station au contrôle refusal, ou fermer l'éditeur au refus du retour)."
     },
     {
       "id": "T30",

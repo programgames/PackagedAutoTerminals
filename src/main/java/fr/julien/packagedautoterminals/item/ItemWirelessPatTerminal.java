@@ -15,7 +15,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
-import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.IGuiHandler;
 import net.minecraftforge.fml.relauncher.Side;
@@ -55,27 +54,15 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
             return new ActionResult<>(EnumActionResult.SUCCESS, stack);
         }
 
-        // Holder mode (D43) comes before the link check: it exists for machines that sit on
-        // no network at all.
+        // Holder mode (D43) needs no link: it exists for machines that sit on no network at all.
         if (player.isSneaking()) {
             PatGuiHandler.openHolderEditor(player);
             return new ActionResult<>(EnumActionResult.SUCCESS, stack);
         }
 
-        if (getEncryptionKey(stack).isEmpty()) {
-            player.sendStatusMessage(
-                    new TextComponentTranslation("gui.packagedautoterminals.not_linked"), true);
-            return new ActionResult<>(EnumActionResult.FAIL, stack);
-        }
-        if (!hasPower(player, POWER_PER_OPEN, stack)) {
-            player.sendStatusMessage(
-                    new TextComponentTranslation("gui.packagedautoterminals.no_power"), true);
-            return new ActionResult<>(EnumActionResult.FAIL, stack);
-        }
-
         // FIXED: the slot used to be `currentItem` whatever the hand. A terminal used from the
         // offhand passed the **main hand** hotbar slot, and `PatGuiHandler.wireless` then read a
-        // different stack than the one just checked: an empty hand opened nothing at all, and
+        // different stack than the one just used: an empty hand opened nothing at all, and
         // another terminal in the main hand was opened in its place.
         int slot = hand == EnumHand.OFF_HAND
                 ? PacketOpenTerminal.OFFHAND
@@ -153,7 +140,7 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
         tag.setString(KEY_ENCRYPTION, encryptionKey);
     }
 
-    /** Energy one opening needs, checked by the key and the AE2WUT click before they open. */
+    /** Energy one opening needs, checked by {@code TerminalContext.openingRefusal}. */
     public static double powerPerOpen() {
         return POWER_PER_OPEN;
     }

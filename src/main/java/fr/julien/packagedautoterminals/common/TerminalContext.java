@@ -1,14 +1,17 @@
 package fr.julien.packagedautoterminals.common;
 
+import appeng.api.AEApi;
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
 import appeng.api.config.SecurityPermissions;
+import appeng.api.features.IWirelessTermHandler;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.networking.security.ISecurityGrid;
 import appeng.helpers.WirelessTerminalGuiObject;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
+import fr.julien.packagedautoterminals.item.ItemWirelessPatTerminal;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
 import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
@@ -122,6 +125,64 @@ public final class TerminalContext {
             return "gui.packagedautoterminals.no_power";
         }
         return null;
+    }
+
+    /**
+     * Reason to refuse opening this terminal, or {@code null}.
+     *
+     * <p>{@link PatGuiHandler} asks it on every opening. The right click, the key and the AE2WUT
+     * click only find the item and call {@code openGui}, so they refuse the same cases with the
+     * same message.
+     */
+    public String openingRefusal(EntityPlayer player) {
+        if (!isWireless()) {
+            return deniesBuild(player) ? "gui.packagedautoterminals.no_permission" : null;
+        }
+        WirelessTerminalGuiObject wireless = (WirelessTerminalGuiObject) host;
+        ItemStack stack = wireless.getItemStack();
+        IWirelessTermHandler handler =
+                AEApi.instance().registries().wireless().getWirelessTerminalHandler(stack);
+        return wirelessRefusal(stationExists(handler.getEncryptionKey(stack)),
+                wireless.rangeCheck(),
+                !deniesBuild(player),
+                handler.hasPower(player, ItemWirelessPatTerminal.powerPerOpen(), stack));
+    }
+
+    /**
+     * The first failing question names the refusal.
+     *
+     * <p>AE2 forces the order: {@code WirelessTerminalGuiObject.rangeCheck} is false for a
+     * terminal with no station, and out of range {@link #grid} is {@code null}, so BUILD cannot
+     * be asked.
+     */
+    static String wirelessRefusal(boolean linked, boolean inRange, boolean mayBuild,
+                                  boolean powered) {
+        if (!linked) {
+            return "gui.packagedautoterminals.not_linked";
+        }
+        if (!inRange) {
+            return "gui.packagedautoterminals.out_of_range";
+        }
+        if (!mayBuild) {
+            return "gui.packagedautoterminals.no_permission";
+        }
+        if (!powered) {
+            return "gui.packagedautoterminals.no_power";
+        }
+        return null;
+    }
+
+    /**
+     * The station lookup of {@code WirelessRegistry.openWirelessTerminalGui}. An empty or
+     * malformed link key finds no station.
+     */
+    private static boolean stationExists(String key) {
+        try {
+            return AEApi.instance().registries().locatable()
+                    .getLocatableBy(Long.parseLong(key)) != null;
+        } catch (NumberFormatException unlinked) {
+            return false;
+        }
     }
 
     /**
