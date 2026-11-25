@@ -780,8 +780,8 @@
         "T33"
       ],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "Créé par la rétrospective."
+      "statut": "bloque",
+      "note": "Créé par la rétrospective. Bloqué après deux revues refusées. Essai 1 : le motif ne voyait pas @GuiSync(value = N), la forme d'AE2 ; raison de drift inexacte. Essai 2 (corrigé, 27 mutations du relecteur, 25 bien détectées) : le motif GUARD ([^{]*) traverse les « ; », donc un onUpdate à retour anticipé (« if (world.isRemote) return; if (…) { refreshTabs(); } ») passe à tort. Correction vérifiée par le relecteur sur une copie : remplacer [^{]* par [^{;]* dans GUARD (GuiSyncTest.java:63). Le diff du second essai est gardé dans docs/audit/T36-essai.patch : git apply, puis cette correction d'un caractère, puis une revue."
     },
     {
       "id": "T37",
