@@ -799,8 +799,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "Créé par la rétrospective (revue de T06)."
+      "statut": "fait",
+      "note": "Créé par la rétrospective (revue de T06). Revue acceptée. Cause : ForgeGradle 2.3.10 ajoute fileTree(\"libs\") à compile, donc libs/mixinbooter-10.7.jar est sur le chemin de runClient/runServer. run/mods/mixinbooter-10.7.jar retiré (local) ; checkDevMods couvre tout libs/**/*.jar ; 0 « Multiple Mixin containers » ; PackagingProvider charge. Backlog : CLAUDE.md §4.1 parle encore de deobfProvided et de libs/maven ; build.yml:30 dit encore « only the libs/maven mods » ; la ligne compileOnly de mixinbooter est redondante."
     }
   ]
 }

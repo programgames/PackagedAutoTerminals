@@ -61,7 +61,7 @@ from `libs/`, otherwise FML refuses to start (see section 4.1):
 
 ```
 Avaritia, Baubles, CodeChickenLib, Cucumber, ExtendedCrafting-Nomifactory-Edition,
-HadEnoughItems, PackagedAvaritia, PackagedExCrafting, PackagingProvider, mixinbooter,
+HadEnoughItems, PackagedAvaritia, PackagedExCrafting, PackagingProvider,
 ae2wut, cell-terminal, Fluid Craft for AE2, PackagedFluidCrafting
 ```
 
@@ -77,9 +77,11 @@ ae2wut, cell-terminal, Fluid Craft for AE2, PackagedFluidCrafting
 > `ae2wut-1.0.5.jar` serves the Wireless Universal Terminal integration. It is **not** a
 > compile dependency: our mixins target its classes by name. See decision **D33**.
 
-> `libs/mixinbooter-10.7.jar` carries the Mixin library, as `compileOnly`. It lives outside
-> `libs/maven`, on purpose: ForgeGradle does not put `compileOnly` entries on the runtime
-> path, so there is no duplicate with `run/mods`, and `checkDevMods` only walks `libs/maven`.
+> `libs/mixinbooter-10.7.jar` carries the Mixin library, as `compileOnly`. ForgeGradle adds
+> every file under `libs/` to `compile`, so this jar also sits on the `runClient`/`runServer`
+> path: MixinBooter loads from `libs/`, in dev and in the CI. `run/mods` must therefore
+> **not** carry it, otherwise the log shows `Multiple Mixin containers present`.
+> `checkDevMods` walks all of `libs/` and refuses that duplicate.
 
 > `PackagingProvider` requires `mixinbooter`. Without it, FML stops with a
 > `MissingModsException`.

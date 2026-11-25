@@ -88,10 +88,10 @@ dependencies {
     // JEI, through HadEnoughItems: same `mezz.jei.api` API, same `jei` modid.
     deobfProvided "pat:hadenoughitems:${project.jeiVersion}@jar"
 
-    // MixinBooter carries the Mixin library. `compileOnly`, and outside `libs/maven`, for
-    // two reasons: ForgeGradle does not put `compileOnly` entries on the runtime path, so
-    // there is no duplicate with `run/mods/mixinbooter-10.7.jar`; and the `checkDevMods` task
-    // only walks `libs/maven`.
+    // MixinBooter carries the Mixin library. ForgeGradle adds every file under `libs/` to
+    // `compile`, so this jar also sits on the runClient/runServer path: MixinBooter loads from
+    // here, in dev and in the CI. `run/mods` must not carry it, and `checkDevMods` refuses the
+    // duplicate.
     compileOnly files('libs/mixinbooter-10.7.jar')
 
     // Pure JUnit, for the classes that hold no Minecraft state: grouping, search parsing,
@@ -253,12 +253,14 @@ task checkLang {
 
 check.dependsOn checkLang
 
-// Guard rail: a jar present in `libs/maven` must NEVER end up in `run/mods`.
-// ForgeGradle puts the dependencies on the runtime path, FML loads them as mods, and the
-// duplicate stops the game with `DuplicateModsFoundException`. This trap was hit twice: with
-// AE2UEL, then with JEI. It stops here.
+// Guard rail: a jar present in `libs/` must NEVER end up in `run/mods`.
+// ForgeGradle adds every file under `libs/` to the `compile` configuration, hence to the
+// runClient/runServer path, and FML loads those jars as mods. The duplicate stops the game
+// with `DuplicateModsFoundException`: this trap was hit twice, with AE2UEL, then with JEI.
+// MixinBooter does not stop the game: it loads twice, and the log says
+// "Multiple Mixin containers present". It all stops here.
 task checkDevMods {
-    description = 'Fails when a jar from libs/maven is also in run/mods.'
+    description = 'Fails when a jar from libs is also in run/mods.'
     group = 'verification'
 
     doLast {
@@ -270,18 +272,19 @@ task checkDevMods {
         def normalise = { String name -> name.toLowerCase().replaceAll('[^a-z0-9]', '') }
         def problems = []
 
-        fileTree(dir: 'libs/maven', include: '**/*.jar').files.each { jar ->
-            def artifact = normalise(jar.parentFile.parentFile.name)
+        fileTree(dir: 'libs', include: '**/*.jar').files.each { jar ->
+            def dependency = jar.name.replaceFirst(/-\d.*$/, '')
+            def artifact = normalise(dependency)
             runMods.listFiles({ file -> file.name.endsWith('.jar') } as FileFilter).each { mod ->
                 if (normalise(mod.name).contains(artifact)) {
-                    problems << "  run/mods/${mod.name} duplicates the dependency ${jar.parentFile.parentFile.name}"
+                    problems << "  run/mods/${mod.name} duplicates the dependency ${dependency}"
                 }
             }
         }
 
         if (!problems.isEmpty()) {
             throw new GradleException(
-                    'Some mods are present twice. FML will refuse to start.'
+                    'Some mods are present twice. FML refuses to start, or loads them twice.'
                     + System.lineSeparator() + problems.join(System.lineSeparator())
                     + System.lineSeparator()
                     + '  Delete these files from run/mods: the dependency is enough.')
