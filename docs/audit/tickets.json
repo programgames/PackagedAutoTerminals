@@ -20,8 +20,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. Vérification : rc=0, 0 ligne warning:, 44 tests verts. Lancer la vérification avec rtk proxy, sinon le hook filtre la sortie."
     },
     {
       "id": "T02",

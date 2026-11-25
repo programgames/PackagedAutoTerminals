@@ -39,6 +39,8 @@ tasks.withType(JavaCompile) {
     // If a mixin ever touches a Minecraft method, this line must go, the processor must be
     // added, and the table must be declared in the configuration file.
     options.compilerArgs << '-proc:none'
+
+    options.compilerArgs << '-Xlint:all' << '-Werror'
 }
 
 // PITFALL: inside the `minecraft { }` block, the Groovy delegate is the ForgeGradle

@@ -10,7 +10,6 @@ import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.translation.I18n;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.ConfigManager;
 import net.minecraftforge.fml.common.Loader;
@@ -89,7 +88,8 @@ public final class WutSupport {
     @SuppressWarnings("deprecation")
     public static String modeName() {
         return "§6("
-                + I18n.translateToLocal("item.packagedautoterminals.wireless_pat_terminal.name")
+                + net.minecraft.util.text.translation.I18n.translateToLocal(
+                        "item.packagedautoterminals.wireless_pat_terminal.name")
                 + ")";
     }
 

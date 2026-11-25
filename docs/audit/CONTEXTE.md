@@ -19,6 +19,8 @@ Branche `audit/2026-11-25`, partie de `85dadf6` (mode holder D43 et mise à l'é
 | `runClient`, `runServer` | existent ; jamais lancés pendant cet audit |
 | GameTest, datagen | n'existent pas en 1.12.2 / absents du projet |
 
+**Sortie brute de Gradle** : le hook `rtk` filtre la sortie de `./gradlew`. Pour lire ou compter des lignes (`grep warning:`, tests `PASSED`), lance `rtk proxy ./gradlew ...`.
+
 **Ne lance pas Gradle pendant la phase d'audit** : quatre auditeurs en parallèle se bloqueraient sur le cache. Les résultats ci-dessus suffisent.
 
 ## Sources de référence (preuves API)
