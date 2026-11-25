@@ -13,8 +13,8 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 /**
  * Drops one item into one ghost slot of the editor.
  *
- * <p>This is the drag and drop from JEI. A normal click needs no packet: the vanilla
- * container already carries it, through {@code slotClick}. A drag from JEI carries no held
+ * <p>This is the drag and drop from JEI. A normal click needs no packet of ours: AE2 already
+ * carries it, through {@code doAction}. A drag from JEI carries no held
  * item, so the client must name the item itself.
  *
  * <p>The server trusts neither the slot nor the item: {@code setGhostSlot} checks the slot

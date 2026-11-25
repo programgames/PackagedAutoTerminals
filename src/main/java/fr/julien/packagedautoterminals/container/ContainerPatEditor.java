@@ -8,6 +8,7 @@ import appeng.api.config.SecurityPermissions;
 import appeng.api.networking.IGrid;
 import appeng.container.AEBaseContainer;
 import appeng.container.guisync.GuiSync;
+import appeng.helpers.InventoryAction;
 import fr.julien.packagedautoterminals.common.EditorInventory;
 import fr.julien.packagedautoterminals.common.Feedback;
 import fr.julien.packagedautoterminals.common.FluidPackets;
@@ -21,6 +22,7 @@ import fr.julien.packagedautoterminals.common.RecipeScale;
 import fr.julien.packagedautoterminals.common.RecipeWriter;
 import fr.julien.packagedautoterminals.common.TerminalContext;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ClickType;
 import net.minecraft.inventory.InventoryBasic;
@@ -294,21 +296,7 @@ public class ContainerPatEditor extends AEBaseContainer {
         }
     }
 
-    /**
-     * Behaviour of the ghost slots.
-     *
-     * <p>The container, not the slot, carries this behaviour. That is also the PackagedAuto
-     * choice, in {@code ContainerTileBase.slotClick}.
-     *
-     * <p>PITFALL: {@code AEBaseContainer.addSlotToContainer} refuses any slot that does not
-     * extend {@code AppEngSlot}. The PackagedAuto slots are therefore unusable here. AE2
-     * provides its own, including {@link SlotFake}.
-     *
-     * <p>Correction: the drag and drop from JEI does **not** come for free with
-     * {@code SlotFake}. The AE2 handler only reads {@code IJEITargetSlot} through
-     * {@code IJEIGhostIngredients}, which the **screen** must implement. We register our own
-     * handler instead, on our screen class. See {@code PatGhostHandler}.
-     */
+    /** A tab switches recipes, and a preview slot ignores the click. */
     @Override
     public ItemStack slotClick(int slotId, int dragType, ClickType clickType, EntityPlayer player) {
         if (slotId >= 0 && slotId < inventorySlots.size()) {
@@ -320,23 +308,48 @@ public class ContainerPatEditor extends AEBaseContainer {
             if (slot instanceof SlotResult) {
                 return ItemStack.EMPTY;
             }
-            if (slot instanceof SlotFake) {
-                if (!editor.isEditable(slot.getSlotIndex())) {
-                    return ItemStack.EMPTY;
-                }
-                if (clickType == ClickType.PICKUP && dragType == 1) {
-                    slot.putStack(ItemStack.EMPTY);
-                } else if (clickType == ClickType.QUICK_MOVE) {
-                    slot.putStack(ItemStack.EMPTY);
-                } else {
-                    ItemStack held = player.inventory.getItemStack();
-                    slot.putStack(held.isEmpty() ? ItemStack.EMPTY : held.copy());
-                }
-                dirty = true;
-                return ItemStack.EMPTY;
-            }
         }
         return super.slotClick(slotId, dragType, clickType, player);
+    }
+
+    /**
+     * Behaviour of the ghost slots.
+     *
+     * <p>PITFALL: a click on a {@link SlotFake} never reaches {@link #slotClick}.
+     * {@code AEBaseGui.handleMouseClick} turns it into a {@code PacketInventoryAction}, which the
+     * server hands to this method. The slot rules of the editor therefore live here.
+     *
+     * <p>The rules on top of AE2: a slot the type disables refuses everything, the right click
+     * with an empty hand empties the slot, and any change marks the work as unsaved.
+     *
+     * <p>PITFALL: {@code AEBaseContainer.addSlotToContainer} refuses any slot that does not
+     * extend {@code AppEngSlot}. The PackagedAuto slots are therefore unusable here. AE2
+     * provides its own, including {@link SlotFake}.
+     *
+     * <p>Correction: the drag and drop from JEI does **not** come for free with
+     * {@code SlotFake}. The AE2 handler only reads {@code IJEITargetSlot} through
+     * {@code IJEIGhostIngredients}, which the **screen** must implement. We register our own
+     * handler instead, on our screen class. See {@code PatGhostHandler}.
+     */
+    @Override
+    public void doAction(EntityPlayerMP player, InventoryAction action, int slotId, long id) {
+        Slot slot = slotId >= 0 && slotId < inventorySlots.size() ? inventorySlots.get(slotId) : null;
+        if (!(slot instanceof SlotFake)) {
+            super.doAction(player, action, slotId, id);
+            return;
+        }
+        if (!editor.isEditable(slot.getSlotIndex())) {
+            return;
+        }
+        ItemStack before = slot.getStack().copy();
+        if (action == InventoryAction.SPLIT_OR_PLACE_SINGLE && player.inventory.getItemStack().isEmpty()) {
+            slot.putStack(ItemStack.EMPTY);
+        } else {
+            super.doAction(player, action, slotId, id);
+        }
+        if (!ItemStack.areItemStacksEqual(before, slot.getStack())) {
+            dirty = true;
+        }
     }
 
     /**
@@ -431,7 +444,7 @@ public class ContainerPatEditor extends AEBaseContainer {
     /**
      * Drops one item into a ghost slot: the drag and drop from JEI.
      *
-     * <p>A normal click goes through {@link #slotClick}, which copies the held item. A drag
+     * <p>A normal click goes through {@link #doAction}, which copies the held item. A drag
      * from JEI carries no held item, so the item travels in the packet. The server checks the
      * slot here, and nowhere else.
      */
