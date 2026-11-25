@@ -764,14 +764,9 @@ public class ContainerPatEditor extends AEBaseContainer {
         int copied = 0;
         for (ItemStack holder : targets) {
             List<IRecipeInfo> recipes = new ArrayList<>(RecipeWriter.recipesOf(holder));
-            int before = recipes.size();
-            for (IRecipeInfo recipe : all) {
-                if (indexOf(recipes, recipe) < 0) {
-                    recipes.add(recipe);
-                }
-            }
-            if (recipes.size() > before && RecipeWriter.setRecipes(holder, recipes)) {
-                copied += recipes.size() - before;
+            int added = RecipeWriter.addMissing(recipes, all);
+            if (added > 0 && RecipeWriter.setRecipes(holder, recipes)) {
+                copied += added;
             }
         }
         holders.markDirty();

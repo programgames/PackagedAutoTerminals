@@ -112,8 +112,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "M",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 71 tests (15 nouveaux dans RecipeWriterTest) ; comportement comparé cas par cas, identique. Reste : pré-contrôle group_full de saveToHolders et holderRecipes() non extraits ; indexOf en double dans ContainerPatEditor."
     },
     {
       "id": "T06",

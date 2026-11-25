@@ -160,6 +160,21 @@ public final class RecipeWriter {
             return Outcome.UNCHANGED;
         }
         List<IRecipeInfo> recipes = new ArrayList<>(recipesOf(holder));
+        Outcome outcome = edit(recipes, oldRecipe, newRecipe, maxRecipes());
+        if (outcome != Outcome.CHANGED) {
+            return outcome;
+        }
+        return setRecipes(holder, recipes) ? Outcome.CHANGED : Outcome.UNCHANGED;
+    }
+
+    /**
+     * The list part of {@link #editHolder}: applies the change to {@code recipes}, in place.
+     *
+     * @return {@link Outcome#CHANGED} when the list now carries the change. The list is left
+     *         untouched otherwise.
+     */
+    public static Outcome edit(List<IRecipeInfo> recipes, IRecipeInfo oldRecipe,
+                               IRecipeInfo newRecipe, int max) {
         int index = indexOf(recipes, oldRecipe);
 
         if (newRecipe == null) {
@@ -184,12 +199,12 @@ public final class RecipeWriter {
             }
             // Last guard. The editor refuses a full group before it reaches this point, so
             // nothing is ever written by halves.
-            if (recipes.size() >= maxRecipes()) {
+            if (recipes.size() >= max) {
                 return Outcome.FULL;
             }
             recipes.add(newRecipe);
         }
-        return setRecipes(holder, recipes) ? Outcome.CHANGED : Outcome.UNCHANGED;
+        return Outcome.CHANGED;
     }
 
     /**
@@ -202,6 +217,12 @@ public final class RecipeWriter {
     public static boolean mapHolder(ItemStack holder, List<IRecipeInfo> from,
                                     List<IRecipeInfo> to) {
         List<IRecipeInfo> recipes = new ArrayList<>(recipesOf(holder));
+        return map(recipes, from, to) && setRecipes(holder, recipes);
+    }
+
+    /** The list part of {@link #mapHolder}, in place. True when one recipe changed. */
+    public static boolean map(List<IRecipeInfo> recipes, List<IRecipeInfo> from,
+                              List<IRecipeInfo> to) {
         boolean changed = false;
         for (int i = 0; i < recipes.size(); i++) {
             int match = indexOf(from, recipes.get(i));
@@ -210,7 +231,23 @@ public final class RecipeWriter {
                 changed = true;
             }
         }
-        return changed && setRecipes(holder, recipes);
+        return changed;
+    }
+
+    /**
+     * Appends to {@code recipes} every recipe of {@code wanted} it lacks, in order. Deletes
+     * nothing, so a blank list becomes a copy of {@code wanted}.
+     *
+     * @return how many recipes were appended
+     */
+    public static int addMissing(List<IRecipeInfo> recipes, List<IRecipeInfo> wanted) {
+        int before = recipes.size();
+        for (IRecipeInfo recipe : wanted) {
+            if (indexOf(recipes, recipe) < 0) {
+                recipes.add(recipe);
+            }
+        }
+        return recipes.size() - before;
     }
 
     /** {@link #mapHolder} on every machine of a group. A machine republishes its patterns once. */
