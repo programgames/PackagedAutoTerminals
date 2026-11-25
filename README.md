@@ -135,6 +135,7 @@ the traps that this project already hit.
 
 | File | Content |
 |---|---|
+| `GLOSSARY.md` | the words of the domain, their names in the code, and the conflicts |
 | `docs/ARCHITECTURE.md` | layers, data flow, entry points |
 | `docs/PACKAGEDAUTO-MODEL.md` | the verified data model of PackagedAuto, with the evidence |
 | `docs/DECISIONS.md` | approved decisions, revisions, and the player reports behind them |

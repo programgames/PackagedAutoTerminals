@@ -613,8 +613,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. Précisions possibles : le nom de groupe vit dans GroupNames (données monde), pas dans la tile ; Feedback.isRefusal() est le point d'entrée public ; Group.isComplete(IRecipeInfo) ; ItemPatTerminal absent ; fusions mergeLonePartners et mergeEmptyPair absentes de « Group »."
     },
     {
       "id": "T29",
