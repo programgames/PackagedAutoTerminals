@@ -38,7 +38,7 @@ public final class Feedback {
      *
      * <p>The list is now exact, and lives in one place. **A new refusal key must be added here**,
      * or it will be drawn as a success. {@code FeedbackKeysTest} fails on any key sent by
-     * {@code tell} that is neither here nor in its own list of successes.
+     * {@code tell} or {@link #pack} that is neither here nor in its own list of successes.
      *
      * <p>The two {@code applied_} entries are not refusals: the write did happen. They are listed
      * because they say that a machine was left behind, and the player has to act.

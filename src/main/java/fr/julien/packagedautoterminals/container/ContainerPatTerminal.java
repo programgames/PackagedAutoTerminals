@@ -237,16 +237,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
 
         RecipeWriter.Result result = RecipeWriter.apply(grid, getActionSource(),
                 group.machines, group.recipes.get(found), null);
-        // FIXED: zero changed machines used to read as "Applied to 0 machines", in the
-        // colour of a success.
-        if (result.changed == 0) {
-            tell("gui.packagedautoterminals.write_failed");
-        } else {
-            tell(result.changed == 1
-                            ? "gui.packagedautoterminals.applied_to_one"
-                            : "gui.packagedautoterminals.applied_to",
-                    result.changed);
-        }
+        show(result.feedback(false));
         refreshNow();
     }
 
@@ -487,35 +478,18 @@ public class ContainerPatTerminal extends AEBaseContainer {
             return;
         }
 
-        int copied = 0;
-        int full = 0;
-        int withoutHolder = 0;
-        int supplied = 0;
+        RecipeWriter.Result total = new RecipeWriter.Result();
         for (IRecipeInfo recipe : uneven) {
             // A null old recipe means "add it where it is missing": applyTo leaves a machine
             // that already carries it untouched, and still honours the twenty recipe cap.
             RecipeWriter.Result result =
                     RecipeWriter.apply(grid, getActionSource(), group.machines, null, recipe);
-            copied += result.changed;
-            full += result.full;
-            withoutHolder += result.withoutHolder;
-            supplied += result.supplied;
+            total.changed += result.changed;
+            total.full += result.full;
+            total.withoutHolder += result.withoutHolder;
+            total.supplied += result.supplied;
         }
-
-        if (copied == 0) {
-            tell("gui.packagedautoterminals.write_failed");
-        } else if (withoutHolder > 0) {
-            tell("gui.packagedautoterminals.applied_partial", copied, withoutHolder);
-        } else if (full > 0) {
-            tell("gui.packagedautoterminals.applied_partial_full", copied, full);
-        } else if (supplied > 0) {
-            tell("gui.packagedautoterminals.applied_with_holder", copied, supplied);
-        } else {
-            tell(copied == 1
-                            ? "gui.packagedautoterminals.applied_to_one"
-                            : "gui.packagedautoterminals.applied_to",
-                    copied);
-        }
+        show(total.feedback(false));
         refreshNow();
     }
 
@@ -530,7 +504,11 @@ public class ContainerPatTerminal extends AEBaseContainer {
 
     /** Message shown inside the screen, not in the action bar. */
     private void tell(String key, Object... arguments) {
-        feedback = Feedback.pack(key, arguments);
+        show(Feedback.pack(key, arguments));
+    }
+
+    private void show(String packed) {
+        feedback = packed;
         feedbackCount++;
     }
 

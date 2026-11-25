@@ -651,8 +651,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 119 tests ; 38 clés vues avant et après. Un seul changement visible : dans save, avec un rôle manquant ET un porte-recettes pris au réseau, le message est maintenant applied_no_partner (rouge) au lieu de applied_with_holder (vert) ; le joueur ne voit plus qu'un porte-recettes a quitté le stockage. À noter dans le CHANGELOG (T34)."
     },
     {
       "id": "T31",

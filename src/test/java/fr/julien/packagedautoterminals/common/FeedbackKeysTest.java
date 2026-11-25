@@ -24,7 +24,8 @@ import java.util.stream.Stream;
 import org.junit.Test;
 
 /**
- * Every key a container sends with {@code tell} is classified, and translated.
+ * Every key a container sends with {@code tell}, or packs with {@code Feedback.pack}, is
+ * classified, and translated.
  *
  * <p>The screens draw a message in red only when {@link Feedback#isRefusal} knows its key.
  * A refusal missing from that list reads in the colour of a success: version 0.1.0-beta.5
@@ -49,8 +50,11 @@ public class FeedbackKeysTest {
             "recipes_scaled_skipped",
             "renamed"));
 
-    /** A whole {@code tell(...)} statement, so both keys of a ternary are read. */
-    private static final Pattern TELL_CALL = Pattern.compile("\\btell\\(([^;]*);");
+    /**
+     * A whole {@code tell(...)} or {@code Feedback.pack(...)} statement, so both keys of a
+     * ternary are read. {@code RecipeWriter.Result.feedback} packs its keys without {@code tell}.
+     */
+    private static final Pattern TELL_CALL = Pattern.compile("\\b(?:tell|pack)\\(([^;]*);");
     private static final Pattern KEY = Pattern.compile("\"" + Pattern.quote(PREFIX) + "([a-z_]+)\"");
 
     @Test

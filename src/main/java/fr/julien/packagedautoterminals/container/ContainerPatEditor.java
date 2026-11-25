@@ -724,38 +724,10 @@ public class ContainerPatEditor extends AEBaseContainer {
 
         RecipeWriter.Result result =
                 RecipeWriter.apply(grid, getActionSource(), targets, oldRecipe, editor.recipeInfo);
+        show(result.feedback(missing != null));
         if (result.changed == 0) {
-            tell("gui.packagedautoterminals.write_failed");
             return false;
         }
-
-        // The player always gets one piece of feedback, and **only one**. Two successive
-        // `tell` calls overwrote each other: the player saw the warning, never the
-        // confirmation, and no longer knew whether the write had succeeded.
-        //
-        // The order runs from the most serious to the least. A machine left behind matters
-        // more than a holder taken from storage, which matters more than a plain success.
-        if (result.withoutHolder > 0) {
-            tell("gui.packagedautoterminals.applied_partial",
-                    result.changed, result.withoutHolder);
-        } else if (result.full > 0) {
-            // FIXED: this count was computed and never shown. A pair whose two sides had
-            // drifted, one at twenty recipes and the other below, took the write on one
-            // machine only, and the terminal called it a success.
-            tell("gui.packagedautoterminals.applied_partial_full",
-                    result.changed, result.full);
-        } else if (result.supplied > 0) {
-            tell("gui.packagedautoterminals.applied_with_holder",
-                    result.changed, result.supplied);
-        } else if (result.changed == 1 && missing != null) {
-            tell("gui.packagedautoterminals.applied_no_partner", result.changed);
-        } else {
-            tell(result.changed == 1
-                            ? "gui.packagedautoterminals.applied_to_one"
-                            : "gui.packagedautoterminals.applied_to",
-                    result.changed);
-        }
-
         followWritten();
         return true;
     }
@@ -1019,7 +991,11 @@ public class ContainerPatEditor extends AEBaseContainer {
 
     /** Message shown inside the screen, not in the action bar. */
     private void tell(String key, Object... arguments) {
-        feedback = Feedback.pack(key, arguments);
+        show(Feedback.pack(key, arguments));
+    }
+
+    private void show(String packed) {
+        feedback = packed;
         feedbackCount++;
     }
 
@@ -1216,16 +1192,10 @@ public class ContainerPatEditor extends AEBaseContainer {
         RecipeWriter.Result result = RecipeWriter.apply(grid, getActionSource(),
                 group.machines, openedRecipe, null);
         rescan();
-        // FIXED: zero changed machines used to read as "Applied to 0 machines", which the
-        // screen drew in the colour of a success.
+        show(result.feedback(false));
         if (result.changed == 0) {
-            tell("gui.packagedautoterminals.write_failed");
             return;
         }
-        tell(result.changed == 1
-                        ? "gui.packagedautoterminals.applied_to_one"
-                        : "gui.packagedautoterminals.applied_to",
-                result.changed);
         keepAsNewRecipe();
     }
 

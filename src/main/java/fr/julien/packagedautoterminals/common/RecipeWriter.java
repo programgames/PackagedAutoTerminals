@@ -88,6 +88,40 @@ public final class RecipeWriter {
         public int full;
         /** Blank recipe holders taken from the ME network for this write. */
         public int supplied;
+
+        /**
+         * The one message this write sends back, packed for {@link Feedback}.
+         *
+         * <p>Two successive messages overwrote each other: the player saw the warning, never
+         * the confirmation. So only one is chosen, from the most serious to the least. Every
+         * half done write, drawn as a refusal, comes before every success.
+         *
+         * @param roleMissing the group lacked a Packager or an Unpackager before the write
+         */
+        public String feedback(boolean roleMissing) {
+            if (changed == 0) {
+                return Feedback.pack("gui.packagedautoterminals.write_failed");
+            }
+            if (withoutHolder > 0) {
+                return Feedback.pack("gui.packagedautoterminals.applied_partial",
+                        changed, withoutHolder);
+            }
+            if (full > 0) {
+                return Feedback.pack("gui.packagedautoterminals.applied_partial_full",
+                        changed, full);
+            }
+            if (roleMissing && changed == 1) {
+                return Feedback.pack("gui.packagedautoterminals.applied_no_partner", changed);
+            }
+            if (supplied > 0) {
+                return Feedback.pack("gui.packagedautoterminals.applied_with_holder",
+                        changed, supplied);
+            }
+            return Feedback.pack(changed == 1
+                            ? "gui.packagedautoterminals.applied_to_one"
+                            : "gui.packagedautoterminals.applied_to",
+                    changed);
+        }
     }
 
     /**
