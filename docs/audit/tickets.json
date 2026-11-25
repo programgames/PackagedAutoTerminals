@@ -1,0 +1,677 @@
+{
+  "genere_le": "2026-11-25",
+  "branche": "audit/2026-11-25",
+  "regle": "Ordre : harnais, puis bugs, puis dette. La phase 5 traite au plus 20 tickets par passage.",
+  "tickets": [
+    {
+      "id": "T01",
+      "titre": "Le compilateur refuse tout avertissement",
+      "type": "harnais",
+      "pourquoi": "Le code compile aujourd'hui avec un seul avertissement. Sans -Werror, le prochain avertissement passe sans bruit.",
+      "constats": [
+        "C-VE-11"
+      ],
+      "criteres": [
+        "`build.gradle` ajoute `-Xlint:all` et `-Werror` aux options de toutes les tâches `JavaCompile` (main, api, test).",
+        "L'import déprécié `net.minecraft.util.text.translation.I18n` disparaît de `integration/wut/WutSupport.java`. L'appel garde le même comportement.",
+        "`./gradlew clean build` est vert et sa sortie ne contient aucune ligne `warning:`."
+      ],
+      "verification": "./gradlew clean build --console=plain > .tools/lint.log 2>&1; echo rc=$?; grep -c 'warning:' .tools/lint.log  # attendu : rc=0 et 0",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T02",
+      "titre": "Tests de garde : protocole réseau, noms de classe, bornes de mise à l'échelle",
+      "type": "harnais",
+      "pourquoi": "Des règles pures (canal de 20 caractères, lectures bornées, noms de classe écrits en chaîne, borne exacte de RecipeScale) ne sont gardées que par des commentaires.",
+      "constats": [
+        "C-VE-09",
+        "C-VE-13",
+        "C-VE-01"
+      ],
+      "criteres": [
+        "Un test vérifie `Reference.CHANNEL.length() <= 20`.",
+        "Un test fait l'aller-retour `toBytes`/`fromBytes` de `PacketRecipeAction` et de `PacketEditorSlot`.",
+        "Un test donne à `PacketRenameGroup` un tampon qui annonce plus d'octets qu'il n'en contient : le nom lu fait 32 caractères au plus, et la lecture ne lève pas d'exception non gérée.",
+        "Un test donne à `PacketEditorFill` un tampon qui annonce `Integer.MAX_VALUE` entrées : la lecture s'arrête sans créer d'objet.",
+        "Un test charge avec `Class.forName(nom, false, loader)` chaque nom de classe PackagedAuto écrit en chaîne dans `CrafterTypes` et `ProviderRole`. Les noms des addons absents du chemin de test sont listés et exclus dans le test.",
+        "`ProviderPairingTest` gagne un cas avec une machine au rôle `UNKNOWN`.",
+        "`RecipeScaleTest` gagne `2048 × 2` accepté contre une limite de 4096 et `2049 × 2` refusé.",
+        "Aucun code de production ne change. Si un test révèle un défaut, le ticket s'arrête et le note."
+      ],
+      "verification": "./gradlew test --console=plain  # attendu : vert, plus de 44 tests",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "M",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T03",
+      "titre": "Les refus s'affichent en rouge, et un test garde la classification",
+      "type": "harnais",
+      "pourquoi": "Quatre refus s'affichent dans la couleur d'un succès, parce qu'une liste tenue à la main décide de la couleur. Le même défaut est déjà revenu une fois (CHANGELOG beta.5).",
+      "constats": [
+        "C-VE-05",
+        "C-AR-04"
+      ],
+      "criteres": [
+        "`machine_gone`, `no_permission`, `no_blank_holder` et `holders_partial` s'affichent en rouge dans les deux écrans.",
+        "Un test JUnit lit `src/main/java`, relève chaque clé passée à `tell(\"gui.packagedautoterminals.<clé>\"`, et échoue si une clé n'est ni dans `Feedback.REFUSALS` ni dans une liste explicite de succès écrite dans le test.",
+        "Le même test échoue si une de ces clés manque dans `en_us.lang`.",
+        "`repairGroup` annonce les porte-recettes pris au réseau, comme `save` le fait déjà."
+      ],
+      "verification": "./gradlew test --console=plain  # attendu : vert ; retirer une clé de REFUSALS fait échouer le nouveau test",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T04",
+      "titre": "Mesurer la taille de l'instantané du terminal",
+      "type": "verification",
+      "pourquoi": "Le client est déconnecté au-delà de 2 097 152 octets NBT comptés. La mesure R2 n'a jamais été faite, et le seuil réel est inconnu.",
+      "constats": [
+        "C-MC-01",
+        "C-VE-03"
+      ],
+      "criteres": [
+        "Un test JUnit construit le tag `Providers` comme `ContainerPatTerminal.buildPayload` le fait, pour N paires de 2 machines à 20 recettes de traitement, avec des piles NBT réalistes (`Index`, `id`, `Count`, `Damage`).",
+        "Le test mesure la taille comptée avec `CompressedStreamTools.read(..., new NBTSizeTracker(2097152L))` et trouve le plus grand N accepté.",
+        "Le test affirme que le réseau connu du joueur (20 machines, 110 recettes, `docs/DECISIONS.md` D38) passe avec une marge.",
+        "La valeur limite de N est écrite dans la note de ce ticket et dans la ligne R2 de `docs/PLAN.md`."
+      ],
+      "verification": "./gradlew test --console=plain -i 2>&1 | grep -i -E 'snapshot|limit'",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T05",
+      "titre": "Les opérations de liste du porte-recettes deviennent pures et testées",
+      "type": "harnais",
+      "pourquoi": "Le mode holder (D43) déplace de vrais objets, et la sauvegarde en ligne passe aussi par `editHolder`. Aucun test ne touche cette logique, et personne ne l'a jouée.",
+      "constats": [
+        "C-VE-01"
+      ],
+      "criteres": [
+        "La logique de liste de `RecipeWriter.editHolder` et `mapHolder` (retrait de toutes les copies, remplacement en place, ajout refusé au-delà de `maxRecipes`, transformation) devient une ou plusieurs fonctions statiques pures sur `List<IRecipeInfo>` dans `common`.",
+        "La fusion de deux porte-recettes de `ContainerPatEditor.syncHolders` (copie des recettes manquantes, jumeau vierge qui devient une copie, rien n'est supprimé) devient aussi une fonction pure.",
+        "Les appelants existants utilisent ces fonctions. Le comportement ne change pas.",
+        "Des tests JUnit avec `FakeRecipe` couvrent : retrait de toutes les copies, remplacement en place, ajout refusé quand la liste est pleine, synchronisation dans les deux sens, jumeau vierge."
+      ],
+      "verification": "./gradlew test --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "M",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T06",
+      "titre": "Prouver qu'un serveur dédié démarre",
+      "type": "harnais",
+      "pourquoi": "Aucun serveur dédié n'a démarré, ni en local ni en CI. Une classe client chargée côté serveur arrêterait chaque serveur au démarrage.",
+      "constats": [
+        "C-VE-06"
+      ],
+      "criteres": [
+        "Un script `tools/server-smoke.sh` écrit `run/eula.txt`, lance `./gradlew runServer`, attend la ligne `Done (` dans `run/logs/latest.log` avec un délai maximal, puis arrête le serveur.",
+        "Le script sort en erreur si le délai expire, ou si le journal contient `NoClassDefFoundError` ou une exception qui cite `packagedautoterminals`.",
+        "Le script passe en local. Après le script, aucun processus Java du serveur ne reste actif.",
+        "`.github/workflows/build.yml` lance ce script après `./gradlew build`."
+      ],
+      "verification": "bash tools/server-smoke.sh; echo exit=$?  # attendu : exit=0",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "M",
+      "statut": "a_faire",
+      "note": "L'efficacité en CI se vérifie seulement après le push de la branche (question 6)."
+    },
+    {
+      "id": "T07",
+      "titre": "Les clics sur les cases fantômes passent par les règles de l'éditeur",
+      "type": "bug",
+      "pourquoi": "AE2 traite les clics sur une `SlotFake` dans `AEBaseContainer.doAction`, que l'éditeur ne redéfinit pas. Le travail non enregistré disparaît sans avertissement, le clic droit ne vide pas la case, et le serveur accepte un objet dans une case désactivée.",
+      "constats": [
+        "C-MC-02"
+      ],
+      "criteres": [
+        "`ContainerPatEditor` redéfinit `doAction` pour les cases fantômes de sa grille.",
+        "Une case que le type de recette désactive refuse l'objet, côté serveur.",
+        "Tout changement d'une case fantôme lève `dirty` : changer d'onglet ensuite affiche l'avertissement « non enregistré ».",
+        "Un clic droit main vide sur une case fantôme vide la case, comme le disent le commentaire de `ContainerPatEditor` et le test D17 de `docs/TESTING.md`.",
+        "Les autres cases et actions passent à `super.doAction`.",
+        "La branche `SlotFake` de `slotClick` disparaît si la lecture d'`AEBaseGui` prouve qu'elle ne s'exécute plus."
+      ],
+      "verification": "./gradlew build --console=plain ; QA : poser un objet au clic dans une case fantôme, puis cliquer un autre onglet → l'avertissement apparaît ; clic droit main vide → la case se vide.",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T08",
+      "titre": "Le terminal désigne une recette par son identité, pas par sa position",
+      "type": "bug",
+      "pourquoi": "La suppression et l'édition depuis le terminal envoient un index calculé sur un instantané ancien. Le serveur peut alors supprimer une autre recette dans toutes les machines du groupe.",
+      "constats": [
+        "C-MC-03",
+        "C-AR-01"
+      ],
+      "criteres": [
+        "`ACTION_REMOVE` et `ACTION_EDIT` envoyées par le terminal portent l'identité de la recette en plus de l'index.",
+        "Une fonction pure de `common` résout (index, identité) : l'index s'il correspond, sinon la recette de même identité dans le groupe, sinon rien.",
+        "Quand la recette n'existe plus, le serveur n'écrit rien et répond `group_changed`.",
+        "Un test JUnit couvre : index juste, index décalé, recette absente.",
+        "Le changement de format du paquet est accepté (porte double sens, `docs/audit/DECISIONS.md` DA-02)."
+      ],
+      "verification": "./gradlew test --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T09",
+      "titre": "Supprimer une recette demande un clic gauche et une confirmation",
+      "type": "bug",
+      "pourquoi": "Un clic droit sur la croix supprime la recette dans tout le groupe, sans confirmation, alors que le README enseigne le clic droit pour éditer. Réponse de Julien à la question 2 : option A.",
+      "constats": [
+        "C-PR-02"
+      ],
+      "criteres": [
+        "La croix d'une ligne de recette réagit seulement au clic gauche.",
+        "Toute suppression depuis le terminal (croix, ou Maj + clic droit sur la ligne) demande un second clic sur la même recette dans un court délai. Le premier clic affiche un message qui demande de cliquer encore.",
+        "Après Delete dans l'éditeur, la grille reste remplie sur l'onglet « nouvelle recette » : un Save restaure la recette.",
+        "Les infobulles et le tableau des gestes du README disent la même chose que le code.",
+        "Les nouvelles clés de traduction existent dans les 16 langues, et `checkLang` est vert."
+      ],
+      "verification": "./gradlew build --console=plain ; QA : un clic droit sur la croix ne supprime rien ; deux clics gauches suppriment ; Delete dans l'éditeur garde la grille.",
+      "porte": "double_sens",
+      "bloque_par": [
+        "T08"
+      ],
+      "taille": "M",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T10",
+      "titre": "Le bouton de ligne ajoute seulement : insérer ou réparer",
+      "type": "bug",
+      "pourquoi": "Un clic simple sur le bouton de ligne renvoie au réseau tous les porte-recettes du groupe, avec une infobulle fausse. Sur une paire séparée, le bouton « réparer » promet une réparation et n'écrit rien. Réponses de Julien aux questions 1 et 3 : option A.",
+      "constats": [
+        "C-PR-01",
+        "C-PR-03"
+      ],
+      "criteres": [
+        "Le bouton de ligne n'éjecte plus rien. Il montre « insérer » quand une machine n'a pas de porte-recettes, ou « réparer » quand les deux côtés diffèrent et que le groupe contient les deux rôles.",
+        "Sur un groupe d'un seul rôle, le bouton « réparer » n'apparaît pas. L'infobulle dit de donner le même nom aux deux lignes pour les réunir.",
+        "L'éjection reste sur Maj + clic gauche de la ligne de groupe, avec une confirmation en deux clics (même motif que T09).",
+        "Les boutons de ligne réagissent seulement au clic gauche.",
+        "Les infobulles, le tableau des gestes du README et le test E6 de `docs/TESTING.md` disent la même chose que le code.",
+        "Les nouvelles clés de traduction existent dans les 16 langues, et `checkLang` est vert."
+      ],
+      "verification": "./gradlew build --console=plain ; QA : un clic sur le bouton d'un groupe sain ne fait rien ; Maj + clic gauche deux fois éjecte ; une paire séparée ne montre pas « réparer ».",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "M",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T11",
+      "titre": "Le regroupement ne tourne plus à chaque tick ni à chaque image",
+      "type": "bug",
+      "pourquoi": "L'éditeur rescanne et regroupe toute la grille à chaque tick, et l'écran du terminal regroupe les machines à chaque image.",
+      "constats": [
+        "C-MC-05",
+        "C-MC-09",
+        "C-AR-02"
+      ],
+      "criteres": [
+        "Côté serveur, l'éditeur calcule son groupe au rythme de `refreshTicks`, comme le terminal, et après chaque écriture. Il garde le résultat entre deux calculs.",
+        "Les appels explicites à `detectAndSendChanges` (molette, case fantôme, remplissage JEI) ne déclenchent plus de scan.",
+        "Chaque action d'écriture fait toujours un scan frais : le serveur reste l'autorité.",
+        "Côté client, le résumé et l'état de chaque groupe se calculent une fois par instantané reçu, sous la même clé de cache que la liste, pas à chaque image."
+      ],
+      "verification": "./gradlew build --console=plain ; lecture : `refreshTabs` et `summary` ne sont plus appelés hors du cache.",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T12",
+      "titre": "L'instantané du terminal reste sous le plafond NBT",
+      "type": "bug",
+      "pourquoi": "Au-delà du plafond, FML coupe la connexion du joueur. Les deux machines d'une paire envoient chacune une copie de la même liste.",
+      "constats": [
+        "C-MC-01",
+        "C-VE-03"
+      ],
+      "criteres": [
+        "Chaque liste de recettes identique n'est envoyée qu'une fois par instantané. Les machines d'une paire désignent la même copie.",
+        "Le serveur mesure la taille de l'instantané avant l'envoi. Au-delà d'un plafond fixe sous 2 097 152 octets comptés, il n'envoie pas l'instantané, et le terminal affiche un message clair au lieu d'une déconnexion.",
+        "Le test de T04 prouve le gain de la déduplication et la décision du plafond.",
+        "Les nouvelles clés de traduction existent dans les 16 langues.",
+        "Le changement de format du paquet est accepté (porte double sens, DA-02)."
+      ],
+      "verification": "./gradlew test --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [
+        "T04"
+      ],
+      "taille": "M",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T13",
+      "titre": "Un seul calcul dit si un groupe a un problème",
+      "type": "bug",
+      "pourquoi": "`groupTroubled`, `hasProblem` et `groupState` répondent à la même question avec trois règles. Le filtre « problèmes seulement » peut cacher une ligne rouge.",
+      "constats": [
+        "C-AR-03",
+        "C-VE-07"
+      ],
+      "criteres": [
+        "Une fonction pure de `common` rend l'état d'un groupe (rôle manquant, machine inactive, porte-recettes manquant, côtés différents, sain…).",
+        "La puce, la couleur et le filtre « problèmes seulement » de `GuiPatTerminal` utilisent tous cette fonction. Les prédicats en double disparaissent de l'écran.",
+        "Des tests JUnit couvrent chaque état, dont le groupe nommé de trois machines où un Packager n'a pas de porte-recettes."
+      ],
+      "verification": "./gradlew test --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "M",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T14",
+      "titre": "Le serveur applique les permissions et les types désactivés",
+      "type": "bug",
+      "pourquoi": "Le terminal s'ouvre sans `BUILD`, contre D12 et contre AE2. L'éditeur ignore `disabled_recipe_types` de PackagedAuto et fait confiance au type envoyé par le client.",
+      "constats": [
+        "C-MC-08",
+        "C-MC-07"
+      ],
+      "criteres": [
+        "Le terminal câblé et le terminal sans fil refusent de s'ouvrir sans la permission `BUILD`, avec un message.",
+        "Le cycle des types, le type par défaut et le remplissage JEI de l'éditeur sautent les types de `TileEncoder.disabledRecipeTypes`, comme l'Encoder de PackagedAuto.",
+        "Un type désactivé demandé par le client est refusé avec un message.",
+        "Les nouvelles clés de traduction existent dans les 16 langues."
+      ],
+      "verification": "./gradlew build --console=plain ; QA : un joueur sans BUILD ne peut pas ouvrir le terminal.",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": "DA-05 : suit D12 sans question à Julien."
+    },
+    {
+      "id": "T15",
+      "titre": "Le client suit la configuration du serveur",
+      "type": "bug",
+      "pourquoi": "`machinesTab` n'est pas synchronisé : un serveur qui coupe l'onglet produit de fausses alertes rouges. `wutModeId` est modifiable en jeu mais lu une seule fois.",
+      "constats": [
+        "C-MC-10",
+        "C-AR-09",
+        "C-PR-05",
+        "C-PR-12"
+      ],
+      "criteres": [
+        "L'instantané porte la valeur `machinesTab` du serveur. Le client affiche l'onglet Machines selon cette valeur.",
+        "Quand le serveur n'a pas envoyé la liste des crafters, l'infobulle n'affiche pas « machine absente ».",
+        "`wutModeId` porte `@Config.RequiresMcRestart`. Son commentaire dit qu'un nouvel identifiant rend muets les terminaux universels déjà assemblés."
+      ],
+      "verification": "./gradlew build --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T16",
+      "titre": "L'avis de mise à jour compare les bonnes versions",
+      "type": "bug",
+      "pourquoi": "La version du mod porte le préfixe `1.12.2-`, mais `update.json` publie la version sans préfixe. Le mod se croit toujours en avance.",
+      "constats": [
+        "C-MC-11"
+      ],
+      "criteres": [
+        "`Reference.VERSION` vaut `modVersion` seul (par exemple `0.1.0-beta.10`).",
+        "Le nom du jar ne change pas.",
+        "`tools/release.sh` reste cohérent avec ce format."
+      ],
+      "verification": "./gradlew build --console=plain && javap -constants -cp build/classes/java/main fr.julien.packagedautoterminals.Reference | grep VERSION  # attendu : 0.1.0-beta.10",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": "DA-08."
+    },
+    {
+      "id": "T17",
+      "titre": "Le terminal sans fil suit l'objet tenu",
+      "type": "bug",
+      "pourquoi": "Les conteneurs ne verrouillent pas la case du terminal sans fil et ne vérifient pas que l'objet est toujours là. L'infobulle demande toujours de lier le terminal. `addCheckedInformation` n'a pas `@SideOnly(CLIENT)`.",
+      "constats": [
+        "C-MC-06",
+        "C-PR-11",
+        "C-MC-17"
+      ],
+      "criteres": [
+        "En mode sans fil, les deux conteneurs verrouillent la case du terminal, comme `ContainerMEPortableTerminal`.",
+        "L'écran se ferme quand l'objet quitte sa case.",
+        "L'infobulle affiche « lié » ou « non lié » selon la clé, et la consigne de liaison seulement pour un terminal non lié.",
+        "`addCheckedInformation` porte `@SideOnly(Side.CLIENT)`."
+      ],
+      "verification": "./gradlew build --console=plain ; QA : jeter le terminal avec Q pendant que l'écran est ouvert → l'écran se ferme.",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T18",
+      "titre": "Le terminal tient en 1080p, et les libellés sont traduits",
+      "type": "bug",
+      "pourquoi": "Le terminal fait 367 px et force l'échelle 2 en 1080p. Des libellés restent en anglais, et « 1 recipes scaled » est faux. Réponse de Julien à la question 4 : option A.",
+      "constats": [
+        "C-PR-04",
+        "C-PR-13"
+      ],
+      "criteres": [
+        "Le terminal montre 10 lignes au lieu de 12. Sa hauteur tient à l'échelle 3 sur un écran de 1080 px.",
+        "`holder_main` et `holder_sync` sont traduits dans les langues où ils restent en anglais.",
+        "Une clé au singulier remplace « 1 recipes scaled ».",
+        "Le CHANGELOG donne la vraie hauteur du terminal.",
+        "`checkLang` est vert."
+      ],
+      "verification": "./gradlew build --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T19",
+      "titre": "L'éditeur côté client ne lit plus la grille et ne recalcule plus à chaque case",
+      "type": "bug",
+      "pourquoi": "En solo, le fil client peut parcourir la grille du serveur. Chaque changement d'onglet coûte 99 recherches de recette côté client.",
+      "constats": [
+        "C-MC-12",
+        "C-MC-13"
+      ],
+      "criteres": [
+        "Un clic sur un onglet de l'éditeur se traite seulement côté serveur. Le client ne lance plus `load` ni `currentGroup`.",
+        "Côté client, la recette se reconstruit une fois après la réception d'un lot de cases, pas à chaque case.",
+        "Le bouton Save reste activé ou désactivé comme avant."
+      ],
+      "verification": "./gradlew build --console=plain ; QA : changer d'onglet dans un gros pack ne fige plus l'écran.",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T20",
+      "titre": "Retirer `tooltipStacks` et le code mort",
+      "type": "bug",
+      "pourquoi": "L'option `tooltipStacks` n'a aucun effet. Plusieurs membres sont écrits mais jamais lus. Réponse de Julien à la question 5 : retirer la clé.",
+      "constats": [
+        "C-AR-12",
+        "C-PR-08"
+      ],
+      "criteres": [
+        "`PatConfig.tooltipStacks` et ses traductions disparaissent des 16 langues.",
+        "La lecture de `ConfigManager` (sources Forge) prouve qu'un ancien fichier de configuration qui contient encore la clé se charge sans erreur. La preuve est citée dans la réponse.",
+        "`ItemWirelessPatTerminal.wutMode()`, `ProviderSnapshot.id`, les modids inutilisés de `Reference` et `CrafterTypes.all()` disparaissent.",
+        "`lastPayloadBytes` reste seulement si T12 l'utilise.",
+        "`checkLang` est vert."
+      ],
+      "verification": "./gradlew build --console=plain && grep -rn 'tooltipStacks\\|tooltip_stacks' src/ ; echo grep_rc=$?  # attendu : grep_rc=1",
+      "porte": "sens_unique",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": "Porte à sens unique validée par Julien (QUESTIONS.md, question 5)."
+    },
+    {
+      "id": "T21",
+      "titre": "Un nom de groupe s'efface quand la machine casse",
+      "type": "bug",
+      "pourquoi": "Un nom survit à la machine. Une machine d'une autre chaîne posée au même endroit hérite du nom et fusionne avec un groupe étranger.",
+      "constats": [
+        "C-MC-04"
+      ],
+      "criteres": [
+        "Quand un provider casse, son entrée de `GroupNames` disparaît.",
+        "Le format NBT de `GroupNames` ne change pas (DA-07).",
+        "Un test JUnit couvre le retrait d'une entrée."
+      ],
+      "verification": "./gradlew test --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T22",
+      "titre": "La limite de 20 recettes se lit sans lien dur à une classe interne",
+      "type": "bug",
+      "pourquoi": "`maxRecipes()` lit `TileEncoder.patternSlots`, hors de l'API, et la dépendance n'a pas de borne haute.",
+      "constats": [
+        "C-MC-14"
+      ],
+      "criteres": [
+        "Le champ se lit par réflexion, avec un repli sur 20 et une ligne de journal si le champ manque."
+      ],
+      "verification": "./gradlew build --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T23",
+      "titre": "Refus du mode holder visible, et diagnostic des orphelines formulé comme un doute",
+      "type": "bug",
+      "pourquoi": "Le refus `portableEncoder=false` s'affiche sous l'écran. Le diagnostic « aucun crafter » se trompe pour un crafter hors réseau ME.",
+      "constats": [
+        "C-PR-10",
+        "C-PR-09"
+      ],
+      "criteres": [
+        "Quand un terminal est ouvert, le refus du mode holder passe par le canal de messages du conteneur.",
+        "L'alerte de recette orpheline dit qu'aucun crafter de ce type n'est sur le réseau ME et qu'un crafter hors réseau reste possible. Elle s'affiche en orange.",
+        "Les clés de traduction changées le sont dans les 16 langues."
+      ],
+      "verification": "./gradlew build --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T24",
+      "titre": "Les gestes cachés ont une infobulle",
+      "type": "bug",
+      "pourquoi": "Les préfixes de recherche `@mod` et `#type` et le bouton `×N` n'ont ni infobulle ni libellé traduit.",
+      "constats": [
+        "C-PR-06"
+      ],
+      "criteres": [
+        "Le champ de recherche a une infobulle qui décrit `@mod`, `#type` et le texte libre.",
+        "Le bouton `×N` a une infobulle traduite.",
+        "Les nouvelles clés existent dans les 16 langues."
+      ],
+      "verification": "./gradlew build --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": "La page JEI « gestes » reste au backlog : c'est une nouvelle feature que Julien n'a pas validée."
+    },
+    {
+      "id": "T25",
+      "titre": "Défauts cosmétiques : flèche du type, ressources non fermées",
+      "type": "bug",
+      "pourquoi": "La flèche « suivant » recule, à l'inverse de l'Encoder. `ClientDiagnostics` ouvre sept ressources sans les fermer.",
+      "constats": [
+        "C-MC-16",
+        "C-MC-18"
+      ],
+      "criteres": [
+        "La flèche droite avance dans les types, comme dans l'Encoder (DA-06).",
+        "`ClientDiagnostics` ferme chaque ressource ouverte."
+      ],
+      "verification": "./gradlew build --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T26",
+      "titre": "La documentation du code dit ce que fait le code",
+      "type": "dette",
+      "pourquoi": "`ARCHITECTURE.md`, plusieurs Javadoc et un PITFALL contredisent le code.",
+      "constats": [
+        "C-AR-13",
+        "C-AR-07",
+        "C-AR-08"
+      ],
+      "criteres": [
+        "`docs/ARCHITECTURE.md` décrit les paquets et le flux réels.",
+        "D21 de `docs/DECISIONS.md` porte la mention « remplacée par D33 ».",
+        "Les Javadoc fausses, orphelines ou en double listées dans C-AR-13 et C-AR-07 sont corrigées ou retirées.",
+        "Le PITFALL `parseLong` de `PatGuiHandler` est corrigé."
+      ],
+      "verification": "./gradlew build --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T27",
+      "titre": "Le wiki et le protocole de test disent la vérité",
+      "type": "dette",
+      "pourquoi": "Le wiki contredit le comportement par défaut, et `TESTING.md` se contredit sur ce qui est prouvé.",
+      "constats": [
+        "C-PR-07",
+        "C-VE-12"
+      ],
+      "criteres": [
+        "Les pages Troubleshooting, Diagnostics et leurs traductions (fr, zh) décrivent le comportement réel et nomment `pullHolderFromNetwork`.",
+        "Le tableau de `TESTING.md` contient O et P, et les en-têtes s'accordent avec lui.",
+        "Les identifiants de test en collision avec les décisions D43 et D44 et le double P1 sont renumérotés.",
+        "Les attentes périmées (P6, B2, chemin de lancement, nom du jar) sont corrigées."
+      ],
+      "verification": "./gradlew build --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T28",
+      "titre": "Écrire le glossaire du domaine",
+      "type": "dette",
+      "pourquoi": "« machine » et « pattern » nomment chacun deux concepts, et aucun document ne fixe le vocabulaire.",
+      "constats": [
+        "C-AR-14"
+      ],
+      "criteres": [
+        "`GLOSSARY.md` reprend la proposition de la section 8 d'`AUDIT.md`, avec les conflits repérés."
+      ],
+      "verification": "test -f GLOSSARY.md",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T29",
+      "titre": "Une seule vérification d'accès pour le terminal sans fil",
+      "type": "dette",
+      "pourquoi": "Le clic droit, la touche, AE2WUT et le handler ne vérifient pas les mêmes choses.",
+      "constats": [
+        "C-AR-08"
+      ],
+      "criteres": [
+        "Une seule fonction rend la raison d'un refus d'accès sans fil, ou rien. Les quatre portes d'ouverture l'appellent."
+      ],
+      "verification": "./gradlew build --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T30",
+      "titre": "Un seul choix de message après une écriture",
+      "type": "dette",
+      "pourquoi": "La traduction d'un `RecipeWriter.Result` en message existe en quatre copies, avec des priorités différentes.",
+      "constats": [
+        "C-VE-10",
+        "C-AR-10"
+      ],
+      "criteres": [
+        "Une fonction pure de `common` choisit le message d'une écriture. Les quatre appelants l'utilisent.",
+        "Un test JUnit couvre chaque cas de `Result`."
+      ],
+      "verification": "./gradlew test --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    },
+    {
+      "id": "T31",
+      "titre": "L'écran lit la géométrie des cases dans les cases",
+      "type": "dette",
+      "pourquoi": "`drawSelectedTab` et `drawDisabledSlots` recalculent la position des cases à la main. Le cadre vert est déjà sorti de l'écran une fois pour cette raison.",
+      "constats": [
+        "C-AR-15"
+      ],
+      "criteres": [
+        "L'écran de l'éditeur lit `slot.xPos` et `slot.yPos` partout.",
+        "Les constantes de mise en page que le conteneur n'utilise pas passent dans une classe de `client.gui`."
+      ],
+      "verification": "./gradlew build --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": ""
+    }
+  ]
+}
