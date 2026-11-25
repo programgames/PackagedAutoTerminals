@@ -781,7 +781,7 @@
       ],
       "taille": "S",
       "statut": "bloque",
-      "note": "Créé par la rétrospective. Bloqué après deux revues refusées. Essai 1 : le motif ne voyait pas @GuiSync(value = N), la forme d'AE2 ; raison de drift inexacte. Essai 2 (corrigé, 27 mutations du relecteur, 25 bien détectées) : le motif GUARD ([^{]*) traverse les « ; », donc un onUpdate à retour anticipé (« if (world.isRemote) return; if (…) { refreshTabs(); } ») passe à tort. Correction vérifiée par le relecteur sur une copie : remplacer [^{]* par [^{;]* dans GUARD (GuiSyncTest.java:63). Le diff du second essai est gardé dans docs/audit/T36-essai.patch : git apply, puis cette correction d'un caractère, puis une revue."
+      "note": "Créé par la rétrospective. Bloqué après deux revues refusées. Essai 1 : le motif ne voyait pas @GuiSync(value = N), la forme d'AE2 ; raison de drift inexacte. Essai 2 (corrigé, 27 mutations du relecteur, 25 bien détectées) : le motif GUARD ([^{]*) traverse les « ; », donc un onUpdate à retour anticipé (« if (world.isRemote) return; if (…) { refreshTabs(); } ») passe à tort. Correction vérifiée par le relecteur sur une copie : remplacer [^{]* par [^{;]* dans GUARD (GuiSyncTest.java:63). Le diff du second essai est gardé dans docs/audit/T36-essai.patch : git apply, puis cette correction d'un caractère, puis une revue. Piste pour le prochain essai (rétrospective du passage 2) : lire les champs @GuiSync par réflexion (Class.forName(nom, false, loader), getFields(), annotation RUNTIME lue par AE2 dans AEBaseContainer) au lieu d'une expression régulière ; garder la lecture de source seulement pour la règle onUpdate."
     },
     {
       "id": "T37",
@@ -801,6 +801,29 @@
       "taille": "S",
       "statut": "fait",
       "note": "Créé par la rétrospective (revue de T06). Revue acceptée. Cause : ForgeGradle 2.3.10 ajoute fileTree(\"libs\") à compile, donc libs/mixinbooter-10.7.jar est sur le chemin de runClient/runServer. run/mods/mixinbooter-10.7.jar retiré (local) ; checkDevMods couvre tout libs/**/*.jar ; 0 « Multiple Mixin containers » ; PackagingProvider charge. Backlog : CLAUDE.md §4.1 parle encore de deobfProvided et de libs/maven ; build.yml:30 dit encore « only the libs/maven mods » ; la ligne compileOnly de mixinbooter est redondante."
+    },
+    {
+      "id": "T38",
+      "titre": "Les documents de référence disent vrai après l'audit",
+      "type": "dette",
+      "pourquoi": "Les revues des passages 1 et 2 ont relevé des phrases devenues fausses dans des documents que les agents et Julien lisent avant d'écrire du code.",
+      "constats": [
+        "C-AR-13",
+        "C-VE-12"
+      ],
+      "criteres": [
+        "CLAUDE.md §4.1 dit que ForgeGradle 2.3.10 met tout libs/ (fileTree) sur le chemin d'exécution, et que la règle de checkDevMods couvre libs/.",
+        ".github/workflows/build.yml ne dit plus « only the libs/maven mods load ».",
+        "docs/ARCHITECTURE.md : « move a Recipe Holder » retiré ; FluidPackets nomme un identifiant d'item ; le client lit aussi recipeInfo pour la ligne « invalid ».",
+        "docs/DECISIONS.md : le texte de R2 dit « renvoi complet, sans delta » ; R1 ne dit plus « each integration module ».",
+        "docs/TESTING.md : B2 porte 🆕 ; « Where I expect trouble » et docs/PLAN.md:84/92/129 ne se contredisent plus."
+      ],
+      "verification": "./gradlew build --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": "Créé par la rétrospective du passage 2, à partir des notes de T26, T27 et T37."
     }
   ]
 }

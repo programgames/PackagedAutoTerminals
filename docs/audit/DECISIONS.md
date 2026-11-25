@@ -72,3 +72,9 @@ Chaque décision est réversible. Format : décision, alternatives, raison, reto
 - Alternative : le traiter tout de suite, et sortir T19 ou T20 de ce passage.
 - Raison : le refus est sûr (aucune écriture) et le cas est rare. L'ancien code supprimait par index et pouvait effacer une autre recette : T08 reste un progrès net.
 - Retour arrière : déplacer T32 plus haut dans `tickets.json`.
+
+## DA-14 — T34 et T36 restent bloqués, avec leur patch
+- Décision : après deux refus, T34 et T36 sont annulés (`git restore`) et marqués `bloque`, comme le skill l'exige. Leur second essai est gardé dans `docs/audit/T34-essai.patch` et `docs/audit/T36-essai.patch`.
+- Alternative : corriger moi-même les trois phrases de T34 et le caractère de T36, puis commiter sans revue.
+- Raison : l'orchestrateur n'écrit pas de code non relu. Le patch évite de refaire le travail vérifié.
+- Retour arrière : au prochain passage, remettre T34 et T36 à `a_faire`, appliquer le patch, corriger, puis faire relire.
