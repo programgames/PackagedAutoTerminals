@@ -384,8 +384,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Accepté au second essai. Premier essai refusé : itemLeft ne voyait pas une pile vidée sur place (splitStack, client modifié) ; corrigé par current.isEmpty(). 99 tests. QA : Q ne jette plus le terminal (case verrouillée) ; pour tester la fermeture, survoler une case vide et presser le chiffre de la case du terminal. Plus strict qu'AE2 : l'écran se ferme au lieu de remettre la pile."
     },
     {
       "id": "T18",

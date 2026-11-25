@@ -12,6 +12,7 @@ import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
 import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 
 /**
@@ -53,6 +54,29 @@ public final class TerminalContext {
 
     public boolean isWireless() {
         return inventorySlot >= 0;
+    }
+
+    /** Wireless item: slot in the player inventory. Otherwise -1. */
+    public int inventorySlot() {
+        return inventorySlot;
+    }
+
+    /**
+     * Has the wireless item left the slot the screen was opened from?
+     *
+     * <p>{@link WirelessTerminalGuiObject} keeps the stack it was built with, and draws its
+     * energy from it. Once the item is gone, that stack is a ghost, so the screen must close,
+     * as {@code ContainerMEPortableTerminal} does.
+     *
+     * <p>Dropping the item empties the stack in place: the slot keeps the same object, with
+     * a count of 0. The identity test alone misses that case.
+     */
+    public boolean itemLeft(EntityPlayer player) {
+        if (!isWireless()) {
+            return false;
+        }
+        ItemStack current = player.inventory.getStackInSlot(inventorySlot);
+        return current.isEmpty() || current != ((WirelessTerminalGuiObject) host).getItemStack();
     }
 
     public IActionHost host() {

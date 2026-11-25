@@ -152,6 +152,9 @@ public class ContainerPatTerminal extends AEBaseContainer {
         // PITFALL: `AEBaseContainer.addSlotToContainer` refuses a vanilla `Slot` and throws
         // "Invalid Slot [...] for AE Container instead of AppEngSlot". The screen then never
         // opens. AE2 provides its own inventory binding, which places AppEngSlot instances.
+        if (terminal.isWireless()) {
+            lockPlayerInventorySlot(terminal.inventorySlot());
+        }
         bindPlayerInventory(inventory, PLAYER_INVENTORY_OFFSET_X, PLAYER_INVENTORY_TOP);
     }
 
@@ -159,6 +162,10 @@ public class ContainerPatTerminal extends AEBaseContainer {
     public void detectAndSendChanges() {
         super.detectAndSendChanges();
         if (!(getPlayerInv().player instanceof EntityPlayerMP)) {
+            return;
+        }
+        if (terminal.itemLeft(getPlayerInv().player)) {
+            setValidContainer(false);
             return;
         }
         if (ticks++ % Math.max(1, PatConfig.refreshTicks) != 0) {

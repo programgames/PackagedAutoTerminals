@@ -128,6 +128,9 @@ public class ContainerPatEditor extends AEBaseContainer {
         this.holders = null;
 
         bindEditorSlots();
+        if (terminal.isWireless()) {
+            lockPlayerInventorySlot(terminal.inventorySlot());
+        }
         bindPlayerInventory(inventory, PLAYER_INVENTORY_OFFSET_X, PLAYER_INVENTORY_TOP);
     }
 
@@ -384,6 +387,11 @@ public class ContainerPatEditor extends AEBaseContainer {
             drift = !holders.getStackInSlot(0).isEmpty() && !holders.getStackInSlot(1).isEmpty()
                     && !sameRecipes(recipesIn(0), recipesIn(1));
         } else if (!world.isRemote) {
+            if (terminal.itemLeft(getPlayerInv().player)) {
+                setValidContainer(false);
+                sendChanges();
+                return;
+            }
             // The editor follows the same rule as the terminal: out of range or out of
             // energy, it closes instead of showing a recipe it can no longer write.
             if (ticks++ % Math.max(1, PatConfig.refreshTicks) == 0) {

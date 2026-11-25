@@ -3,6 +3,7 @@ package fr.julien.packagedautoterminals.item;
 import appeng.api.config.Actionable;
 import appeng.api.features.IWirelessTermHandler;
 import appeng.api.util.IConfigManager;
+import appeng.core.localization.GuiText;
 import appeng.items.tools.powered.powersink.AEBasePoweredItem;
 import appeng.util.ConfigManager;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
@@ -18,6 +19,8 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.IGuiHandler;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
  * Wireless PackagedAuto terminal.
@@ -172,11 +175,16 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
      * calls this hook afterwards. Overriding the vanilla method does not compile.
      */
     @Override
+    @SideOnly(Side.CLIENT)
     public void addCheckedInformation(ItemStack stack, World world, java.util.List<String> lines,
                                          net.minecraft.client.util.ITooltipFlag flag) {
         super.addCheckedInformation(stack, world, lines, flag);
+        boolean linked = !getEncryptionKey(stack).isEmpty();
+        lines.add((linked ? GuiText.Linked : GuiText.Unlinked).getLocal());
         lines.add(net.minecraft.client.resources.I18n.format("tip.packagedautoterminals.wireless"));
-        lines.add(net.minecraft.client.resources.I18n.format("tip.packagedautoterminals.wireless_link"));
+        if (!linked) {
+            lines.add(net.minecraft.client.resources.I18n.format("tip.packagedautoterminals.wireless_link"));
+        }
         lines.add(net.minecraft.client.resources.I18n.format("tip.packagedautoterminals.wireless_holder"));
     }
 }
