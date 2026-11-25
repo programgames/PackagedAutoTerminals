@@ -15,7 +15,8 @@ The terminal is an AE2 part. A part is a thin block that you attach to a face of
 ## 3. Open the terminal
 
 Right click the part. The screen lists every Packager, every Unpackager and every Packaging
-Provider of the network.
+Provider of the network. The terminal opens only for a player who holds the Build permission of
+the AE2 security on that network.
 
 The terminal joins the machines that work together into a group. A group is normally one Packager
 with one Unpackager. Four rules build the groups:
@@ -40,7 +41,28 @@ You can also drag an item out of JEI onto a cell, instead of step 3.
 The recipe reaches the Packager and the Unpackager in the same gesture. PackagedAuto needs the
 same recipe on both sides. If you write one side only, the automation breaks without a message.
 
-To edit a recipe that already exists, right click its row in the list.
+To edit a recipe that already exists, unfold its group with the chevron, then right click the
+recipe row.
+
+## The gestures of the list
+
+| Gesture | Effect |
+|---|---|
+| Left click a group row | Open the editor on a new recipe |
+| Left click the chevron of a group row | Fold or unfold the recipes of the group |
+| Left click the button of a group row | Take blank recipe holders from the network, or copy the recipes that one side lacks to the other side |
+| Shift + left click a group row, twice | Send the recipe holders of the group back to the network |
+| Right click a recipe row, or left click its pencil | Edit that recipe |
+| Left click the cross of a recipe row, twice | Remove that recipe from the group |
+| Shift + right click a recipe row, twice | Remove that recipe from the group |
+| Left click the pin of a group row | Mark the machines of the group in the world |
+
+The button of a group row shows only when the group needs it. An arrow that enters a box means
+that a machine holds no recipe holder. Two turning arrows mean that a recipe sits on one side
+only. The button only adds: it never removes a holder or a recipe.
+
+A removal asks for two clicks on the same row, within three seconds. The first click only shows
+a warning.
 
 ## The wireless terminal
 

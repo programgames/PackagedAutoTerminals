@@ -595,8 +595,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée : 11 fichiers .md, aucun code. Retrait de 🆕 sur D–G vérifié dans l'historique (le tableau « passed » est plus récent que les en-têtes). Backlog : B2 réécrit sans 🆕 ; « inactive … runs nothing » va trop loin (un crafter sans canal fabrique encore avec du RF) ; les routeurs affichent « no recipe » en rouge (défaut d'interface probable, GuiPatTerminal.java:961) ; tests D22–D35 homonymes des décisions D22–D35 ; « Where I expect trouble » et PLAN.md:84/92/129 encore contradictoires ; tableau de progression sans date ni version."
     },
     {
       "id": "T28",

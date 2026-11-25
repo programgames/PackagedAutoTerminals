@@ -15,7 +15,8 @@ Le terminal est une pièce AE2. Une pièce est un bloc fin que tu fixes sur une 
 ## 3. Ouvre le terminal
 
 Fais un clic droit sur la pièce. L'écran liste chaque Packager, chaque Unpackager et chaque
-Packaging Provider du réseau.
+Packaging Provider du réseau. Le terminal ne s'ouvre que pour un joueur qui détient la permission
+Build de la sécurité AE2 sur ce réseau.
 
 Le terminal réunit en un groupe les machines qui travaillent ensemble. Un groupe est normalement
 un Packager avec un Unpackager. Quatre règles construisent les groupes :
@@ -43,7 +44,29 @@ Tu peux aussi glisser un objet depuis JEI sur une case, au lieu de l'étape 3.
 La recette atteint le Packager et l'Unpackager dans le même geste. PackagedAuto exige la même
 recette des deux côtés. Si tu n'écris qu'un seul côté, l'automatisation casse sans message.
 
-Pour modifier une recette qui existe déjà, fais un clic droit sur sa ligne dans la liste.
+Pour modifier une recette qui existe déjà, déplie son groupe avec le chevron, puis fais un clic
+droit sur la ligne de la recette.
+
+## Les gestes de la liste
+
+| Geste | Effet |
+|---|---|
+| Clic gauche sur une ligne de groupe | Ouvre l'éditeur sur une nouvelle recette |
+| Clic gauche sur le chevron d'une ligne de groupe | Plie ou déplie les recettes du groupe |
+| Clic gauche sur le bouton d'une ligne de groupe | Prend des porte-recettes vierges sur le réseau, ou copie de l'autre côté les recettes qui manquent à un côté |
+| Maj + clic gauche sur une ligne de groupe, deux fois | Renvoie au réseau les porte-recettes du groupe |
+| Clic droit sur une ligne de recette, ou clic gauche sur son crayon | Modifie cette recette |
+| Clic gauche sur la croix d'une ligne de recette, deux fois | Retire cette recette du groupe |
+| Maj + clic droit sur une ligne de recette, deux fois | Retire cette recette du groupe |
+| Clic gauche sur l'épingle d'une ligne de groupe | Marque les machines du groupe dans le monde |
+
+Le bouton d'une ligne de groupe n'apparaît que quand le groupe en a besoin. Une flèche qui entre
+dans une boîte signale qu'une machine ne porte pas de porte-recettes. Deux flèches qui tournent
+signalent qu'une recette n'est que d'un côté. Le bouton ne fait qu'ajouter : il ne retire jamais un
+porte-recettes ni une recette.
+
+Un retrait demande deux clics sur la même ligne, dans les trois secondes. Le premier clic ne
+fait qu'afficher un avertissement.
 
 ## Le terminal sans fil
 

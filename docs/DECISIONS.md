@@ -767,7 +767,7 @@ keeps its proportions; the tester had to repeat that for every recipe of the hol
 | Craft recipes | Skipped, and counted in the message | `canSetOutput()` false locks them to one per cell |
 | Failure | Refused before any write, naming the first recipe that fails: amount not divisible, amount above 4096 items or a billion mB, recipe invalid once scaled | no group is ever left half scaled; same rule as one recipe |
 | Collision | Two recipes equal once scaled: refused, naming both | a silent merge deletes a recipe nobody asked to delete |
-| Unsaved work | Refused with `unsaved` | the reload would erase it |
+| Unsaved work | Refused with `scale_unsaved` | the reload would erase it |
 | After | The open tab reloads on the scaled version of its recipe | the next Save edits the right recipe |
 | Running crafts | Nothing special: same write path as Save, see test N9 | no loss proven |
 

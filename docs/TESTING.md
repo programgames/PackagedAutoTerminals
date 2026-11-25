@@ -13,12 +13,12 @@
 
 | Group | State |
 |---|---|
-| A — The foundation | passed |
-| B — Reading and search | passed |
-| C — The pin and the name | passed |
-| D — The merged editor | passed |
-| E — The pair, and its accidents | passed |
-| F — The Machines tab | passed |
+| A — The foundation | passed, except the tests marked 🆕 |
+| B — Reading and search | passed, except the tests marked 🆕 |
+| C — The pin and the name | passed, except the tests marked 🆕 |
+| D — The merged editor | passed, except the tests marked 🆕 |
+| E — The pair, and its accidents | passed, except the tests marked 🆕 |
+| F — The Machines tab | passed, except the tests marked 🆕 |
 | G — The wireless terminal | passed |
 | H — Settings and real instance | H1 passed, H2 pending |
 | I — Folding and crafting machine | 🆕 never tested |
@@ -27,23 +27,25 @@
 | L — Opening key | 🆕 never tested |
 | M — Reading and editing comfort | 🆕 never tested |
 | N — The cases nobody had thought of | 🆕 never tested |
+| O — Holder mode, with no network | 🆕 never tested |
+| P — Scale every recipe | 🆕 never tested |
 
 Fixes born from these runs: name frame raised to 16 pixels, buttons placed under the preview,
 single feedback message trimmed to the frame, grouping by the name given by the player, text
-widths computed instead of hard coded, narrowest recipe type chosen on the JEI transfer (D32),
-and wiring of the wireless range, link and energy checks, which nobody called.
+widths computed instead of hard coded, narrowest recipe type chosen on the JEI transfer
+(decision D32), and wiring of the wireless range, link and energy checks, which nobody called.
 
 ---
 
 ## Preparation
 
-### P1 — Launch
+### S1 — Launch
 
 ```bash
-cd /c/Users/Julien/Desktop/PackagedAutoTerminals && ./gradlew runClient
+cd /h/Dev/PackagedAutoTerminals && ./gradlew runClient
 ```
 
-### P2 — The test bench
+### S2 — The test bench
 
 In a creative superflat world, build this:
 
@@ -72,9 +74,10 @@ Open the **Mods** menu.
 Look for `PackagedAuto Terminal` in JEI, then craft it.
 → The recipe needs an ME terminal and a Package Recipe Holder.
 
-### A3 — Placement
+### A3 — Placement 🆕
 Place the terminal on a cable, then right click.
-→ The screen opens. Width **256**, no trimmed text.
+→ The screen opens: **320** pixels wide, **331** tall, with **ten** rows in the list. On a 1920
+by 1080 window at GUI scale 3, the scale stays 3. No trimmed text.
 
 ---
 
@@ -88,7 +91,8 @@ line.
 
 ### B2 — The summary
 Look at the line above the inventory.
-→ "2 machines · 1 recipe". Hovering gives the packet size.
+→ "2 machines · 1 recipe". Hovering the line shows nothing: `SnapshotSizeTest` measures the
+packet size at build time.
 
 ### B3 — Free search
 Type the name of the produced item, then `zzz`.
@@ -134,7 +138,7 @@ Right click the recipe, type `Iron` into the top field, **Enter**.
 
 ---
 
-## D — The merged editor 🆕
+## D — The merged editor
 
 ### D1 — Opening
 Right click the recipe.
@@ -246,77 +250,81 @@ with Shift and by 10000 mB with Ctrl.
 In a recipe that holds 1000 mB of water and 2 items, tick the box and set the water to 2000.
 → The item goes to 4. Fluids and items scale together.
 
-### D40 — A craft recipe shows its output 🆕
+### D22 — A craft recipe shows its output 🆕
 Open a recipe of a Package Crafter: `Ultimate`, `Extreme`, or any tier.
 → The 3 by 3 output box shows the crafted item, in its **centre**. The box is no longer black.
 The item cannot be taken, and cannot be replaced.
 
-### D41 — The amount of a craft recipe 🆕
+### D23 — The amount of a craft recipe 🆕
 On that same recipe, left click a filled ingredient slot, then roll the wheel over it.
 → The panel does **not** open. The wheel changes nothing. A message reads "Une recette de craft
 prend un objet par case". On a `Processing` recipe, both gestures still work.
 
-### D42 — The frame of the open tab 🆕
+### D24 — The frame of the open tab 🆕
 Open a group of more than ten recipes, and select a recipe of the **second** row.
 → The green frame sits on that tab, inside the screen. No green square appears outside the
 screen.
 
-### D43 — The tab arrows 🆕
+### D25 — The tab arrows 🆕
 Open a group of more than twenty recipes, and press the right arrow.
 → The row moves by ten tabs. No recipe is lost. At the end of the row, the right arrow is
 greyed out; at the start, the left one is.
 
-### D49 — Every message shows its number 🆕
+### D26 — Every message shows its number 🆕
 Save a recipe on a pair.
 → The line reads "Applied to 2 machines", with a digit. It must never read "Format error".
 Repeat on a full group and on a ratio refusal: each one shows its number.
 
-### D50 — The wireless terminal in the offhand 🆕
+### D27 — The wireless terminal in the offhand 🆕
 Put a linked, charged wireless terminal in the **offhand**, leave the main hand empty, right click.
 → The terminal opens. Repeat with another, unlinked terminal in the main hand: the offhand one
 still opens, and the refusal names the right item.
 
-### D51 — A refusal is red in the terminal 🆕
-In the terminal, try to create a recipe on a machine with no recipe holder.
-→ The line is **red**. So is the full group refusal. A successful write stays green.
+### D28 — A refusal is red in the terminal 🆕
+With no blank recipe holder left in the ME network, left click the row of a lone Packager that
+has no recipe holder.
+→ "No blank Package Recipe Holder on the network" is **red**. So is the full group refusal. A
+successful write stays green.
 
-### D52 — The group changed underneath 🆕
-Open the editor on a recipe, then remove another recipe of the same group by hand from the holder,
-then press Save.
-→ The editor refuses with "This group changed". The recipe you opened is untouched.
+### D29 — The group changed underneath 🆕
+Open the editor on a recipe. With a second player, delete that very recipe from the terminal.
+Then press Save in the first editor.
+→ The editor refuses with "This group changed: open the recipe again". Nothing is written. If
+the second player deletes **another** recipe instead, Save writes normally: the editor names the
+recipe it opened, not its position.
 
-### D53 — The in-game help 🆕
+### D30 — The in-game help 🆕
 Hover the terminal item, then press the JEI usage key on it.
 → Two lines of tooltip. JEI opens a description page of three paragraphs. The wireless terminal
 has its own, of two.
 
-### D47 — The amount of a fluid in its slot 🆕
+### D31 — The amount of a fluid in its slot 🆕
 Put 4000 mB of water in a slot of the editor.
 → The slot reads **4**, in the corner, like every AE2 fluid screen. It no longer reads 1. At
 250 mB it reads 0.25, and at 120000 mB it reads 120K. The text never overflows the slot.
 
-### D48 — A small Minecraft window 🆕
+### D32 — A small Minecraft window 🆕
 Shrink the game window until it is about 1000 by 600 pixels, then open the terminal and the
 editor.
 → Both screens fit whole. Nothing is cut at the top or at the bottom. JEI and the hotbar shrink
 with them. Close the screen: the GUI scale of the game is the one the player chose.
 
-### D45 — The plate of the amount panel 🆕
+### D33 — The plate of the amount panel 🆕
 Open the amount panel over the dark sky, not over the screen.
 → The plate is the **light** grey of a vanilla screen. The item name and "Keep ratio" read
 clearly. A plate that comes out dark means the colour repair failed.
 
-### D46 — The bottom edge of the buttons 🆕
+### D34 — The bottom edge of the buttons 🆕
 Look at Back, Save, Delete and Clear.
 → Each one has a light bevel on top **and** a shadow at the bottom. None looks cut.
 
-### D44 — The panel and the JEI tooltip 🆕
+### D35 — The panel and the JEI tooltip 🆕
 Open the amount panel so that it covers the JEI list, and move the mouse over the buttons.
 → No JEI tooltip appears. The buttons stay readable.
 
 ---
 
-## E — The pair, and its accidents 🆕
+## E — The pair, and its accidents
 
 ### E1 — Recipe on one side only
 With the Encoder, remove the recipe from the **Packager** only.
@@ -327,9 +335,16 @@ too.
 Right click the red line, then **Save** without changing anything.
 → "Applied to 2 machines", and the line turns black again.
 
-### E3 — Machine without a recipe holder
-Remove the recipe holder from the Packager, then click its line in the terminal.
-→ Message "Insert a Package Recipe Holder first". **Nothing is pulled from the ME network.**
+### E3 — Machine without a recipe holder 🆕
+Set `pullHolderFromNetwork` to `false` in `run/config/packagedautoterminals.cfg`, then restart.
+Place a lone Packager with no recipe holder, then left click its row in the terminal.
+→ Message "Insert a Package Recipe Holder into this machine first", in red. **Nothing is pulled
+from the ME network.**
+
+Set `pullHolderFromNetwork` back to `true`, the default, restart, then click the row again.
+→ The editor opens. Save reads "Applied to 1, 1 holder taken from the network": a blank holder
+left the ME network for the Packager. With no blank holder in the network, the click reads "No
+blank Package Recipe Holder on the network" instead.
 
 ### E4 — Brand new pair
 Empty both recipe holders.
@@ -340,7 +355,7 @@ Place the second Unpackager, connected, with no recipe holder.
 → It appears on its own line: the terminal does not guess when two machines could claim the
 same role.
 
-### E6 — Group removal
+### E6 — Group removal 🆕
 1. Hover the line of a healthy pair.
    → No button replaces the chip. A left click on the chip opens the editor on a new recipe,
    like the rest of the row. No recipe holder leaves its machine.
@@ -362,7 +377,7 @@ the same name in the editor: they join again, and the missing recipe is flagged 
 
 ---
 
-## F — The Machines tab 🆕
+## F — The Machines tab
 
 ### F1 — Switching
 Click the **Patterns** button at the top left.
@@ -371,12 +386,15 @@ Click the **Patterns** button at the top left.
 ### F2 — The two sections
 → **Crafters** first, then **Routers** with the Distributor.
 
-### F3 — State
-→ Each machine shows "idle" or "busy".
+### F3 — State 🆕
+→ Each machine shows "busy" while it works, or the number of encoded recipes that its kind of
+machine runs, such as "2 recipes". A machine without a channel shows "inactive", and a machine
+that no encoded recipe targets shows "no recipe". Both are red.
 
-### F4 — Orphan recipe
+### F4 — Orphan recipe 🆕
 Encode an **Ultimate** recipe without placing an Ultimate Crafter.
-→ An orange warning at the top of the list. Place the crafter: it disappears.
+→ An orange warning at the top of the list. Its tooltip says that a crafter outside the ME
+network may still run this recipe type. Place the crafter: the warning disappears.
 
 ### F5 — No false positive
 Check that a **Processing** recipe triggers no warning.
@@ -384,10 +402,10 @@ Check that a **Processing** recipe triggers no warning.
 
 ---
 
-## G — The wireless terminal 🆕
+## G — The wireless terminal
 
-> The riskiest part: it has never run, and the container rework also touches the wired
-> terminal. If A to F break, say so before starting G.
+> The container rework behind G also touches the wired terminal. If A to F break, say so before
+> starting G.
 
 ### G1 — Crafting
 → The **Wireless PackagedAuto Terminal** is crafted from ours and the AE2 wireless terminal.
@@ -657,8 +675,9 @@ In `run/config/packagedautoterminals.cfg`, set `machinesTab` to `false`.
 → The tab button disappears, and the title comes back.
 
 ### H2 — Real instance
-Copy `build/libs/packagedautoterminals-1.12.2-0.1.0.jar` into
-`H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`.
+Copy `build/libs/packagedautoterminals-1.12.2-<modVersion>.jar` into
+`H:\PrismLauncher\instances\cleanroom-0.5.17-alpha\minecraft\mods`. `<modVersion>` is the value
+in `gradle.properties`, today `0.1.0-beta.10`.
 → The instance starts, and the terminal works with your AE2UEL fork.
 
 ---
@@ -672,8 +691,8 @@ Copy `build/libs/packagedautoterminals-1.12.2-0.1.0.jar` into
 
 1. Encode three recipes in a Packager that has no partner.
 2. Place an Unpackager beside it, with no recipe holder.
-3. Open the terminal. The group joins the two machines, and the chip reads
-   `3 on one side only`, in red.
+3. Open the terminal. The group joins the two machines, and the chip reads `no holder`, in
+   red: a missing holder comes before the recipes on one side only.
 4. Hover the row. The button shows two turning arrows.
 5. Click it.
 
@@ -694,16 +713,22 @@ machine that lost it. Before this release the row read `6 recipes`, and nothing 
 2. Open the terminal.
 
 **Expected**: the chip reads `no holder`, in red, and the tooltip names that machine. Hover
-the row: the button shows an arrow entering a box, and a click serves the machine from the
-network.
+the row: the button shows two turning arrows, because the recipes now sit on one side only. A
+click takes a blank holder from the network for that machine, and copies the recipes into it.
+
+Then take both holders out of a pair that carries no recipe. Hover its row: the button shows an
+arrow entering a box, and a click puts a blank holder from the network into each machine.
 
 ### N4 — A refusal that used to be silent
 
 1. On a server, revoke the **build** permission of a player in an ME Security Terminal.
-2. Open the terminal with that player and click a group row, then press Save in the editor.
+2. Right click the terminal with that player, then try the wireless terminal too.
+3. Give the permission back, open the terminal, then revoke the permission again while the
+   screen is open.
 
-**Expected**: `You are not allowed to build on this network`, in red. Before this release
-nothing happened and nothing was said.
+**Expected**: in step 2, no screen opens, and the action bar reads `You are not allowed to
+build on this network`. In step 3, the screen closes, and the chat shows the same line. Before
+this release the screen opened anyway.
 
 ### N5 — The machine is broken while the editor is open
 
@@ -734,10 +759,12 @@ this release the screen closed on nothing.
 ### N8 — A duplicate recipe in one holder
 
 1. With a Package Recipe Encoder, write the same recipe twice into one holder.
-2. Put the holder back and remove that recipe from the terminal.
+2. Put the holder back, then left click the cross of that recipe row in the terminal, once.
+3. Left click the same cross again, within three seconds.
 
-**Expected**: one click removes both copies and the row leaves the list. Before this release
-the row stayed, and the player had to click again.
+**Expected**: in step 2, the red line "Click again to delete this recipe." shows, and nothing
+is removed. In step 3, both copies go and the row leaves the list. Before this release the row
+stayed after the removal, and the player had to remove it again.
 
 ### N9 — Writing while the machine works ⚠ unverified
 
@@ -758,7 +785,7 @@ machine, and `IPackageCraftingMachine.isBusy` is the test to use.
 
 ---
 
-## O — Holder mode, with no network 🆕 coded, not tested in game
+## O — Holder mode, with no network 🆕
 
 > Written on 2026-10-25 from decision D43. Every test runs **far from any ME network**, unless
 > it says otherwise.
@@ -826,7 +853,7 @@ shows one group, with no drift chip.
 
 ---
 
-## P — Scale every recipe 🆕 coded, not tested in game
+## P — Scale every recipe 🆕
 
 > Written on 2026-10-25 from decision D44.
 
@@ -867,7 +894,8 @@ as a guard.
 
 1. Change an amount in the open tab without saving. Multiply by 2.
 
-**Expected**: the `unsaved` message. Nothing changed.
+**Expected**: the `scale_unsaved` message, "Save the open recipe first", in red. Nothing
+changed.
 
 ### P7 — Holder mode
 
