@@ -9,7 +9,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # The full history gives tools/check-changelog.sh origin/main and its merge base.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: A change to src/main needs a CHANGELOG line
+        if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
+        run: bash tools/check-changelog.sh
 
       # ForgeGradle 2.3 and Gradle 4.10.3 only accept JDK 8.
       - uses: actions/setup-java@v4

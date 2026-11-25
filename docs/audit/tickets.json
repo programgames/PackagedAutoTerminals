@@ -758,8 +758,8 @@
         "T34"
       ],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "Créé par la rétrospective. Bloqué par T34. Passage 3 : attend T34."
+      "statut": "fait",
+      "note": "Créé par la rétrospective. Bloqué par T34. Passage 3 : attend T34. Revue acceptée : 6 cas vérifiés sur une branche jetable (src/main seul → 1 ; ligne dans une section publiée → 1 ; ligne dans [Unreleased] → 0 ; sans section → 1 ; avec section ajoutée → 0) ; passe sur audit/2026-11-25. Backlog : un CHANGELOG committé en CRLF passerait à tort sous Linux (ajouter tr -d '\\r' dans unreleased())."
     },
     {
       "id": "T36",
