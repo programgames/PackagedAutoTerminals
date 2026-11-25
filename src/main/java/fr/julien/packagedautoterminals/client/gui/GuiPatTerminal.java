@@ -29,6 +29,7 @@ import fr.julien.packagedautoterminals.common.SearchQuery;
 import fr.julien.packagedautoterminals.common.SecondClick;
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
+import fr.julien.packagedautoterminals.network.PacketProviderList;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
 import fr.julien.packagedautoterminals.network.PatNetwork;
 import fr.julien.packagedautoterminals.common.TerminalContext;
@@ -621,6 +622,14 @@ public class GuiPatTerminal extends AEBaseGui {
                 EMPTY_U, EMPTY_V, EMPTY_SIZE, EMPTY_SIZE, SHEET, SHEET);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
+        if (terminalContainer.tooBigBytes > 0) {
+            drawCentred(I18n.format("gui.packagedautoterminals.snapshot_too_big"),
+                    middle, top + EMPTY_SIZE + 8, COLOR_WARNING);
+            drawCentred(I18n.format("gui.packagedautoterminals.snapshot_too_big_hint",
+                    terminalContainer.tooBigBytes, PacketProviderList.CAP),
+                    middle, top + EMPTY_SIZE + 22, COLOR_DIM);
+            return;
+        }
         drawCentred(I18n.format(filtered
                 ? "gui.packagedautoterminals.no_result"
                 : "gui.packagedautoterminals.empty"), middle, top + EMPTY_SIZE + 8, COLOR_TEXT);

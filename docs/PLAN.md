@@ -146,8 +146,10 @@ Eight releases shipped, from `0.1.0-beta.1` to `0.1.0-beta.9`. The test protocol
 4. **Duplicate a recipe** in the editor. To encode a variant, the player retypes everything.
 5. **The R2 measurement**: the size of the snapshot packet on a loaded network. Measured on
    2026-11-25 by `SnapshotSizeTest`, against the 2 097 152 counted bytes the client accepts:
-   the limit is **27 pairs** of 2 machines with 20 processing recipes each (2 095 268 counted
-   bytes). The player's network, 20 machines and 110 recipes, counts 435 250 bytes, 20 % of
-   the limit. Every machine of a pair sends its own copy of the recipes.
+   the limit was **27 pairs** of 2 machines with 20 processing recipes each, while every machine
+   of a pair sent its own copy of the recipes. Since each distinct recipe list travels once, the
+   limit is **52 pairs** (2 064 982 counted bytes). Past 2 000 000 counted bytes (50 pairs), the
+   server sends the size instead of the snapshot, and the terminal says so. The player's
+   network, 20 machines and 110 recipes, counts 226 912 bytes, 10 % of the limit.
 6. **Gases**, which need a format nobody has verified in game.
 7. **The 1.16 port**, described in `docs/PORTING.md`.

@@ -8,7 +8,6 @@ import fr.julien.packagedautoterminals.common.ProviderSnapshot;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
 import fr.julien.packagedautoterminals.network.PacketProviderList;
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -26,13 +25,7 @@ public final class ClientHandler {
             return;
         }
         ContainerPatTerminal container = (ContainerPatTerminal) minecraft.player.openContainer;
-        List<ProviderSnapshot> providers = new ArrayList<>();
-        NBTTagList list = message.payload.getTagList("Providers", 10);
-        for (int i = 0; i < list.tagCount(); i++) {
-            NBTTagCompound tag = list.getCompoundTagAt(i);
-            providers.add(ProviderSnapshot.readFromNBT(tag));
-        }
-        container.providers = providers;
+        container.providers = ProviderSnapshot.readAll(message.payload);
 
         List<MachineSnapshot> machines = new ArrayList<>();
         NBTTagList machineList = message.payload.getTagList("Machines", 10);
@@ -42,6 +35,7 @@ public final class ClientHandler {
         container.machines = machines;
 
         container.lastPayloadBytes = message.payloadBytes;
+        container.tooBigBytes = message.payload.getLong("TooBig");
         // The screen watches this number to know that its rows are out of date.
         container.revision++;
     }

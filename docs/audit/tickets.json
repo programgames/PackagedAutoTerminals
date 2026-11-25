@@ -275,8 +275,8 @@
         "T04"
       ],
       "taille": "M",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 90 tests, checkLang 147 clés. Limite client : 52 paires pleines (2 064 982 octets comptés) ; plafond serveur CAP = 2 000 000 (50 paires) ; réseau du joueur 226 912 octets (10 %). Backlog : un test toBytes/fromBytes avec une machine sans porte-recettes fermerait le dernier trou de couverture ; message à voir en jeu."
     },
     {
       "id": "T13",

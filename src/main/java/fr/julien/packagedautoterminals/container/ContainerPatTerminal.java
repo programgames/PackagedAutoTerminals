@@ -121,6 +121,13 @@ public class ContainerPatTerminal extends AEBaseContainer {
      * on a network with many providers, or draw it in a tooltip for the length of the measurement.
      */
     public int lastPayloadBytes;
+    /**
+     * Client side only. Counted bytes of the snapshot the server held back, or 0.
+     *
+     * <p>Past {@link PacketProviderList#CAP}, the server sends this size instead of the snapshot,
+     * and the screen says why the list is empty.
+     */
+    public long tooBigBytes;
 
     /** Message to show the player, key and arguments packed together. */
     @GuiSync(10)
@@ -164,23 +171,14 @@ public class ContainerPatTerminal extends AEBaseContainer {
         // providers alone would miss a machine state change, which would then never be
         // sent.
         NBTTagCompound wrapper = new NBTTagCompound();
-        wrapper.setTag("Providers", buildPayload());
+        ProviderSnapshot.writeAll(ProviderScanner.scan(terminal.grid()), wrapper);
         wrapper.setTag("Machines", buildMachinePayload());
         if (wrapper.equals(lastSent)) {
             return;
         }
         lastSent = wrapper;
-        PatNetwork.CHANNEL.sendTo(new PacketProviderList(wrapper),
+        PatNetwork.CHANNEL.sendTo(PacketProviderList.capped(wrapper),
                 (EntityPlayerMP) getPlayerInv().player);
-    }
-
-    private NBTTagList buildPayload() {
-        NBTTagList list = new NBTTagList();
-        IGrid grid = terminal.grid();
-        for (ProviderSnapshot snapshot : ProviderScanner.scan(grid)) {
-            list.appendTag(snapshot.writeToNBT());
-        }
-        return list;
     }
 
     /** Crafting machines of the network. Empty when the tab is disabled in the config. */

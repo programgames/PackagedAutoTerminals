@@ -1,7 +1,9 @@
 package fr.julien.packagedautoterminals.common;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -50,7 +52,44 @@ public class ProviderSnapshot {
      */
     public transient IPackageProvidingMachine machine;
 
-    public NBTTagCompound writeToNBT() {
+    /**
+     * Writes the machines into the snapshot tag. Each distinct recipe list travels once: the
+     * two machines of a pair point to the same copy.
+     */
+    public static void writeAll(List<ProviderSnapshot> snapshots, NBTTagCompound wrapper) {
+        NBTTagList providers = new NBTTagList();
+        NBTTagList recipeLists = new NBTTagList();
+        Map<NBTTagList, Integer> indexes = new HashMap<>();
+        for (ProviderSnapshot snapshot : snapshots) {
+            NBTTagList recipes = MiscUtil.writeRecipeListToNBT(new NBTTagList(), snapshot.recipes);
+            int index = indexes.computeIfAbsent(recipes, list -> {
+                recipeLists.appendTag(list);
+                return recipeLists.tagCount() - 1;
+            });
+            NBTTagCompound tag = snapshot.writeToNBT();
+            tag.setInteger("Recipes", index);
+            providers.appendTag(tag);
+        }
+        wrapper.setTag("Providers", providers);
+        wrapper.setTag("RecipeLists", recipeLists);
+    }
+
+    /** Reads the machines written by {@link #writeAll}. */
+    public static List<ProviderSnapshot> readAll(NBTTagCompound wrapper) {
+        NBTTagList recipeLists = wrapper.getTagList("RecipeLists", 9);
+        NBTTagList providers = wrapper.getTagList("Providers", 10);
+        List<ProviderSnapshot> snapshots = new ArrayList<>();
+        for (int i = 0; i < providers.tagCount(); i++) {
+            NBTTagCompound tag = providers.getCompoundTagAt(i);
+            ProviderSnapshot snapshot = readFromNBT(tag);
+            snapshot.recipes = MiscUtil.readRecipeListFromNBT(
+                    (NBTTagList) recipeLists.get(tag.getInteger("Recipes")));
+            snapshots.add(snapshot);
+        }
+        return snapshots;
+    }
+
+    private NBTTagCompound writeToNBT() {
         NBTTagCompound tag = new NBTTagCompound();
         tag.setInteger("Id", id);
         tag.setString("Name", name);
@@ -61,11 +100,10 @@ public class ProviderSnapshot {
         tag.setBoolean("Holder", holderPresent);
         tag.setInteger("Role", role.ordinal());
         tag.setString("CustomName", customName == null ? "" : customName);
-        tag.setTag("Recipes", MiscUtil.writeRecipeListToNBT(new NBTTagList(), recipes));
         return tag;
     }
 
-    public static ProviderSnapshot readFromNBT(NBTTagCompound tag) {
+    private static ProviderSnapshot readFromNBT(NBTTagCompound tag) {
         ProviderSnapshot snapshot = new ProviderSnapshot();
         snapshot.id = tag.getInteger("Id");
         snapshot.name = tag.getString("Name");
@@ -76,7 +114,6 @@ public class ProviderSnapshot {
         snapshot.holderPresent = tag.getBoolean("Holder");
         snapshot.role = ProviderRole.fromOrdinal(tag.getInteger("Role"));
         snapshot.customName = tag.getString("CustomName");
-        snapshot.recipes = MiscUtil.readRecipeListFromNBT(tag.getTagList("Recipes", 10));
         return snapshot;
     }
 }
