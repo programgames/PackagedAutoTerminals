@@ -206,10 +206,11 @@ public class ContainerPatTerminal extends AEBaseContainer {
      * <p>PackagedAuto requires the same recipe in the Packager and in the Unpackager.
      * Removing it from one side only would break the automation without a single message.
      *
-     * <p>The index refers to the **group** list, as the terminal shows it, not to the list of
-     * one machine: client and server compute the same grouping, from the same data.
+     * <p>The index refers to the **group** list, as the terminal showed it, not to the list of
+     * one machine. That list may have moved since: the recipe itself decides, and a recipe the
+     * group no longer carries removes nothing.
      */
-    public void removeRecipe(int dimension, BlockPos pos, int index) {
+    public void removeRecipe(int dimension, BlockPos pos, int index, IRecipeInfo recipe) {
         IGrid grid = grid();
         if (grid == null || !allowed()) {
             return;
@@ -218,12 +219,17 @@ public class ContainerPatTerminal extends AEBaseContainer {
         List<ProviderSnapshot> all = ProviderScanner.scan(grid);
         ProviderPairing.Group group =
                 ProviderPairing.groupOf(ProviderPairing.group(all), dimension, pos);
-        if (group == null || index < 0 || index >= group.recipes.size()) {
+        if (group == null) {
+            return;
+        }
+        int found = RecipeWriter.resolve(group.recipes, index, recipe);
+        if (found < 0) {
+            tell("gui.packagedautoterminals.group_changed");
             return;
         }
 
         RecipeWriter.Result result = RecipeWriter.apply(grid, getActionSource(),
-                group.machines, group.recipes.get(index), null);
+                group.machines, group.recipes.get(found), null);
         // FIXED: zero changed machines used to read as "Applied to 0 machines", in the
         // colour of a success.
         if (result.changed == 0) {
@@ -513,12 +519,12 @@ public class ContainerPatTerminal extends AEBaseContainer {
     }
 
     /**
-     * Opens the editor on a recipe of the group, or on an empty recipe.
+     * Opens the editor on a recipe of the group.
      *
-     * <p>The same checks as for removal apply: the machine must be on this grid, and the
-     * player must hold the {@code BUILD} permission.
+     * <p>The same checks as for removal apply: the machine must be on this grid, the player
+     * must hold the {@code BUILD} permission, and the group must still carry the recipe.
      */
-    public void openEditor(int dimension, BlockPos pos, int index) {
+    public void openEditor(int dimension, BlockPos pos, int index, IRecipeInfo recipe) {
         IGrid grid = grid();
         if (grid == null || !allowed()) {
             return;
@@ -528,8 +534,14 @@ public class ContainerPatTerminal extends AEBaseContainer {
             tell("gui.packagedautoterminals.machine_gone");
             return;
         }
-        openEditor(ProviderPairing.groupOf(ProviderPairing.group(all), dimension, pos),
-                dimension, pos, index);
+        ProviderPairing.Group group =
+                ProviderPairing.groupOf(ProviderPairing.group(all), dimension, pos);
+        int found = group == null ? -1 : RecipeWriter.resolve(group.recipes, index, recipe);
+        if (found < 0) {
+            tell("gui.packagedautoterminals.group_changed");
+            return;
+        }
+        openEditor(group, dimension, pos, found);
     }
 
     /** Opens the editor on a group that the caller has already computed. */

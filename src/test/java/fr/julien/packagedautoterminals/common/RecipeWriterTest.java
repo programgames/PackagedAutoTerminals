@@ -146,6 +146,21 @@ public class RecipeWriterTest {
     }
 
     @Test
+    public void aRecipeStillAtItsIndexResolvesThere() {
+        assertEquals(1, RecipeWriter.resolve(recipes("a", "b", "c"), 1, recipe("b")));
+    }
+
+    @Test
+    public void aRecipeThatMovedResolvesToItsNewIndex() {
+        assertEquals(0, RecipeWriter.resolve(recipes("b", "c"), 1, recipe("b")));
+    }
+
+    @Test
+    public void aRecipeThatIsGoneResolvesToNothing() {
+        assertEquals(-1, RecipeWriter.resolve(recipes("a", "c"), 1, recipe("b")));
+    }
+
+    @Test
     public void aSyncOfTwinsCopiesNothing() {
         List<IRecipeInfo> main = recipes("a", "b");
         assertEquals(0, RecipeWriter.addMissing(main, recipes("b", "a")));

@@ -5,24 +5,28 @@ import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
 import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import thelm.packagedauto.api.IRecipeInfo;
+import thelm.packagedauto.api.MiscUtil;
 
 /**
  * Edit command, from the client to the server.
  *
- * <p>The client sends an **intent**, never a recipe NBT (decision D05). It names the machine
+ * <p>The client sends an **intent**, never a recipe to write (decision D05). It names the machine
  * by its position, not by a session id: the order of a scan can change between two refreshes.
  * The server then checks that this machine really is on the terminal grid, and that the
  * player is allowed to touch it.
  */
 public class PacketRecipeAction implements IMessage {
 
-    /** Removes the recipe at index {@link #index}. */
+    /** Removes {@link #recipe}, which the client saw at index {@link #index}. */
     public static final byte ACTION_REMOVE = 0;
-    /** Opens the editor on the recipe at index {@link #index}. */
+    /** Opens the editor on {@link #recipe}, which the client saw at index {@link #index}. */
     public static final byte ACTION_EDIT = 1;
     /** Writes the editor recipe, then returns to the terminal. */
     public static final byte ACTION_SAVE = 2;
@@ -55,14 +59,26 @@ public class PacketRecipeAction implements IMessage {
     public BlockPos pos = BlockPos.ORIGIN;
     public int index;
     public byte action;
+    /**
+     * The recipe that {@link #ACTION_REMOVE} and {@link #ACTION_EDIT} name, in the PackagedAuto
+     * NBT format, or {@code null}. The server only looks it up in its own lists and writes its
+     * own copy, never this one.
+     */
+    public NBTTagCompound recipe;
 
     public PacketRecipeAction() {}
 
     public PacketRecipeAction(int dimension, BlockPos pos, int index, byte action) {
+        this(dimension, pos, index, action, null);
+    }
+
+    public PacketRecipeAction(int dimension, BlockPos pos, int index, byte action,
+                              NBTTagCompound recipe) {
         this.dimension = dimension;
         this.pos = pos;
         this.index = index;
         this.action = action;
+        this.recipe = recipe;
     }
 
     @Override
@@ -71,6 +87,7 @@ public class PacketRecipeAction implements IMessage {
         pos = BlockPos.fromLong(buf.readLong());
         index = buf.readInt();
         action = buf.readByte();
+        recipe = ByteBufUtils.readTag(buf);
     }
 
     @Override
@@ -79,6 +96,7 @@ public class PacketRecipeAction implements IMessage {
         buf.writeLong(pos.toLong());
         buf.writeInt(index);
         buf.writeByte(action);
+        ByteBufUtils.writeTag(buf, recipe);
     }
 
     public static class Handler implements IMessageHandler<PacketRecipeAction, IMessage> {
@@ -88,10 +106,15 @@ public class PacketRecipeAction implements IMessage {
             player.getServerWorld().addScheduledTask(() -> {
                 if (player.openContainer instanceof ContainerPatTerminal) {
                     ContainerPatTerminal container = (ContainerPatTerminal) player.openContainer;
+                    IRecipeInfo recipe = message.recipe == null
+                            ? null
+                            : MiscUtil.readRecipeFromNBT(message.recipe);
                     if (message.action == ACTION_REMOVE) {
-                        container.removeRecipe(message.dimension, message.pos, message.index);
+                        container.removeRecipe(message.dimension, message.pos, message.index,
+                                recipe);
                     } else if (message.action == ACTION_EDIT) {
-                        container.openEditor(message.dimension, message.pos, message.index);
+                        container.openEditor(message.dimension, message.pos, message.index,
+                                recipe);
                     } else if (message.action == ACTION_NEW) {
                         container.newRecipe(message.dimension, message.pos);
                     } else if (message.action == ACTION_REMOVE_HOLDER) {

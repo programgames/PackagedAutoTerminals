@@ -319,6 +319,19 @@ public final class RecipeWriter {
         return outcome;
     }
 
+    /**
+     * Where {@code recipe} sits in {@code recipes} now: at {@code index} when it is still there,
+     * elsewhere when the list moved, -1 when it is gone.
+     *
+     * <p>The terminal computes {@code index} on a snapshot that can be a second old.
+     */
+    public static int resolve(List<IRecipeInfo> recipes, int index, IRecipeInfo recipe) {
+        if (index >= 0 && index < recipes.size() && recipes.get(index).equals(recipe)) {
+            return index;
+        }
+        return indexOf(recipes, recipe);
+    }
+
     private static int indexOf(List<IRecipeInfo> recipes, IRecipeInfo recipe) {
         if (recipe == null) {
             return -1;

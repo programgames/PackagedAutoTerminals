@@ -179,8 +179,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 78 tests. Limite connue : une recette de crafting que seul le serveur connaît (script serveur seul) est refusée avec group_changed, sans écriture → ticket T32. Backlog : une recette de plus de 32 Ko de NBT dépasse la taille d'un paquet client ; docs/ARCHITECTURE.md:75 dit encore « never a recipe NBT » (T26)."
     },
     {
       "id": "T09",
@@ -672,6 +672,29 @@
       "taille": "S",
       "statut": "a_faire",
       "note": ""
+    },
+    {
+      "id": "T32",
+      "titre": "Le terminal renvoie le NBT de recette que le serveur a envoyé",
+      "type": "bug",
+      "pourquoi": "Depuis T08, le client réécrit la recette avant de l'envoyer. Une recette de crafting que seul le serveur connaît n'a alors pas la même identité, et le serveur refuse de la modifier ou de la supprimer (group_changed). Le refus est sûr, mais le joueur ne peut plus agir sur cette recette depuis la liste.",
+      "constats": [
+        "C-MC-03",
+        "C-AR-01"
+      ],
+      "criteres": [
+        "Le client garde le NBT de chaque recette reçu dans l'instantané et le renvoie tel quel avec ACTION_EDIT et ACTION_REMOVE.",
+        "Le serveur compare ce NBT avec le NBT de ses propres recettes, ou relit ce NBT comme aujourd'hui ; une recette que seul le serveur connaît se résout.",
+        "Un test JUnit couvre le cas où le client n'a pas pu reconstruire la recette."
+      ],
+      "verification": "./gradlew cleanTest test --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [
+        "T08"
+      ],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": "Créé après la revue de T08. Placé en fin de liste : la limite de 20 tickets par passage s'applique (DA-13)."
     }
   ]
 }

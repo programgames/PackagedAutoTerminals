@@ -8,6 +8,7 @@ import fr.julien.packagedautoterminals.Reference;
 import fr.julien.packagedautoterminals.common.GroupNames;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import org.junit.Test;
@@ -39,6 +40,22 @@ public class NetworkProtocolTest {
         assertEquals(new BlockPos(-12, 64, 30000), read.pos);
         assertEquals(-4, read.index);
         assertEquals(PacketRecipeAction.ACTION_SCALE_ALL, read.action);
+        assertFalse(buf.isReadable());
+    }
+
+    @Test
+    public void theRecipeNamedByAnActionSurvivesTheWire() {
+        NBTTagCompound recipe = new NBTTagCompound();
+        recipe.setString("RecipeType", "packagedauto:crafting");
+        ByteBuf buf = Unpooled.buffer();
+        new PacketRecipeAction(0, BlockPos.ORIGIN, 3, PacketRecipeAction.ACTION_REMOVE, recipe)
+                .toBytes(buf);
+
+        PacketRecipeAction read = new PacketRecipeAction();
+        read.fromBytes(buf);
+
+        assertEquals(3, read.index);
+        assertEquals(recipe, read.recipe);
         assertFalse(buf.isReadable());
     }
 

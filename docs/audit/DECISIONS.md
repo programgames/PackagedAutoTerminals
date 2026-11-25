@@ -66,3 +66,9 @@ Chaque décision est réversible. Format : décision, alternatives, raison, reto
 - Décision : C-MC-15 (hypothèse latente), C-VE-04 (QA seulement), C-VE-08 (question 7 : pas de porte), C-AR-05, C-AR-06, C-AR-11, C-AR-18 et la page JEI vont au backlog d'`AUDIT.md`.
 - Raison : pas de moyen de vérifier, décision de Julien, ou refactor de taille M sans bug derrière.
 - Retour arrière : créer le ticket.
+
+## DA-13 — La limite de T08 devient le ticket T32, en fin de liste
+- Décision : le refus des recettes de crafting connues du seul serveur (révélé par la revue de T08) devient le ticket T32, placé après T31. Il n'entre pas dans les 20 tickets de ce passage.
+- Alternative : le traiter tout de suite, et sortir T19 ou T20 de ce passage.
+- Raison : le refus est sûr (aucune écriture) et le cas est rare. L'ancien code supprimait par index et pouvait effacer une autre recette : T08 reste un progrès net.
+- Retour arrière : déplacer T32 plus haut dans `tickets.json`.

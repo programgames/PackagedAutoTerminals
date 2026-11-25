@@ -36,11 +36,13 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.input.Keyboard;
 import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.IRecipeType;
+import thelm.packagedauto.api.MiscUtil;
 
 /**
  * List of the machines and of their recipes.
@@ -1203,11 +1205,11 @@ public class GuiPatTerminal extends AEBaseGui {
                 return;
             }
             if (action == BUTTON_EDIT) {
-                send(clicked.anchor(), clicked.recipeIndex, PacketRecipeAction.ACTION_EDIT);
+                sendRecipe(clicked, PacketRecipeAction.ACTION_EDIT);
                 return;
             }
             if (action == BUTTON_REMOVE) {
-                send(clicked.anchor(), clicked.recipeIndex, PacketRecipeAction.ACTION_REMOVE);
+                sendRecipe(clicked, PacketRecipeAction.ACTION_REMOVE);
                 return;
             }
         }
@@ -1221,7 +1223,7 @@ public class GuiPatTerminal extends AEBaseGui {
                 return;
             }
             if (mouseButton == 1 && clicked.recipe != null) {
-                send(anchor, clicked.recipeIndex, isShiftKeyDown()
+                sendRecipe(clicked, isShiftKeyDown()
                         ? PacketRecipeAction.ACTION_REMOVE
                         : PacketRecipeAction.ACTION_EDIT);
                 return;
@@ -1296,6 +1298,13 @@ public class GuiPatTerminal extends AEBaseGui {
     private void send(ProviderSnapshot anchor, int index, byte action) {
         PatNetwork.CHANNEL.sendToServer(
                 new PacketRecipeAction(anchor.dimension, anchor.pos, index, action));
+    }
+
+    private void sendRecipe(Line line, byte action) {
+        ProviderSnapshot anchor = line.anchor();
+        PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(anchor.dimension, anchor.pos,
+                line.recipeIndex, action,
+                MiscUtil.writeRecipeToNBT(new NBTTagCompound(), line.recipe)));
     }
 
     /** Displayed row under the mouse, or {@code null}. Relative coordinates. */
