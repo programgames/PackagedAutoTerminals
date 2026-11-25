@@ -1,0 +1,143 @@
+package fr.julien.packagedautoterminals.container;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.junit.Test;
+
+/**
+ * No {@code @GuiSync} field lets a client change the state of the server.
+ *
+ * <p>AE2 runs {@code PacketProgressBar.serverPacketData} for any client. {@code SyncData}
+ * then writes the value that the client chose into an int, long, boolean or enum
+ * {@code @GuiSync} field of its open container, on the server, and calls {@code onUpdate}.
+ * It never writes a String field. A negative {@code tabOffset} crashed the server this way.
+ */
+public class GuiSyncTest {
+
+    /** Fields that a client can write on the server, and why that is harmless. */
+    private static final Map<String, String> SAFE = new TreeMap<>();
+
+    static {
+        SAFE.put("ContainerPatEditor.recipeTypeId",
+                "the server never reads it: sendChanges sets it from editor.recipeType");
+        SAFE.put("ContainerPatEditor.currentTab",
+                "it only decides whether a click reloads the open tab of this player");
+        SAFE.put("ContainerPatEditor.recipeCount",
+                "refreshTabs recomputes it; load and RecipeWriter check the real recipe list");
+        SAFE.put("ContainerPatEditor.tabOffset",
+                "refreshTabs clamps it; load opens no recipe outside the real list");
+        SAFE.put("ContainerPatEditor.dirty",
+                "it only decides whether this player gets the unsaved-change warning");
+        SAFE.put("ContainerPatEditor.drift",
+                "only the screen reads it, in holder mode only;"
+                        + " there the server recomputes it on every tick");
+        SAFE.put("ContainerPatEditor.feedbackCount", "only the screen reads it");
+        SAFE.put("ContainerPatTerminal.feedbackCount", "only the screen reads it");
+    }
+
+    private static final Pattern GUI_SYNC_FIELD = Pattern.compile(
+            "@(?:[\\w.]+\\.)?GuiSync\\s*\\([^)]*\\)\\s*"
+            + "(?:(?:public|protected|private|static|final|transient|volatile)\\s+"
+            + "|@[\\w.]+(?:\\s*\\([^)]*\\))?\\s*)*"
+            + "([\\w.]+)\\s+(\\w+)");
+    private static final Pattern ON_UPDATE = Pattern.compile(
+            "void\\s+onUpdate\\s*\\([^)]*\\bString\\b[^)]*\\)\\s*\\{");
+    private static final Pattern SUPER_CALL = Pattern.compile("super\\.onUpdate\\([^;]*\\);");
+    private static final Pattern GUARD = Pattern.compile("^if\\s*\\(([^{;]*)\\)\\s*\\{");
+    private static final Pattern OTHER_THAN_AND = Pattern.compile("[!|=?^]");
+
+    @Test
+    public void everyFieldThatAClientCanWriteIsListedWithItsReason() throws IOException {
+        Set<String> writable = new TreeSet<>();
+        for (Path source : sources()) {
+            Matcher field = GUI_SYNC_FIELD.matcher(code(source));
+            while (field.find()) {
+                if (!"String".equals(field.group(1))) {
+                    writable.add(className(source) + "." + field.group(2));
+                }
+            }
+        }
+        assertEquals("a client can write these fields on the server: list each one in SAFE,"
+                + " with the reason why that is harmless", SAFE.keySet(), writable);
+    }
+
+    @Test
+    public void everyOnUpdateActsOnTheClientOnly() throws IOException {
+        int overrides = 0;
+        List<String> unguarded = new ArrayList<>();
+        for (Path source : sources()) {
+            String code = code(source);
+            Matcher method = ON_UPDATE.matcher(code);
+            while (method.find()) {
+                overrides++;
+                String body = code.substring(method.end(), closingBrace(code, method.end() - 1));
+                body = SUPER_CALL.matcher(body).replaceFirst("").trim();
+                if (!body.isEmpty() && !onlyOnTheClient(body)) {
+                    unguarded.add(className(source));
+                }
+            }
+        }
+        assertTrue("no onUpdate override found under src/main/java", overrides > 0);
+        assertEquals("AE2 calls onUpdate on the server with a value the client chose: wrap the"
+                + " body in if (... && world.isRemote)", new ArrayList<String>(), unguarded);
+    }
+
+    /**
+     * One {@code if} that joins {@code world.isRemote} to its other terms with {@code &&} only,
+     * with no else and nothing after it.
+     */
+    private static boolean onlyOnTheClient(String body) {
+        Matcher guard = GUARD.matcher(body);
+        if (!guard.find()) {
+            return false;
+        }
+        String condition = guard.group(1);
+        return condition.contains("world.isRemote") && !OTHER_THAN_AND.matcher(condition).find()
+                && closingBrace(body, guard.end() - 1) == body.length() - 1;
+    }
+
+    private static int closingBrace(String code, int open) {
+        int depth = 0;
+        for (int i = open; i < code.length(); i++) {
+            if (code.charAt(i) == '{') {
+                depth++;
+            } else if (code.charAt(i) == '}' && --depth == 0) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException("no closing brace for the one at " + open);
+    }
+
+    private static List<Path> sources() throws IOException {
+        try (Stream<Path> files = Files.walk(Paths.get("src/main/java"))) {
+            return files.filter(path -> path.toString().endsWith(".java"))
+                    .collect(Collectors.toList());
+        }
+    }
+
+    private static String code(Path source) throws IOException {
+        return new String(Files.readAllBytes(source), StandardCharsets.UTF_8)
+                .replaceAll("(?s)/\\*.*?\\*/|//[^\\n]*", "");
+    }
+
+    private static String className(Path source) {
+        return source.getFileName().toString().replace(".java", "");
+    }
+}

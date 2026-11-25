@@ -736,8 +736,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "bloque",
-      "note": "Créé par la rétrospective. Bloqué après deux revues refusées. Essai 1 : une ligne du CHANGELOG promettait un avertissement rouge que le code donne seulement si le groupe a déjà des recettes, qu'il manque un rôle et que la sauvegarde n'écrit qu'une machine. Essai 2 : la règle 3 de CODING_STANDARDS.md est fausse pour le code actuel (Delete de l'éditeur supprime en un clic, voulu par T09 ; clic droit vide une case fantôme), la règle 1 ne dit pas que ~49 commentaires anciens ne la suivent pas, et la ligne T24 du CHANGELOG oublie que l'onglet Machines n'affiche que le texte libre. Toutes les autres lignes ont été vérifiées exactes. Le diff du second essai est gardé dans docs/audit/T34-essai.patch (git apply) : il reste trois phrases à corriger."
+      "statut": "a_faire",
+      "note": "Créé par la rétrospective. Bloqué après deux revues refusées. Essai 1 : une ligne du CHANGELOG promettait un avertissement rouge que le code donne seulement si le groupe a déjà des recettes, qu'il manque un rôle et que la sauvegarde n'écrit qu'une machine. Essai 2 : la règle 3 de CODING_STANDARDS.md est fausse pour le code actuel (Delete de l'éditeur supprime en un clic, voulu par T09 ; clic droit vide une case fantôme), la règle 1 ne dit pas que ~49 commentaires anciens ne la suivent pas, et la ligne T24 du CHANGELOG oublie que l'onglet Machines n'affiche que le texte libre. Toutes les autres lignes ont été vérifiées exactes. Le diff du second essai est gardé dans docs/audit/T34-essai.patch (git apply) : il reste trois phrases à corriger. Passage 3 : remis à faire (DA-14)."
     },
     {
       "id": "T35",
@@ -758,8 +758,8 @@
         "T34"
       ],
       "taille": "S",
-      "statut": "bloque",
-      "note": "Créé par la rétrospective. Bloqué par T34."
+      "statut": "a_faire",
+      "note": "Créé par la rétrospective. Bloqué par T34. Passage 3 : attend T34."
     },
     {
       "id": "T36",
@@ -780,8 +780,8 @@
         "T33"
       ],
       "taille": "S",
-      "statut": "bloque",
-      "note": "Créé par la rétrospective. Bloqué après deux revues refusées. Essai 1 : le motif ne voyait pas @GuiSync(value = N), la forme d'AE2 ; raison de drift inexacte. Essai 2 (corrigé, 27 mutations du relecteur, 25 bien détectées) : le motif GUARD ([^{]*) traverse les « ; », donc un onUpdate à retour anticipé (« if (world.isRemote) return; if (…) { refreshTabs(); } ») passe à tort. Correction vérifiée par le relecteur sur une copie : remplacer [^{]* par [^{;]* dans GUARD (GuiSyncTest.java:63). Le diff du second essai est gardé dans docs/audit/T36-essai.patch : git apply, puis cette correction d'un caractère, puis une revue. Piste pour le prochain essai (rétrospective du passage 2) : lire les champs @GuiSync par réflexion (Class.forName(nom, false, loader), getFields(), annotation RUNTIME lue par AE2 dans AEBaseContainer) au lieu d'une expression régulière ; garder la lecture de source seulement pour la règle onUpdate."
+      "statut": "fait",
+      "note": "Créé par la rétrospective. Bloqué après deux revues refusées. Essai 1 : le motif ne voyait pas @GuiSync(value = N), la forme d'AE2 ; raison de drift inexacte. Essai 2 (corrigé, 27 mutations du relecteur, 25 bien détectées) : le motif GUARD ([^{]*) traverse les « ; », donc un onUpdate à retour anticipé (« if (world.isRemote) return; if (…) { refreshTabs(); } ») passe à tort. Correction vérifiée par le relecteur sur une copie : remplacer [^{]* par [^{;]* dans GUARD (GuiSyncTest.java:63). Le diff du second essai est gardé dans docs/audit/T36-essai.patch : git apply, puis cette correction d'un caractère, puis une revue. Piste pour le prochain essai (rétrospective du passage 2) : lire les champs @GuiSync par réflexion (Class.forName(nom, false, loader), getFields(), annotation RUNTIME lue par AE2 dans AEBaseContainer) au lieu d'une expression régulière ; garder la lecture de source seulement pour la règle onUpdate. Passage 3 : remis à faire (DA-14). Passage 3 : patch + GUARD [^{;]* + ON_UPDATE élargi ; revue acceptée, 57 mutations, les 52 formes courantes détectées. Trous exotiques restants (backlog) : effet de bord dans la condition ou dans les arguments de super.onUpdate, clause throws, @GuiSync((int) 7L), « @ GuiSync » ; la lecture par réflexion fermerait les deux derniers."
     },
     {
       "id": "T37",
