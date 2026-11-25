@@ -1,6 +1,7 @@
 package fr.julien.packagedautoterminals.common;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import net.minecraft.nbt.NBTTagCompound;
@@ -46,6 +47,27 @@ public class GroupNamesTest {
         names.set(0, POS, "ingots");
         names.set(0, POS, "   ");
         assertEquals("", names.get(0, POS));
+    }
+
+    @Test
+    public void aBrokenMachineLosesItsNameAndOnlyItsName() {
+        GroupNames names = new GroupNames();
+        names.set(0, POS, "ingots");
+        names.set(-1, POS, "nether");
+        names.setDirty(false);
+
+        names.remove(0, POS);
+
+        assertEquals("", names.get(0, POS));
+        assertEquals("nether", names.get(-1, POS));
+        assertTrue(names.isDirty());
+    }
+
+    @Test
+    public void breakingAnUnnamedBlockLeavesTheSaveUntouched() {
+        GroupNames names = new GroupNames();
+        names.remove(0, POS);
+        assertFalse(names.isDirty());
     }
 
     @Test

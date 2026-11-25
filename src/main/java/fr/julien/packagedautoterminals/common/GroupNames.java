@@ -9,7 +9,12 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.MapStorage;
 import net.minecraft.world.storage.WorldSavedData;
+import fr.julien.packagedautoterminals.Reference;
 import net.minecraftforge.common.DimensionManager;
+import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 /**
  * Names the player gives to machine groups.
@@ -40,6 +45,7 @@ import net.minecraftforge.common.DimensionManager;
  * <p>An entry written before this fix carries no dimension. It is read as dimension zero,
  * which is where a single player world keeps its machines.
  */
+@Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class GroupNames extends WorldSavedData {
 
     private static final String NAME = "packagedautoterminals_names";
@@ -103,6 +109,25 @@ public class GroupNames extends WorldSavedData {
             names.put(keyOf(dimension, pos), clean);
         }
         markDirty();
+    }
+
+    public void remove(int dimension, BlockPos pos) {
+        if (names.remove(keyOf(dimension, pos)) != null) {
+            markDirty();
+        }
+    }
+
+    /**
+     * A broken machine loses its name. Otherwise a machine of another chain, placed at the same
+     * position, would inherit the name and merge with a foreign group.
+     *
+     * <p>Lowest priority: a protection mod cancels the event at a higher one, and the machine then
+     * stays in place with its name.
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onBlockBroken(BlockEvent.BreakEvent event) {
+        World world = event.getWorld();
+        get(world).remove(world.provider.getDimension(), event.getPos());
     }
 
     /**

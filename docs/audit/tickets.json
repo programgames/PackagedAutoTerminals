@@ -471,8 +471,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 103 tests ; serveur dédié OK. Couvre la casse par un joueur (BreakEvent, priorité LOWEST). Non couvert (DA-07) : securityBreak d'AE2, explosion, setBlockToAir d'un autre mod. Backlog : garde isRemote d'une ligne dans onBlockBroken."
     },
     {
       "id": "T22",
