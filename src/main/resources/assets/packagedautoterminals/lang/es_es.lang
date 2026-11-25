@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=Duración de la marca, en segundo
 gui.packagedautoterminals.new_hint=Clic izquierdo: nueva receta
 gui.packagedautoterminals.no_blank_holder=No hay ningún Package Recipe Holder vacío en la red
 gui.packagedautoterminals.jei_no_type=Ningún tipo de receta de PackagedAuto acepta esta categoría
+gui.packagedautoterminals.type_disabled=Este tipo de receta está desactivado en la configuración de PackagedAuto
 gui.packagedautoterminals.jei_no_transfer=Esta receta no se puede codificar
 gui.packagedautoterminals.tab_patterns=Patrones
 gui.packagedautoterminals.tab_machines=Máquinas

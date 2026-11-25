@@ -56,6 +56,7 @@ public final class Feedback {
                     "gui.packagedautoterminals.no_holder_here",
                     "gui.packagedautoterminals.no_blank_holder",
                     "gui.packagedautoterminals.no_permission",
+                    "gui.packagedautoterminals.type_disabled",
                     "gui.packagedautoterminals.machine_gone",
                     "gui.packagedautoterminals.network_full",
                     "gui.packagedautoterminals.holders_partial",

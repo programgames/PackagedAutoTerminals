@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=İşaret süresi, saniye
 gui.packagedautoterminals.new_hint=Sol tık: yeni tarif
 gui.packagedautoterminals.no_blank_holder=Ağda boş Package Recipe Holder yok
 gui.packagedautoterminals.jei_no_type=Hiçbir PackagedAuto tarif türü bu kategoriyi kabul etmiyor
+gui.packagedautoterminals.type_disabled=Bu tarif türü PackagedAuto yapılandırmasında devre dışı
 gui.packagedautoterminals.jei_no_transfer=Bu tarif kodlanamaz
 gui.packagedautoterminals.tab_patterns=Desenler
 gui.packagedautoterminals.tab_machines=Makineler

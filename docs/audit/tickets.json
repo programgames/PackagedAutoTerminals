@@ -318,8 +318,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "DA-05 : suit D12 sans question à Julien."
+      "statut": "fait",
+      "note": "DA-05 : suit D12 sans question à Julien. Revue acceptée. 99 tests, checkLang 148 clés. BUILD contrôlé dans PatGuiHandler.getServerGuiElement (toutes les portes y passent) et dans refusal() pendant la session. onUpdate(recipeTypeId) n'agit plus côté serveur : PacketProgressBar d'AE2 applique sur le serveur les @GuiSync du client → ticket T33. Backlog : PENDING non retiré au refus d'ouverture ; JEI lit la config PackagedAuto du client."
     },
     {
       "id": "T15",
@@ -695,6 +695,26 @@
       "taille": "S",
       "statut": "a_faire",
       "note": "Créé après la revue de T08. Placé en fin de liste : la limite de 20 tickets par passage s'applique (DA-13)."
+    },
+    {
+      "id": "T33",
+      "titre": "Aucun champ @GuiSync de nos conteneurs ne laisse le client écrire l'état du serveur",
+      "type": "verification",
+      "pourquoi": "AE2 exécute PacketProgressBar.serverPacketData pour tout client : SyncData.update appelle onUpdate sur le serveur avec une valeur choisie par le client. T14 a fermé ce chemin pour recipeTypeId. Les autres champs @GuiSync (dirty, currentTab, recipeCount…) de ContainerPatEditor et ContainerPatTerminal ne sont pas vérifiés.",
+      "constats": [
+        "C-MC-07"
+      ],
+      "criteres": [
+        "Chaque champ @GuiSync des deux conteneurs est listé avec l'effet d'une valeur forgée côté serveur (champ écrit, onUpdate appelé ou non).",
+        "Chaque effet nuisible côté serveur est fermé de la même façon que T14 (garde world.isRemote dans onUpdate, ou recalcul serveur), ou décrit comme inoffensif avec la preuve.",
+        "La preuve cite .tools/ae2-src/appeng/core/sync/packets/PacketProgressBar.java et SyncData."
+      ],
+      "verification": "./gradlew build --console=plain ; la réponse liste chaque champ avec sa preuve.",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": "Créé après la revue de T14."
     }
   ]
 }

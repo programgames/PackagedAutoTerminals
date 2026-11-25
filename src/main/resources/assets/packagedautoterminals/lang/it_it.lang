@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=Durata del contrassegno, in secon
 gui.packagedautoterminals.new_hint=Clic sinistro: nuova ricetta
 gui.packagedautoterminals.no_blank_holder=Nessun Package Recipe Holder vuoto nella rete
 gui.packagedautoterminals.jei_no_type=Nessun tipo di ricetta PackagedAuto accetta questa categoria
+gui.packagedautoterminals.type_disabled=Questo tipo di ricetta è disattivato nella configurazione di PackagedAuto
 gui.packagedautoterminals.jei_no_transfer=Questa ricetta non può essere codificata
 gui.packagedautoterminals.tab_patterns=Schemi
 gui.packagedautoterminals.tab_machines=Macchine

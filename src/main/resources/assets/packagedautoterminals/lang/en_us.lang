@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=Mark duration, in seconds
 gui.packagedautoterminals.new_hint=Left click: new recipe
 gui.packagedautoterminals.no_blank_holder=No blank Package Recipe Holder on the network
 gui.packagedautoterminals.jei_no_type=No PackagedAuto recipe type accepts this category
+gui.packagedautoterminals.type_disabled=This recipe type is disabled in the PackagedAuto config
 gui.packagedautoterminals.jei_no_transfer=This recipe cannot be encoded
 gui.packagedautoterminals.tab_patterns=Patterns
 gui.packagedautoterminals.tab_machines=Machines

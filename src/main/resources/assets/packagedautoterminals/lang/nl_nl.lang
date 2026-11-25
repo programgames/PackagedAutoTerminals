@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=Duur van de markering, in seconde
 gui.packagedautoterminals.new_hint=Linksklik: nieuw recept
 gui.packagedautoterminals.no_blank_holder=Geen lege Package Recipe Holder in het netwerk
 gui.packagedautoterminals.jei_no_type=Geen PackagedAuto-recepttype accepteert deze categorie
+gui.packagedautoterminals.type_disabled=Dit recepttype is uitgeschakeld in de configuratie van PackagedAuto
 gui.packagedautoterminals.jei_no_transfer=Dit recept kan niet worden gecodeerd
 gui.packagedautoterminals.tab_patterns=Patronen
 gui.packagedautoterminals.tab_machines=Machines

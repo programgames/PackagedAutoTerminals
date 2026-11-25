@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=Тривалість познач
 gui.packagedautoterminals.new_hint=Лівий клік: новий рецепт
 gui.packagedautoterminals.no_blank_holder=У мережі немає порожнього Package Recipe Holder
 gui.packagedautoterminals.jei_no_type=Жоден тип рецепта PackagedAuto не приймає цю категорію
+gui.packagedautoterminals.type_disabled=Цей тип рецепта вимкнено в налаштуваннях PackagedAuto
 gui.packagedautoterminals.jei_no_transfer=Цей рецепт не можна закодувати
 gui.packagedautoterminals.tab_patterns=Шаблони
 gui.packagedautoterminals.tab_machines=Машини

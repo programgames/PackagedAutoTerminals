@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=Doba označení, v sekundách
 gui.packagedautoterminals.new_hint=Levé tlačítko: nový recept
 gui.packagedautoterminals.no_blank_holder=V síti není žádný prázdný Package Recipe Holder
 gui.packagedautoterminals.jei_no_type=Žádný typ receptu PackagedAuto nepřijímá tuto kategorii
+gui.packagedautoterminals.type_disabled=Tento typ receptu je v konfiguraci PackagedAuto vypnutý
 gui.packagedautoterminals.jei_no_transfer=Tento recept nelze zakódovat
 gui.packagedautoterminals.tab_patterns=Vzory
 gui.packagedautoterminals.tab_machines=Stroje

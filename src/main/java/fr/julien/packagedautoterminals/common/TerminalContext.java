@@ -2,9 +2,11 @@ package fr.julien.packagedautoterminals.common;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
+import appeng.api.config.SecurityPermissions;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.security.IActionHost;
+import appeng.api.networking.security.ISecurityGrid;
 import appeng.helpers.WirelessTerminalGuiObject;
 import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.part.PartPatTerminal;
@@ -70,7 +72,7 @@ public final class TerminalContext {
      * called them. Out of range, the wireless terminal stayed open and empty, and it never
      * drew any energy.
      *
-     * <p>PITFALL fixed, second part: **the order of the three questions matters**. The
+     * <p>PITFALL fixed, second part: **the order of the questions matters**. The
      * AE2UEL bytecode shows that {@code WirelessTerminalGuiObject.getActionableNode} calls
      * {@code rangeCheck} then returns {@code null} when no access point is in range. Asking
      * the grid first therefore reported a missing link every time the player walked away.
@@ -81,7 +83,7 @@ public final class TerminalContext {
      *
      * @param ticks number of ticks elapsed since the last call.
      */
-    public String refusal(int ticks) {
+    public String refusal(EntityPlayer player, int ticks) {
         if (host instanceof WirelessTerminalGuiObject
                 && !((WirelessTerminalGuiObject) host).rangeCheck()) {
             return "gui.packagedautoterminals.out_of_range";
@@ -89,10 +91,24 @@ public final class TerminalContext {
         if (grid() == null) {
             return "gui.packagedautoterminals.not_linked";
         }
+        if (deniesBuild(player)) {
+            return "gui.packagedautoterminals.no_permission";
+        }
         if (!drainPower(PatConfig.wirelessPowerPerTick * Math.max(1, ticks))) {
             return "gui.packagedautoterminals.no_power";
         }
         return null;
+    }
+
+    /**
+     * Does the network refuse BUILD to this player? AE2 asks BUILD to open its Interface
+     * Terminal ({@code GuiBridge.GUI_INTERFACE_TERMINAL}), and decision D12 follows AE2.
+     * Without a grid there is no one to ask: {@link #refusal} reports that case.
+     */
+    public boolean deniesBuild(EntityPlayer player) {
+        IGrid grid = grid();
+        return grid != null && !grid.<ISecurityGrid>getCache(ISecurityGrid.class)
+                .hasPermission(player, SecurityPermissions.BUILD);
     }
 
     /**

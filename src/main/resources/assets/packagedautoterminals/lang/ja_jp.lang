@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=マークの表示時間(秒)
 gui.packagedautoterminals.new_hint=左クリック: 新しいレシピ
 gui.packagedautoterminals.no_blank_holder=ネットワークに空の梱包レシピホルダーがありません
 gui.packagedautoterminals.jei_no_type=このカテゴリを受け付けるPackagedAutoのレシピタイプがありません
+gui.packagedautoterminals.type_disabled=このレシピタイプはPackagedAutoの設定で無効になっています
 gui.packagedautoterminals.jei_no_transfer=このレシピはエンコードできません
 gui.packagedautoterminals.tab_patterns=パターン
 gui.packagedautoterminals.tab_machines=機械

@@ -36,6 +36,8 @@ import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.IRecipeListItem;
 import thelm.packagedauto.api.IRecipeType;
 import thelm.packagedauto.api.RecipeTypeRegistry;
+import thelm.packagedauto.recipe.RecipeTypeProcessing;
+import thelm.packagedauto.tile.TileEncoder;
 import appeng.container.slot.AppEngSlot;
 import appeng.container.slot.SlotFake;
 import net.minecraftforge.items.IItemHandler;
@@ -385,7 +387,7 @@ public class ContainerPatEditor extends AEBaseContainer {
             // The editor follows the same rule as the terminal: out of range or out of
             // energy, it closes instead of showing a recipe it can no longer write.
             if (ticks++ % Math.max(1, PatConfig.refreshTicks) == 0) {
-                String refusal = terminal.refusal(PatConfig.refreshTicks);
+                String refusal = terminal.refusal(getPlayerInv().player, PatConfig.refreshTicks);
                 if (refusal != null) {
                     setValidContainer(false);
                     TerminalContext.refuse(
@@ -414,7 +416,9 @@ public class ContainerPatEditor extends AEBaseContainer {
 
     @Override
     public void onUpdate(String field, Object oldValue, Object newValue) {
-        if ("recipeTypeId".equals(field)) {
+        // AE2 also applies a PacketProgressBar sent by the client on the server. Only the
+        // server sets the type: the client follows it.
+        if ("recipeTypeId".equals(field) && getPlayerInv().player.world.isRemote) {
             int id = (Integer) newValue;
             editor.recipeType = id < 0 ? null : RecipeTypeRegistry.getRecipeType(id);
             // The client must recompute its preview: a type change alters the recipe
@@ -433,6 +437,10 @@ public class ContainerPatEditor extends AEBaseContainer {
     public void fillFromRecipe(int typeId, Int2ObjectMap<ItemStack> transfer) {
         IRecipeType type = RecipeTypeRegistry.getRecipeType(typeId);
         if (type == null) {
+            return;
+        }
+        if (isDisabled(type)) {
+            tell("gui.packagedautoterminals.type_disabled");
             return;
         }
         editor.clear();
@@ -1383,10 +1391,27 @@ public class ContainerPatEditor extends AEBaseContainer {
         if (editor.recipeType == null) {
             editor.recipeType = defaultRecipeType();
         } else {
-            editor.recipeType = RecipeTypeRegistry.getNextRecipeType(editor.recipeType, forward);
+            editor.recipeType = nextEnabledType(editor.recipeType, forward);
         }
         editor.updateRecipeInfo();
         dirty = true;
+    }
+
+    static IRecipeType nextEnabledType(IRecipeType type, boolean forward) {
+        IRecipeType next = type;
+        do {
+            next = RecipeTypeRegistry.getNextRecipeType(next, forward);
+        } while (isDisabled(next));
+        return next;
+    }
+
+    /**
+     * Same rule as {@code InventoryEncoderPattern.cycleRecipeType} of PackagedAuto: the config
+     * {@code disabled_recipe_types} hides a type, except Processing.
+     */
+    public static boolean isDisabled(IRecipeType type) {
+        return type != null && type != RecipeTypeProcessing.INSTANCE
+                && TileEncoder.disabledRecipeTypes.contains(type.getName().toString());
     }
 
     /**
@@ -1407,7 +1432,7 @@ public class ContainerPatEditor extends AEBaseContainer {
         }
         for (String name : new String[] {"crafting", "processing"}) {
             IRecipeType type = registry.get(new ResourceLocation("packagedauto", name));
-            if (type != null) {
+            if (type != null && !isDisabled(type)) {
                 return type;
             }
         }

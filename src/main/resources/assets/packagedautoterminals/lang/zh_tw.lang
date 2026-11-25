@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=標記持續時間（秒）
 gui.packagedautoterminals.new_hint=左鍵點擊：新增配方
 gui.packagedautoterminals.no_blank_holder=網路中沒有空白的封包配方儲存器
 gui.packagedautoterminals.jei_no_type=沒有封包合成配方類型接受這個分類
+gui.packagedautoterminals.type_disabled=此配方類型已在PackagedAuto設定中停用
 gui.packagedautoterminals.jei_no_transfer=這個配方無法編碼
 gui.packagedautoterminals.tab_patterns=樣板
 gui.packagedautoterminals.tab_machines=機器

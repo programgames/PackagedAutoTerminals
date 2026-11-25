@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=표시 지속 시간(초)
 gui.packagedautoterminals.new_hint=좌클릭: 새 레시피
 gui.packagedautoterminals.no_blank_holder=네트워크에 빈 Package Recipe Holder가 없습니다
 gui.packagedautoterminals.jei_no_type=이 분류를 받는 PackagedAuto 레시피 유형이 없습니다
+gui.packagedautoterminals.type_disabled=이 레시피 유형은 PackagedAuto 설정에서 비활성화되어 있습니다
 gui.packagedautoterminals.jei_no_transfer=이 레시피는 인코딩할 수 없습니다
 gui.packagedautoterminals.tab_patterns=패턴
 gui.packagedautoterminals.tab_machines=기계

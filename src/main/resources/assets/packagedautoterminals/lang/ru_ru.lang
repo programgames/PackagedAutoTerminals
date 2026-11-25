@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=Длительность отме
 gui.packagedautoterminals.new_hint=Левый клик: новый рецепт
 gui.packagedautoterminals.no_blank_holder=В сети нет пустого носителя программы рецепта
 gui.packagedautoterminals.jei_no_type=Ни один тип рецепта PackagedAuto не принимает эту категорию
+gui.packagedautoterminals.type_disabled=Этот тип рецепта отключён в настройках PackagedAuto
 gui.packagedautoterminals.jei_no_transfer=Этот рецепт нельзя закодировать
 gui.packagedautoterminals.tab_patterns=Шаблоны
 gui.packagedautoterminals.tab_machines=Машины

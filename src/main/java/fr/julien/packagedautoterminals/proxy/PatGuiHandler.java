@@ -102,6 +102,11 @@ public class PatGuiHandler implements IGuiHandler {
         if (context == null) {
             return null;
         }
+        if (context.deniesBuild(player)) {
+            player.sendStatusMessage(new TextComponentTranslation(
+                    "gui.packagedautoterminals.no_permission"), true);
+            return null;
+        }
         if (!isEditor(id)) {
             return new ContainerPatTerminal(player.inventory, context);
         }

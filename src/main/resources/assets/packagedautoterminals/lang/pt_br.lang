@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=Duração da marcação, em segun
 gui.packagedautoterminals.new_hint=Clique esquerdo: nova receita
 gui.packagedautoterminals.no_blank_holder=Nenhum Package Recipe Holder vazio na rede
 gui.packagedautoterminals.jei_no_type=Nenhum tipo de receita do PackagedAuto aceita esta categoria
+gui.packagedautoterminals.type_disabled=Este tipo de receita está desativado na configuração do PackagedAuto
 gui.packagedautoterminals.jei_no_transfer=Esta receita não pode ser codificada
 gui.packagedautoterminals.tab_patterns=Padrões
 gui.packagedautoterminals.tab_machines=Máquinas

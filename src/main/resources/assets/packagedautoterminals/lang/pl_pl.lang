@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=Czas oznaczenia, w sekundach
 gui.packagedautoterminals.new_hint=Lewy przycisk: nowa receptura
 gui.packagedautoterminals.no_blank_holder=Brak pustego Package Recipe Holder w sieci
 gui.packagedautoterminals.jei_no_type=Żaden typ receptury PackagedAuto nie przyjmuje tej kategorii
+gui.packagedautoterminals.type_disabled=Ten typ receptury jest wyłączony w konfiguracji PackagedAuto
 gui.packagedautoterminals.jei_no_transfer=Tej receptury nie da się zakodować
 gui.packagedautoterminals.tab_patterns=Wzory
 gui.packagedautoterminals.tab_machines=Maszyny

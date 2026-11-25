@@ -26,6 +26,7 @@ config.packagedautoterminals.wireless_power=无线每刻能耗
 gui.packagedautoterminals.new_hint=左键点击：新建配方
 gui.packagedautoterminals.no_blank_holder=网络中没有空白的样板包储存器
 gui.packagedautoterminals.jei_no_type=没有封包合成配方类型支持该分类
+gui.packagedautoterminals.type_disabled=该配方类型已在PackagedAuto配置中禁用
 gui.packagedautoterminals.jei_no_transfer=该配方无法被编码
 gui.packagedautoterminals.tab_patterns=样板
 gui.packagedautoterminals.tab_machines=机器

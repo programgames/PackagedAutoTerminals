@@ -81,7 +81,8 @@ public class PatTransferHandler implements IRecipeTransferHandler<ContainerPatEd
                 : RecipeTypeRegistry.getRegistry().entrySet()) {
             IRecipeType type = entry.getValue();
             List<String> categories = type.getJEICategories();
-            if (categories == null || !categories.contains(category)) {
+            if (categories == null || !categories.contains(category)
+                    || ContainerPatEditor.isDisabled(type)) {
                 continue;
             }
             if (categories.size() < narrowest) {

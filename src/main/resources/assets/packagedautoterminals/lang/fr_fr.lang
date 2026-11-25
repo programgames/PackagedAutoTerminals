@@ -27,6 +27,7 @@ config.packagedautoterminals.highlight_seconds=Durée du marquage, en secondes
 gui.packagedautoterminals.new_hint=Clic gauche : nouvelle recette
 gui.packagedautoterminals.no_blank_holder=Aucun porte-recettes vierge sur le réseau
 gui.packagedautoterminals.jei_no_type=Aucun type PackagedAuto n'accepte cette catégorie
+gui.packagedautoterminals.type_disabled=Ce type de recette est désactivé dans la configuration de PackagedAuto
 gui.packagedautoterminals.jei_no_transfer=Cette recette ne peut pas être encodée
 gui.packagedautoterminals.tab_patterns=Patterns
 gui.packagedautoterminals.tab_machines=Machines

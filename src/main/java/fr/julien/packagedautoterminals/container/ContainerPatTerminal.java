@@ -161,7 +161,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
         }
 
         // Range, link and energy. A refusal closes the screen on the next tick.
-        String refusal = terminal.refusal(PatConfig.refreshTicks);
+        String refusal = terminal.refusal(getPlayerInv().player, PatConfig.refreshTicks);
         if (refusal != null) {
             setValidContainer(false);
             TerminalContext.refuse((EntityPlayerMP) getPlayerInv().player, refusal);
