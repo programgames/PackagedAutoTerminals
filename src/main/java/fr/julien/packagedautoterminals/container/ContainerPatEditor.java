@@ -362,13 +362,20 @@ public class ContainerPatEditor extends AEBaseContainer {
     @GuiSync(0)
     public int recipeTypeId = -1;
 
-    /** Elapsed ticks, so range is only checked at the refresh rate. */
+    /** Elapsed ticks, so range and the group are only checked at the refresh rate. */
     private int ticks;
+
+    /**
+     * Target group as of the last scan, for the tab row.
+     *
+     * <p>A scan reads the recipes of every holder on the network, so it runs at the refresh rate
+     * and after each write, never on every tick. No write trusts this copy: each one scans
+     * again first, because the server stays the authority.
+     */
+    private ProviderPairing.Group scannedGroup;
 
     @Override
     public void detectAndSendChanges() {
-        recipeTypeId = editor.recipeType == null ? -1 : RecipeTypeRegistry.getId(editor.recipeType);
-
         World world = getPlayerInv().player.world;
         if (!world.isRemote && holders != null) {
             refreshTabs();
@@ -384,14 +391,24 @@ public class ContainerPatEditor extends AEBaseContainer {
                     TerminalContext.refuse(
                             (net.minecraft.entity.player.EntityPlayerMP) getPlayerInv().player,
                             refusal);
-                    super.detectAndSendChanges();
+                    sendChanges();
                     return;
                 }
+                rescan();
             }
             // The name is read again on every cycle: another screen may have changed it.
             groupName = GroupNames.get(world).get(dimension, pos);
             refreshTabs();
         }
+        sendChanges();
+    }
+
+    /**
+     * Sends the changed slots and fields. The slot edits call it instead of
+     * {@link #detectAndSendChanges}, so a click never counts as a tick, and never scans.
+     */
+    private void sendChanges() {
+        recipeTypeId = editor.recipeType == null ? -1 : RecipeTypeRegistry.getId(editor.recipeType);
         super.detectAndSendChanges();
     }
 
@@ -438,7 +455,7 @@ public class ContainerPatEditor extends AEBaseContainer {
             editor.endGroup();
         }
         dirty = true;
-        detectAndSendChanges();
+        sendChanges();
     }
 
     /**
@@ -460,7 +477,7 @@ public class ContainerPatEditor extends AEBaseContainer {
             editor.setInventorySlotContents(slot, copy);
         }
         dirty = true;
-        detectAndSendChanges();
+        sendChanges();
     }
 
     /**
@@ -572,7 +589,7 @@ public class ContainerPatEditor extends AEBaseContainer {
             editor.endGroup();
         }
         dirty = true;
-        detectAndSendChanges();
+        sendChanges();
     }
 
     public void changeSlotCount(int slot, int delta) {
@@ -587,7 +604,7 @@ public class ContainerPatEditor extends AEBaseContainer {
         amount = Math.max(1L, Math.min(maxAmountOf(stack), amount));
         editor.setInventorySlotContents(slot, withAmount(stack, (int) amount));
         dirty = true;
-        detectAndSendChanges();
+        sendChanges();
     }
 
     /**
@@ -694,6 +711,9 @@ public class ContainerPatEditor extends AEBaseContainer {
      * of creating a copy.
      */
     private void followWritten() {
+        if (holders == null) {
+            rescan();
+        }
         List<IRecipeInfo> after = currentRecipes();
         if (after != null) {
             int written = indexOf(after, editor.recipeInfo);
@@ -886,6 +906,7 @@ public class ContainerPatEditor extends AEBaseContainer {
             names.set(machine.dimension, machine.pos, name);
         }
         groupName = clean;
+        rescan();
         tell(merges
                 ? "gui.packagedautoterminals.name_merges"
                 : "gui.packagedautoterminals.renamed");
@@ -1129,7 +1150,7 @@ public class ContainerPatEditor extends AEBaseContainer {
         if (grid == null || !allowed()) {
             return;
         }
-        ProviderPairing.Group group = currentGroup();
+        ProviderPairing.Group group = rescan();
         if (group == null) {
             tell("gui.packagedautoterminals.machine_gone");
             return;
@@ -1142,6 +1163,7 @@ public class ContainerPatEditor extends AEBaseContainer {
 
         RecipeWriter.Result result = RecipeWriter.apply(grid, getActionSource(),
                 group.machines, openedRecipe, null);
+        rescan();
         // FIXED: zero changed machines used to read as "Applied to 0 machines", which the
         // screen drew in the colour of a success.
         if (result.changed == 0) {
@@ -1207,6 +1229,7 @@ public class ContainerPatEditor extends AEBaseContainer {
             tell("gui.packagedautoterminals.scale_unsaved");
             return;
         }
+        ProviderPairing.Group group = holders == null ? rescan() : null;
         List<IRecipeInfo> recipes = currentRecipes();
         if (recipes == null) {
             tell("gui.packagedautoterminals.machine_gone");
@@ -1256,15 +1279,11 @@ public class ContainerPatEditor extends AEBaseContainer {
             holders.markDirty();
         } else {
             IGrid grid = grid();
-            ProviderPairing.Group group = currentGroup();
             if (grid == null || !allowed()) {
                 return;
             }
-            if (group == null) {
-                tell("gui.packagedautoterminals.machine_gone");
-                return;
-            }
             changed = RecipeWriter.mapMachines(grid, group.machines, from, to);
+            rescan();
         }
         if (changed == 0) {
             tell("gui.packagedautoterminals.write_failed");
@@ -1332,18 +1351,16 @@ public class ContainerPatEditor extends AEBaseContainer {
         if (holders != null) {
             return holderRecipes();
         }
-        ProviderPairing.Group group = currentGroup();
-        return group == null ? null : group.recipes;
+        return scannedGroup == null ? null : scannedGroup.recipes;
     }
 
-    /** Target group, recomputed on demand. */
-    private ProviderPairing.Group currentGroup() {
+    /** Scans the network now, and keeps the target group for the tab row. */
+    private ProviderPairing.Group rescan() {
         IGrid grid = grid();
-        if (grid == null) {
-            return null;
-        }
-        return ProviderPairing.groupOf(ProviderPairing.group(ProviderScanner.scan(grid)),
-                dimension, pos);
+        scannedGroup = grid == null ? null
+                : ProviderPairing.groupOf(ProviderPairing.group(ProviderScanner.scan(grid)),
+                        dimension, pos);
+        return scannedGroup;
     }
 
     /** Closes the editor and reopens the terminal, on the same part. */

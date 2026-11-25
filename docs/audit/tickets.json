@@ -250,8 +250,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 87 tests. Chaque écriture décide sur un scan frais ; l'affichage lit la vue en cache (retard de 20 ticks au plus). Gain non mesuré (profileur spark à faire). Backlog : un onglet peut s'ouvrir sur une recette supprimée par un autre joueur dans la seconde précédente ; save et delete répondent alors group_changed."
     },
     {
       "id": "T12",

@@ -206,9 +206,11 @@ public class GuiPatTerminal extends AEBaseGui {
      * once a second.
      *
      * <p>The rows are now rebuilt only when something they depend on moves: the snapshot from
-     * the server, the search text, the open tab, or the set of unfolded groups.
+     * the server, the search text, the open tab, or the set of unfolded groups. The summary of
+     * the status bar and the state of each group are computed with them, under the same key.
      */
     private List<Line> cachedLines;
+    private String cachedSummary = "";
     private String cacheKey = "";
 
     private int lastFeedbackCount;
@@ -326,7 +328,7 @@ public class GuiPatTerminal extends AEBaseGui {
             fontRenderer.drawString(trim(message, ContainerPatTerminal.STATUS_WIDTH - 8),
                     statusLeft, summaryY, messageRefused ? COLOR_WARNING : COLOR_OK);
         } else {
-            fontRenderer.drawString(summary(), statusLeft, summaryY, COLOR_TEXT);
+            fontRenderer.drawString(cachedSummary, statusLeft, summaryY, COLOR_TEXT);
             drawResultCount(lines, summaryY);
         }
 
@@ -695,7 +697,7 @@ public class GuiPatTerminal extends AEBaseGui {
             ItemStack machine = CrafterTypes.iconFor(machineType);
             int stateRight = machine.isEmpty() ? LOCATE_LEFT - 4 : GROUP_MACHINE_LEFT - 4;
 
-            String state = groupState(line.group);
+            String state = line.groupState;
             fontRenderer.drawString(
                     trim(groupTitle(line.group), budget(GROUP_TEXT, state, stateRight - 6)),
                     GROUP_TEXT, y + TEXT_OFFSET, COLOR_TEXT);
@@ -707,7 +709,7 @@ public class GuiPatTerminal extends AEBaseGui {
                         groupButton(line.group), GLYPH_V,
                         ACTION_SIZE, ACTION_SIZE, SHEET, SHEET);
             } else {
-                drawChip(state, stateRight, y, groupTroubled(line.group));
+                drawChip(state, stateRight, y, line.groupTroubled);
             }
 
             if (!machine.isEmpty()) {
@@ -1500,6 +1502,7 @@ public class GuiPatTerminal extends AEBaseGui {
                 + "|" + expanded.size() + ":" + expanded.hashCode();
         if (cachedLines == null || !key.equals(cacheKey)) {
             cachedLines = buildLines();
+            cachedSummary = summary();
             cacheKey = key;
         }
         return cachedLines;
@@ -1627,7 +1630,10 @@ public class GuiPatTerminal extends AEBaseGui {
             if (!titleMatches && recipes.isEmpty()) {
                 continue;
             }
-            lines.add(Line.group(group));
+            Line header = Line.group(group);
+            header.groupState = groupState(group);
+            header.groupTroubled = groupTroubled(group);
+            lines.add(header);
 
             // Two rules, said in a single line: outside a search the group opens on the
             // chevron; during a search it opens on the result found. Expanding through the
@@ -1814,6 +1820,9 @@ public class GuiPatTerminal extends AEBaseGui {
          * walks the groups, and the drawing runs on every frame.
          */
         int crafterRecipes;
+        /** Chip of a group header, and whether it is a fault. Also computed with the rows. */
+        String groupState;
+        boolean groupTroubled;
 
         static Line group(ProviderPairing.Group group) {
             return new Line(group, null, -1, null, null);
