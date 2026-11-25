@@ -519,6 +519,15 @@ public class ContainerPatTerminal extends AEBaseContainer {
         refreshNow();
     }
 
+    /** Opens the holder mode of the editor (D43), or says inside the screen why not. */
+    public void openHolderEditor() {
+        if (!PatConfig.portableEncoder) {
+            tell("gui.packagedautoterminals.portable_disabled");
+            return;
+        }
+        PatGuiHandler.openHolderEditor(getPlayerInv().player);
+    }
+
     /** Message shown inside the screen, not in the action bar. */
     private void tell(String key, Object... arguments) {
         feedback = Feedback.pack(key, arguments);

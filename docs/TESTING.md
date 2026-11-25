@@ -376,7 +376,7 @@ Click the **Patterns** button at the top left.
 
 ### F4 — Orphan recipe
 Encode an **Ultimate** recipe without placing an Ultimate Crafter.
-→ A red warning at the top of the list. Place the crafter: it disappears.
+→ An orange warning at the top of the list. Place the crafter: it disappears.
 
 ### F5 — No false positive
 Check that a **Processing** recipe triggers no warning.

@@ -510,8 +510,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 105 tests, checkLang 148. Backlog : défaut ancien, le survol des titres « Crafters » et « Routers » affiche orphan_help (Line.section range le titre dans warning, GuiPatTerminal.java:1314-1317) ; refus portable_disabled depuis un terminal ouvert sans test manuel dans TESTING.md."
     },
     {
       "id": "T24",

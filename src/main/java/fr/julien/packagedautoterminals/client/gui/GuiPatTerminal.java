@@ -91,6 +91,8 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int COLOR_TEXT = 0x404040;
     private static final int COLOR_DIM = 0x808080;
     private static final int COLOR_WARNING = 0x803030;
+    /** A doubt, not a fault: the screen cannot see what lies outside the ME network. */
+    private static final int COLOR_DOUBT = 0x9C4A00;
     /** E4: every other row, very slightly darkened. */
     private static final int COLOR_STRIPE = 0x14000000;
     /** E1: hovered row. */
@@ -662,7 +664,7 @@ public class GuiPatTerminal extends AEBaseGui {
         if (line.warning != null) {
             String text = trim(line.warning, LIST_WIDTH - 8);
             fontRenderer.drawString(text, LIST_LEFT + 4, y + TEXT_OFFSET,
-                    line.section ? COLOR_TEXT : COLOR_WARNING);
+                    line.section ? COLOR_TEXT : COLOR_DOUBT);
             if (line.section) {
                 // A rule from the end of the title to the right edge. It closes the heading,
                 // and the eye then reads the rows under it as one block.
@@ -1504,8 +1506,9 @@ public class GuiPatTerminal extends AEBaseGui {
     /**
      * Machines tab: the crafters of the network, preceded by the orphan recipes.
      *
-     * <p>A recipe is an orphan when no crafter on the network can run its type. That is the
-     * most frequent mistake in game, and no other mod reports it.
+     * <p>A recipe is an orphan when no crafter on the ME network can run its type. That is the
+     * most frequent mistake in game, and no other mod reports it. A crafter off the network,
+     * next to an Unpackager or behind a Proxy, can still run it, so the report reads as a doubt.
      */
     private List<Line> buildMachineLines(SearchQuery query) {
         List<Line> lines = new ArrayList<>();

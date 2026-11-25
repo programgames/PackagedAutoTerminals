@@ -2,7 +2,6 @@ package fr.julien.packagedautoterminals.network;
 
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
-import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
@@ -124,7 +123,7 @@ public class PacketRecipeAction implements IMessage {
                     } else if (message.action == ACTION_REPAIR_GROUP) {
                         container.repairGroup(message.dimension, message.pos);
                     } else if (message.action == ACTION_OPEN_HOLDERS) {
-                        PatGuiHandler.openHolderEditor(player);
+                        container.openHolderEditor();
                     }
                     return;
                 }
