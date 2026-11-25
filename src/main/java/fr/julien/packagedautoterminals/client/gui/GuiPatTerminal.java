@@ -452,6 +452,30 @@ public class GuiPatTerminal extends AEBaseGui {
         drawTooltip(x, y, lines);
     }
 
+    /**
+     * The search syntax. The Machines tab only searches names, so it skips the prefixes.
+     *
+     * <p>It takes absolute coordinates: it is drawn after the field, otherwise the typed text
+     * would show through it.
+     */
+    private void drawSearchTooltip(int mouseX, int mouseY) {
+        int x = mouseX - guiLeft;
+        int y = mouseY - guiTop;
+        if (x < ContainerPatTerminal.SEARCH_LEFT
+                || x >= ContainerPatTerminal.SEARCH_LEFT + ContainerPatTerminal.SEARCH_WIDTH
+                || y < ContainerPatTerminal.SEARCH_TOP
+                || y >= ContainerPatTerminal.SEARCH_TOP + ContainerPatTerminal.SEARCH_HEIGHT) {
+            return;
+        }
+        List<String> lines = new ArrayList<>();
+        lines.add(I18n.format("gui.packagedautoterminals.search_hint"));
+        if (!machinesView) {
+            lines.add(I18n.format("gui.packagedautoterminals.search_hint_mod"));
+            lines.add(I18n.format("gui.packagedautoterminals.search_hint_type"));
+        }
+        drawTooltip(mouseX, mouseY, lines);
+    }
+
     /** Index of the tool button under these relative coordinates, or -1. */
     private int toolUnder(int x, int y) {
         int top = toolTop();
@@ -1078,6 +1102,7 @@ public class GuiPatTerminal extends AEBaseGui {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         super.drawScreen(mouseX, mouseY, partialTicks);
         search.drawTextBox();
+        drawSearchTooltip(mouseX, mouseY);
     }
 
     @Override

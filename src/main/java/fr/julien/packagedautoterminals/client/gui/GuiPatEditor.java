@@ -155,6 +155,7 @@ public class GuiPatEditor extends AEBaseGui {
     private GuiButton syncButton;
     private GuiButton saveButton;
     private GuiButton deleteButton;
+    private GuiButton scaleButton;
     /** The two arrows of the tab row. They are greyed out when the row cannot move. */
     private GuiButton tabsPreviousButton;
     private GuiButton tabsNextButton;
@@ -286,8 +287,9 @@ public class GuiPatEditor extends AEBaseGui {
         buttonList.add(deleteButton);
         buttonList.add(new PatButton(BUTTON_CLEAR, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
                 guiTop + buttonTop + 36, 54, 16, I18n.format("gui.packagedautoterminals.clear")));
-        buttonList.add(new PatButton(BUTTON_SCALE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
-                guiTop + buttonTop + 54, 54, 16, "\u00D7N"));
+        scaleButton = new PatButton(BUTTON_SCALE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
+                guiTop + buttonTop + 54, 54, 16, "\u00D7N");
+        buttonList.add(scaleButton);
 
         if (holderMode) {
             syncButton = new PatButton(BUTTON_SYNC, guiLeft + SYNC_LEFT, guiTop + 3, 32, 16,
@@ -860,6 +862,11 @@ public class GuiPatEditor extends AEBaseGui {
         }
         drawAmountPanel(mouseX, mouseY, partialTicks);
         drawScalePanel(mouseX, mouseY, partialTicks);
+        if (scaleButton.isMouseOver()) {
+            drawTooltip(mouseX, mouseY, java.util.Arrays.asList(
+                    I18n.format("gui.packagedautoterminals.scale_hint"),
+                    I18n.format("gui.packagedautoterminals.scale_hint_craft")));
+        }
     }
 
     /** Opens the scale panel over the middle of the grid. */

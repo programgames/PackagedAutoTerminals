@@ -530,8 +530,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "La page JEI « gestes » reste au backlog : c'est une nouvelle feature que Julien n'a pas validée."
+      "statut": "fait",
+      "note": "La page JEI « gestes » reste au backlog : c'est une nouvelle feature que Julien n'a pas validée. Accepté au second essai. Premier essai refusé : l'infobulle de recherche se dessinait avant le texte du champ (dans drawFG), qui passait par-dessus ; corrigé dans drawScreen après drawTextBox. 105 tests, checkLang 153. Backlog : l'infobulle cache le texte tapé si le pointeur reste sur le champ (montrer seulement quand le champ est vide ?) ; la croix d'effacement montre l'aide de syntaxe ; les infobulles des outils et des lignes restent dans drawFG."
     },
     {
       "id": "T25",
