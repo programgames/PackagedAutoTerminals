@@ -103,15 +103,19 @@ dependencies {
 // first match, hence the SRG names, and every class that extends an AE2 class fails.
 // We remove the raw artifacts of the local repository here. The deobfuscated ones stay.
 afterEvaluate {
-    sourceSets.main.compileClasspath = sourceSets.main.compileClasspath.filter { file ->
+    def notRaw = { file ->
         !file.absolutePath.startsWith(new File(projectDir, 'libs/maven').absolutePath)
     }
+    sourceSets.main.compileClasspath = sourceSets.main.compileClasspath.filter(notRaw)
 
     // The tests read the same classes as the mod, so they need the same path, and they need
     // it AFTER the filter above. Wiring it earlier would capture the unfiltered collection,
     // put the raw SRG jars back in front, and the tests would stop seeing the MCP names.
     sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
-    sourceSets.test.runtimeClasspath += sourceSets.main.compileClasspath
+    // The raw jars also sit on the test runtime path, in front. A test that runs PackagedAuto
+    // code would then call SRG names, and fail with NoSuchMethodError.
+    sourceSets.test.runtimeClasspath =
+            (sourceSets.test.runtimeClasspath + sourceSets.main.compileClasspath).filter(notRaw)
 }
 
 test {

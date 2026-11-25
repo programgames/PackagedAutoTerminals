@@ -144,8 +144,10 @@ Eight releases shipped, from `0.1.0-beta.1` to `0.1.0-beta.9`. The test protocol
    group P, not run yet.
 3. **Baubles**, so the wireless terminal sits in a bauble slot.
 4. **Duplicate a recipe** in the editor. To encode a variant, the player retypes everything.
-5. **The R2 measurement**: the size of the snapshot packet on a loaded network. Revision R2
-   accepted the simple "resend everything" path until a figure proves it too costly, and no
-   figure has been taken.
+5. **The R2 measurement**: the size of the snapshot packet on a loaded network. Measured on
+   2026-11-25 by `SnapshotSizeTest`, against the 2 097 152 counted bytes the client accepts:
+   the limit is **27 pairs** of 2 machines with 20 processing recipes each (2 095 268 counted
+   bytes). The player's network, 20 machines and 110 recipes, counts 435 250 bytes, 20 % of
+   the limit. Every machine of a pair sends its own copy of the recipes.
 6. **Gases**, which need a format nobody has verified in game.
 7. **The 1.16 port**, described in `docs/PORTING.md`.

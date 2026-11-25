@@ -91,8 +91,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Mesure : limite = 27 paires pleines (2 machines × 20 recettes de traitement), 2 095 268 octets comptés ; 28 paires déconnectent le client. Réseau connu du joueur : 435 250 octets comptés, 20 % du plafond. Onglet Machines exclu de la mesure : la limite réelle est plus basse avec machinesTab actif. build.gradle filtre aussi les jars SRG du chemin d'exécution des tests."
     },
     {
       "id": "T05",

@@ -18,7 +18,7 @@ import thelm.packagedauto.api.IRecipeType;
  * <p>{@link ProviderPairing} only ever asks a recipe whether it equals another one. Every
  * other method of the interface is there to satisfy the compiler, and answers nothing.
  */
-final class FakeRecipe implements IRecipeInfo {
+class FakeRecipe implements IRecipeInfo {
 
     private final String name;
 
