@@ -693,8 +693,8 @@
         "T08"
       ],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "Créé après la revue de T08. Placé en fin de liste : la limite de 20 tickets par passage s'applique (DA-13)."
+      "statut": "fait",
+      "note": "Créé après la revue de T08. Placé en fin de liste : la limite de 20 tickets par passage s'applique (DA-13). Revue acceptée. 121 tests. recipeTags est un champ d'instance, renouvelé à chaque instantané, rempli sur le fil client. Backlog : PacketRecipeAction n'a pas de borne contre la limite de 32 767 octets (recette à gros NBT) ; IdentityHashMap allouée pour rien côté serveur (création paresseuse) ; deux recettes serveur-seul de même grille se fusionnent côté client."
     },
     {
       "id": "T33",

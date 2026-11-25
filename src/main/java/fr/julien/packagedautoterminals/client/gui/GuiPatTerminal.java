@@ -38,13 +38,11 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.input.Keyboard;
 import thelm.packagedauto.api.IRecipeInfo;
 import thelm.packagedauto.api.IRecipeType;
-import thelm.packagedauto.api.MiscUtil;
 
 /**
  * List of the machines and of their recipes.
@@ -1307,7 +1305,7 @@ public class GuiPatTerminal extends AEBaseGui {
         ProviderSnapshot anchor = line.anchor();
         PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(anchor.dimension, anchor.pos,
                 line.recipeIndex, action,
-                MiscUtil.writeRecipeToNBT(new NBTTagCompound(), line.recipe)));
+                ProviderSnapshot.tagOf(line.group.machines, line.recipe)));
     }
 
     /** Displayed row under the mouse, or {@code null}. Relative coordinates. */

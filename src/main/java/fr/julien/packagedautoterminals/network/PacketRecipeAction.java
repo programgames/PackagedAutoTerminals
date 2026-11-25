@@ -60,8 +60,8 @@ public class PacketRecipeAction implements IMessage {
     public byte action;
     /**
      * The recipe that {@link #ACTION_REMOVE} and {@link #ACTION_EDIT} name, in the PackagedAuto
-     * NBT format, or {@code null}. The server only looks it up in its own lists and writes its
-     * own copy, never this one.
+     * NBT format, as the snapshot carried it, or {@code null}. The server only looks it up in its
+     * own lists and writes its own copy, never this one.
      */
     public NBTTagCompound recipe;
 

@@ -2,6 +2,7 @@ package fr.julien.packagedautoterminals.common;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +37,14 @@ public class ProviderSnapshot {
     /** Name given by the player, or empty string. Stored by our mod, not by PackagedAuto. */
     public String customName = "";
     public List<IRecipeInfo> recipes = new ArrayList<>();
+    /**
+     * The tag that the server wrote for each of {@link #recipes}, on the client only.
+     *
+     * <p>The client names a recipe to the server with this tag, never with a tag of its own:
+     * a crafting recipe that only the server knows loses its {@code Recipe} key when the
+     * client writes it again, and the server would no longer find it.
+     */
+    public final Map<IRecipeInfo, NBTTagCompound> recipeTags = new IdentityHashMap<>();
 
     /**
      * The machine itself, on the server only.
@@ -72,6 +81,17 @@ public class ProviderSnapshot {
         wrapper.setTag("RecipeLists", recipeLists);
     }
 
+    /** The tag that the server wrote for {@code recipe}, in one of {@code machines}, or null. */
+    public static NBTTagCompound tagOf(List<ProviderSnapshot> machines, IRecipeInfo recipe) {
+        for (ProviderSnapshot machine : machines) {
+            NBTTagCompound tag = machine.recipeTags.get(recipe);
+            if (tag != null) {
+                return tag;
+            }
+        }
+        return null;
+    }
+
     /** Reads the machines written by {@link #writeAll}. */
     public static List<ProviderSnapshot> readAll(NBTTagCompound wrapper) {
         NBTTagList recipeLists = wrapper.getTagList("RecipeLists", 9);
@@ -80,8 +100,15 @@ public class ProviderSnapshot {
         for (int i = 0; i < providers.tagCount(); i++) {
             NBTTagCompound tag = providers.getCompoundTagAt(i);
             ProviderSnapshot snapshot = readFromNBT(tag);
-            snapshot.recipes = MiscUtil.readRecipeListFromNBT(
-                    (NBTTagList) recipeLists.get(tag.getInteger("Recipes")));
+            NBTTagList recipes = (NBTTagList) recipeLists.get(tag.getInteger("Recipes"));
+            for (int r = 0; r < recipes.tagCount(); r++) {
+                NBTTagCompound recipeTag = recipes.getCompoundTagAt(r);
+                IRecipeInfo recipe = MiscUtil.readRecipeFromNBT(recipeTag);
+                if (recipe != null) {
+                    snapshot.recipes.add(recipe);
+                    snapshot.recipeTags.put(recipe, recipeTag);
+                }
+            }
             snapshots.add(snapshot);
         }
         return snapshots;
