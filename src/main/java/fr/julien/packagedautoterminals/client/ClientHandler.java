@@ -33,6 +33,7 @@ public final class ClientHandler {
             machines.add(MachineSnapshot.readFromNBT(machineList.getCompoundTagAt(i)));
         }
         container.machines = machines;
+        container.machinesTab = message.payload.getBoolean("MachinesTab");
 
         container.lastPayloadBytes = message.payloadBytes;
         container.tooBigBytes = message.payload.getLong("TooBig");

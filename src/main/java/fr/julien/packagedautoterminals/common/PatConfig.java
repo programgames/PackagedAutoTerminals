@@ -23,8 +23,11 @@ public final class PatConfig {
     @Config.Comment({
             "Mode id of the terminal inside AE2 Wireless Universal Terminal.",
             "Change it only on a conflict with another third-party mod: two mods that pick",
-            "the same id replace each other."
+            "the same id replace each other.",
+            "A new id silences the universal terminals already assembled: they keep the old id.",
+            "The server and every client must use the same id."
     })
+    @Config.RequiresMcRestart
     @Config.RangeInt(min = 0, max = 127)
     @Config.LangKey("config.packagedautoterminals.wut_mode_id")
     public static int wutModeId = 41;
@@ -55,7 +58,10 @@ public final class PatConfig {
     @Config.LangKey("config.packagedautoterminals.portable_encoder")
     public static boolean portableEncoder = true;
 
-    @Config.Comment("Shows the Machines tab and the diagnostic for orphan recipes.")
+    @Config.Comment({
+            "Shows the Machines tab and the diagnostic for orphan recipes.",
+            "On a server, the value of the server applies to every player."
+    })
     @Config.LangKey("config.packagedautoterminals.machines_tab")
     public static boolean machinesTab = true;
 

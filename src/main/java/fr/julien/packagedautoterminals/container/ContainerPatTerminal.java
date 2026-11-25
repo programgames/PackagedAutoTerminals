@@ -105,6 +105,11 @@ public class ContainerPatTerminal extends AEBaseContainer {
     /** Client side only. Crafting machines, for the Machines tab. */
     public List<MachineSnapshot> machines = new ArrayList<>();
     /**
+     * Client side only. The {@code machinesTab} setting of the server: it sent the crafting
+     * machines, and the screen shows their tab.
+     */
+    public boolean machinesTab;
+    /**
      * Client side only. Counts the snapshots received.
      *
      * <p>The screen rebuilds its rows only when this number moves. Before that, it rebuilt
@@ -173,6 +178,7 @@ public class ContainerPatTerminal extends AEBaseContainer {
         NBTTagCompound wrapper = new NBTTagCompound();
         ProviderSnapshot.writeAll(ProviderScanner.scan(terminal.grid()), wrapper);
         wrapper.setTag("Machines", buildMachinePayload());
+        wrapper.setBoolean("MachinesTab", PatConfig.machinesTab);
         if (wrapper.equals(lastSent)) {
             return;
         }

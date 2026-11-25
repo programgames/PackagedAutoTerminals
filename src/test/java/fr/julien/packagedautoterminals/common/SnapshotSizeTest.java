@@ -96,6 +96,7 @@ public class SnapshotSizeTest {
         PacketProviderList received = overTheWire(PacketProviderList.capped(tooBig));
         assertFalse(received.payload.hasKey("Providers"));
         assertEquals(countedBytes(tooBig), received.payload.getLong("TooBig"));
+        assertTrue(received.payload.getBoolean("MachinesTab"));
     }
 
     @Test
@@ -110,8 +111,8 @@ public class SnapshotSizeTest {
     }
 
     /**
-     * The tag {@code ContainerPatTerminal.detectAndSendChanges} sends, with no Machines tab.
-     * Each pair carries its own recipes, so no two pairs share a list.
+     * The tag {@code ContainerPatTerminal.detectAndSendChanges} sends, with the Machines tab on
+     * and no crafter. Each pair carries its own recipes, so no two pairs share a list.
      */
     private static NBTTagCompound snapshot(int pairs, int recipesPerMachine) {
         List<ProviderSnapshot> providers = new ArrayList<>();
@@ -133,6 +134,7 @@ public class SnapshotSizeTest {
         NBTTagCompound wrapper = new NBTTagCompound();
         ProviderSnapshot.writeAll(providers, wrapper);
         wrapper.setTag("Machines", new NBTTagList());
+        wrapper.setBoolean("MachinesTab", true);
         return wrapper;
     }
 

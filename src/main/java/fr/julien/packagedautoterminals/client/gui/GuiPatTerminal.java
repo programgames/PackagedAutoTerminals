@@ -21,7 +21,6 @@ import fr.julien.packagedautoterminals.common.CrafterTypes;
 import fr.julien.packagedautoterminals.common.Feedback;
 import fr.julien.packagedautoterminals.common.MachineSnapshot;
 import fr.julien.packagedautoterminals.common.NetworkItems;
-import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.common.ProviderPairing;
 import fr.julien.packagedautoterminals.common.ProviderRole;
 import fr.julien.packagedautoterminals.common.ProviderSnapshot;
@@ -481,9 +480,9 @@ public class GuiPatTerminal extends AEBaseGui {
         return LIST_LEFT + index * (ContainerPatTerminal.TAB_WIDTH + ContainerPatTerminal.TAB_GAP);
     }
 
-    /** How many tabs the screen shows. The Machines tab can be turned off in the config. */
-    private static int tabCount() {
-        return PatConfig.machinesTab ? 2 : 1;
+    /** How many tabs the screen shows. The server config can turn the Machines tab off. */
+    private int tabCount() {
+        return terminalContainer.machinesTab ? 2 : 1;
     }
 
     /**
@@ -1408,7 +1407,8 @@ public class GuiPatTerminal extends AEBaseGui {
      *
      * <p>Three cases, three sentences: the machine is there, the machine is missing from the
      * network, or the type needs no machine. The third case covers {@code processing}, which
-     * sends its package to any inventory.
+     * sends its package to any inventory. A server with the Machines tab off sends no crafting
+     * machine: the line then names the machine without saying whether it is missing.
      */
     private String machineHint(IRecipeType type) {
         ItemStack machine = CrafterTypes.iconFor(type);
@@ -1416,7 +1416,7 @@ public class GuiPatTerminal extends AEBaseGui {
             return TextFormatting.GRAY
                     + I18n.format("gui.packagedautoterminals.machine_none");
         }
-        if (onNetwork(type)) {
+        if (!terminalContainer.machinesTab || onNetwork(type)) {
             return TextFormatting.GRAY + I18n.format(
                     "gui.packagedautoterminals.machine_used", machine.getDisplayName());
         }

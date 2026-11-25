@@ -39,7 +39,7 @@ public class PacketProviderList implements IMessage {
 
     /**
      * The snapshot itself, or, when it exceeds {@link #CAP}, its counted size under the key
-     * {@code TooBig}.
+     * {@code TooBig}, next to the {@code MachinesTab} setting of the server.
      */
     public static PacketProviderList capped(NBTTagCompound snapshot) {
         long counted = countedBytes(snapshot);
@@ -48,6 +48,7 @@ public class PacketProviderList implements IMessage {
         }
         NBTTagCompound notice = new NBTTagCompound();
         notice.setLong("TooBig", counted);
+        notice.setBoolean("MachinesTab", snapshot.getBoolean("MachinesTab"));
         return new PacketProviderList(notice);
     }
 
