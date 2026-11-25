@@ -45,6 +45,13 @@ public final class Feedback {
     private static final Set<String> REFUSALS = Collections.unmodifiableSet(new HashSet<>(
             Arrays.asList(
                     "gui.packagedautoterminals.insert_holder_first",
+                    "gui.packagedautoterminals.insert_holder",
+                    "gui.packagedautoterminals.scale_nothing",
+                    "gui.packagedautoterminals.scale_collision",
+                    "gui.packagedautoterminals.scale_not_exact",
+                    "gui.packagedautoterminals.scale_too_large",
+                    "gui.packagedautoterminals.scale_invalid",
+                    "gui.packagedautoterminals.scale_unsaved",
                     "gui.packagedautoterminals.no_holder_here",
                     "gui.packagedautoterminals.network_full",
                     "gui.packagedautoterminals.group_full",

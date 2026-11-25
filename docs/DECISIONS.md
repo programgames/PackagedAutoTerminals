@@ -693,3 +693,86 @@ CurseForge. `tools/release.sh` only runs the checks and pushes the tag.
 One point stays open, and it belongs to the licences rather than to the build: a public
 repository that carries the jars of AE2UEL, PackagedAuto and HadEnoughItems redistributes
 them. LGPL v3 and MIT both allow it, under their own conditions. Nobody has asked the authors.
+
+## D43 — The terminal edits a recipe holder with no ME network
+
+Asked by a tester on 2026-10-25, settled and coded the same day. Not tested in game yet.
+
+The request: a machine that runs on its own, outside any network and any subnet, cannot be
+reached by the terminal. Its recipes can only change at a Package Recipe Encoder block. The
+tester wants the Encoder screen inside the wireless terminal, to edit a holder on the go.
+
+**State before this decision.** Nothing of the kind exists. The wireless terminal refuses to
+open without a link key (`not_linked`) or out of range (`out_of_range`), and
+`ContainerPatEditor.save()` needs a `grid` for `ProviderScanner.scan` and `RecipeWriter.apply`.
+
+**The real Encoder screen is ruled out.** `GuiEncoder` and its container need a `TileEncoder`
+placed in the world. Opening it from an item means a fake tile, which breaks on every update
+of PackagedAuto. Our editor already copies the Encoder layout, its slot indexes and its JEI
+transfer (D22), and `EditorInventory` depends on no tile.
+
+What was decided:
+
+| Point | Decision | Reason |
+|---|---|---|
+| Form | A **holder mode** of our editor, not the PackagedAuto screen | no fake tile; JEI, fluids and `GuiScaleFit` come for free |
+| Entry | Sneak + right click with our wireless terminal opens the holder mode, plus a button in `GuiPatTerminal`, wired and wireless | the sneak click works far from any network; the button makes the feature visible |
+| AE2WUT | Button only in the first version | whether AE2WUT uses the sneak click is unread; D33 keeps the injections to a minimum |
+| Conditions | No link key, no range, no energy | no network means no AE2 energy and no AE2 permission to check |
+| Config | `PatConfig.portableEncoder`, on by default | a pack author may see it as a way around the Encoder block |
+| Slots | Two real slots, **main** and **twin**, one item each | the holders leave the player inventory while edited; a stack of two would get one write |
+| Accepted items | Any `IRecipeListItem` | the test `RecipeWriter` already applies |
+| Model | The tab row shows the recipes of the holder; Save and Delete write at once | the gesture of the online terminal; no work state outside the holder, nothing lost on close |
+| Pairs | Every Save and Delete writes to **both** holders | a Packager and its Unpackager carry the same list; editing one alone creates drift |
+| Drift | Same warning and same two-arrow button as the online group row (N1); the button copies every missing recipe both ways and deletes nothing | an empty holder in the twin slot plus this button is a copy |
+| More than two | One twin slot; the player swaps the twin and presses the button again | the pair is the usual case |
+| Full holder | A new recipe that fits in one holder only is refused in both, with `group_full` | a partial write is the drift the twins exist to prevent |
+| One holder | Works alone, in either slot, with no mirror | a lone machine needs no pair |
+| Delete under drift | Removes the recipe wherever it exists, without an error | the player means "this recipe exists nowhere now" |
+| Close | Both holders go back to the inventory, or drop at the feet when it is full; an unsaved tab is lost, as online | no confirmation screen |
+
+**Verified when coding** (rule 1), in the bytecode:
+
+- `ItemRecipeHolder` never calls `setMaxStackSize`: holders stack to 64. The slot limit of
+  one is therefore needed, not a precaution.
+- The two-argument constructor of `AEBaseContainer` throws `Must have a valid anchor` on a
+  null anchor. Holder mode uses the four-argument one, which takes three nulls.
+
+**Still open**: whether AE2WUT reads the sneak click of its own item. Until someone reads its
+code, the universal terminal reaches holder mode through the tool button only.
+
+**How it is built.** One container class, `ContainerPatEditor`, with a holder constructor.
+A subclass would have been cleaner, but JEI looks up its transfer handler by the **exact**
+container class, so the transfer from JEI would have stopped working in holder mode. The
+screen opens through gui id 30 and carries no terminal: Back and Escape close it instead of
+returning to a terminal. The edit of one holder lives in `RecipeWriter.editHolder`, which the
+machine path now calls too, so both follow one set of rules.
+
+**What the server checks.** The holders sit in a container slot the server owns. The client
+sends the same intents as online (save, delete, sync), and the server writes through
+`IRecipeListItem.setRecipeList`. The client never writes the NBT.
+
+## D44 — Scale every recipe of a group in one gesture
+
+Asked by a tester on 2026-10-25, settled the same day. A machine that gains a parallel upgrade
+needs every one of its recipes multiplied. The amount panel already scales **one** recipe and
+keeps its proportions; the tester had to repeat that for every recipe of the holder.
+
+| Point | Decision | Reason |
+|---|---|---|
+| Scope | Every recipe of the group open in the editor; in holder mode, every recipe of both holders | a group carries one list; scaling one holder would create drift |
+| Entry | A `×N` button in the editor, under Clear, opening a small factor panel | the editor already shows the recipes of the group, and holder mode gets it for free |
+| Operation | Multiply or divide by a whole number from 2 to 64; four quick buttons ×2, ×4, ×8, ×16 | parallel upgrades come in such steps; dividing undoes a mistake |
+| Outputs | Scaled too, like the "keep ratio" box | a recipe that eats four times more must give four times more |
+| Craft recipes | Skipped, and counted in the message | `canSetOutput()` false locks them to one per cell |
+| Failure | Refused before any write, naming the first recipe that fails: amount not divisible, amount above 4096 items or a billion mB, recipe invalid once scaled | no group is ever left half scaled; same rule as one recipe |
+| Collision | Two recipes equal once scaled: refused, naming both | a silent merge deletes a recipe nobody asked to delete |
+| Unsaved work | Refused with `unsaved` | the reload would erase it |
+| After | The open tab reloads on the scaled version of its recipe | the next Save edits the right recipe |
+| Running crafts | Nothing special: same write path as Save, see test N9 | no loss proven |
+
+**How it is built.** Each recipe is rebuilt in a scratch `EditorInventory`, so the scaled
+recipe goes through `generateFromStacks` exactly like a recipe typed by hand. The write maps
+old to new **inside each holder in one pass** (`RecipeWriter.mapHolder`): order is kept, and a
+machine republishes its patterns once instead of once per recipe. A machine that lacks one of
+the recipes is not repaired by this gesture; the drift button stays the tool for that.

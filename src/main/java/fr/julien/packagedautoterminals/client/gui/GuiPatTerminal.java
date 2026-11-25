@@ -235,7 +235,11 @@ public class GuiPatTerminal extends AEBaseGui {
     public void initGui() {
         // The scale must be settled before anything is placed: every widget below reads
         // `width` and `height`.
-        if (scaleFit.apply(this, mc, xSize, ySize)) {
+        // FIXED, crash reported on GitHub with beta.8: "this.search is null" in drawScreen. The
+        // early return trusted the nested pass of setWorldAndResolution to build the screen.
+        // In that player's pack the nested pass did not, and the screen was drawn with no
+        // widget at all. The return now happens only when the nested pass did build it.
+        if (scaleFit.apply(this, mc, xSize, ySize) && search != null) {
             return;
         }
         super.initGui();
@@ -392,7 +396,7 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * The two tool buttons of the strip: the sort order, and the filter.
+     * The tool buttons of the strip: the filter, the sort order, and the holder mode.
      *
      * <p>On a network of twenty machines, reading every row to find the one that is wrong
      * costs more than the terminal saves. These two buttons do that reading.
@@ -409,7 +413,19 @@ public class GuiPatTerminal extends AEBaseGui {
                 TOOL_SIZE, TOOL_SIZE, SHEET, SHEET);
         drawModalRectWithCustomSizedTexture(toolLeft(1), top, SORT_U, GLYPH_V,
                 TOOL_SIZE, TOOL_SIZE, SHEET, SHEET);
+        // Holder mode (D43). The Encoder block is its icon: the tool does what that block
+        // does. A full item is sixteen pixels, so it overhangs the twelve of a glyph by two.
+        if (encoderIcon == null) {
+            Item encoder = Item.getByNameOrId("packagedauto:encoder");
+            encoderIcon = encoder == null ? ItemStack.EMPTY : new ItemStack(encoder);
+        }
+        if (!encoderIcon.isEmpty()) {
+            drawItem(toolLeft(2) - 2, top - 2, encoderIcon);
+        }
     }
+
+    /** Icon of the holder mode tool, resolved on first use. */
+    private ItemStack encoderIcon;
 
     /** What the tool button under the pointer does. Nothing is drawn when there is none. */
     private void drawToolTooltip(int x, int y) {
@@ -420,7 +436,7 @@ public class GuiPatTerminal extends AEBaseGui {
         List<String> lines = new ArrayList<>();
         lines.add(tool == 0
                 ? I18n.format("gui.packagedautoterminals.filter_problems")
-                : sortLabel());
+                : tool == 1 ? sortLabel() : I18n.format("gui.packagedautoterminals.open_holders"));
         drawTooltip(x, y, lines);
     }
 
@@ -430,7 +446,7 @@ public class GuiPatTerminal extends AEBaseGui {
         if (y < top || y >= top + TOOL_SIZE) {
             return -1;
         }
-        for (int index = 0; index < 2; index++) {
+        for (int index = 0; index < 3; index++) {
             if (x >= toolLeft(index) && x < toolLeft(index) + TOOL_SIZE) {
                 return index;
             }
@@ -1124,6 +1140,12 @@ public class GuiPatTerminal extends AEBaseGui {
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
         int tool = toolUnder(mouseX - guiLeft, mouseY - guiTop);
         if (tool >= 0) {
+            if (tool == 2) {
+                clickSound();
+                PatNetwork.CHANNEL.sendToServer(new PacketRecipeAction(
+                        0, BlockPos.ORIGIN, 0, PacketRecipeAction.ACTION_OPEN_HOLDERS));
+                return;
+            }
             if (tool == 0) {
                 onlyProblems = !onlyProblems;
             } else {

@@ -2,6 +2,7 @@ package fr.julien.packagedautoterminals.network;
 
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
+import fr.julien.packagedautoterminals.proxy.PatGuiHandler;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.math.BlockPos;
@@ -43,6 +44,12 @@ public class PacketRecipeAction implements IMessage {
     public static final byte ACTION_INSERT_HOLDER = 10;
     /** Copies every recipe of the group into the machines of the group that lack it. */
     public static final byte ACTION_REPAIR_GROUP = 11;
+    /** Holder mode: copies the recipes missing from one holder into it, both ways. */
+    public static final byte ACTION_SYNC_HOLDERS = 12;
+    /** Opens the holder mode from the terminal. */
+    public static final byte ACTION_OPEN_HOLDERS = 13;
+    /** Scales every recipe (D44). {@link #index} is the factor, negative to divide. */
+    public static final byte ACTION_SCALE_ALL = 14;
 
     public int dimension;
     public BlockPos pos = BlockPos.ORIGIN;
@@ -93,6 +100,8 @@ public class PacketRecipeAction implements IMessage {
                         container.insertHolders(message.dimension, message.pos);
                     } else if (message.action == ACTION_REPAIR_GROUP) {
                         container.repairGroup(message.dimension, message.pos);
+                    } else if (message.action == ACTION_OPEN_HOLDERS) {
+                        PatGuiHandler.openHolderEditor(player);
                     }
                     return;
                 }
@@ -112,6 +121,10 @@ public class PacketRecipeAction implements IMessage {
                         editor.clearGrid();
                     } else if (message.action == ACTION_SCROLL_TABS) {
                         editor.scrollTabs(message.index == 1);
+                    } else if (message.action == ACTION_SYNC_HOLDERS) {
+                        editor.syncHolders();
+                    } else if (message.action == ACTION_SCALE_ALL) {
+                        editor.scaleAll(Math.abs(message.index), message.index < 0);
                     }
                 }
             });

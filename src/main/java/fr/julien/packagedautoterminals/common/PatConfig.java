@@ -47,6 +47,14 @@ public final class PatConfig {
     @Config.LangKey("config.packagedautoterminals.pull_holder")
     public static boolean pullHolderFromNetwork = true;
 
+    @Config.Comment({
+            "Lets the terminals edit a Package Recipe Holder by hand, with no ME network:",
+            "sneak and right click with the wireless terminal, or use the button of the",
+            "terminal. It does what the Package Recipe Encoder block does."
+    })
+    @Config.LangKey("config.packagedautoterminals.portable_encoder")
+    public static boolean portableEncoder = true;
+
     @Config.Comment("Shows the Machines tab and the diagnostic for orphan recipes.")
     @Config.LangKey("config.packagedautoterminals.machines_tab")
     public static boolean machinesTab = true;

@@ -97,7 +97,7 @@ public final class RecipeWriter {
         return result;
     }
 
-    private enum Outcome { CHANGED, UNCHANGED, NO_HOLDER, FULL }
+    public enum Outcome { CHANGED, UNCHANGED, NO_HOLDER, FULL }
 
     /**
      * The machine of a snapshot, without walking the grid again when it is already known.
@@ -135,17 +135,31 @@ public final class RecipeWriter {
             }
             borrowed = true;
         }
+        Outcome outcome = editHolder(holder, oldRecipe, newRecipe);
+        if (outcome != Outcome.CHANGED) {
+            return giveBack(grid, source, holder, borrowed, outcome);
+        }
+        machine.setPatternStack(holder);
+        if (borrowed) {
+            result.supplied++;
+        }
+        return Outcome.CHANGED;
+    }
+
+    /**
+     * Applies a change to one recipe holder, in place, with no machine and no network.
+     *
+     * <p>The machine path above and the holder mode of the editor (D43) both go through here,
+     * so a holder edited by hand follows the same rules as one edited in its machine.
+     *
+     * @return {@link Outcome#CHANGED} when the holder now carries the change.
+     */
+    public static Outcome editHolder(ItemStack holder, IRecipeInfo oldRecipe,
+                                     IRecipeInfo newRecipe) {
         if (!(holder.getItem() instanceof IRecipeListItem)) {
-            return giveBack(grid, source, holder, borrowed, Outcome.UNCHANGED);
+            return Outcome.UNCHANGED;
         }
-
-        IRecipeListItem holderItem = (IRecipeListItem) holder.getItem();
-        IRecipeList recipeList = holderItem.getRecipeList(holder);
-        if (recipeList == null) {
-            return giveBack(grid, source, holder, borrowed, Outcome.UNCHANGED);
-        }
-
-        List<IRecipeInfo> recipes = new ArrayList<>(recipeList.getRecipeList());
+        List<IRecipeInfo> recipes = new ArrayList<>(recipesOf(holder));
         int index = indexOf(recipes, oldRecipe);
 
         if (newRecipe == null) {
@@ -166,23 +180,79 @@ public final class RecipeWriter {
         } else {
             // The machine does not carry this recipe yet: it receives it.
             if (indexOf(recipes, newRecipe) >= 0) {
-                return giveBack(grid, source, holder, borrowed, Outcome.UNCHANGED);
+                return Outcome.UNCHANGED;
             }
             // Last guard. The editor refuses a full group before it reaches this point, so
             // nothing is ever written by halves.
             if (recipes.size() >= maxRecipes()) {
-                return giveBack(grid, source, holder, borrowed, Outcome.FULL);
+                return Outcome.FULL;
             }
             recipes.add(newRecipe);
         }
+        return setRecipes(holder, recipes) ? Outcome.CHANGED : Outcome.UNCHANGED;
+    }
 
+    /**
+     * Replaces every recipe of {@code from} by the recipe at the same position in {@code to},
+     * in one write per holder, keeping the order (D44).
+     *
+     * <p>One recipe at a time through {@link #apply} would pass through states where a scaled
+     * recipe equals one not yet scaled, and the holder would briefly list it twice.
+     */
+    public static boolean mapHolder(ItemStack holder, List<IRecipeInfo> from,
+                                    List<IRecipeInfo> to) {
+        List<IRecipeInfo> recipes = new ArrayList<>(recipesOf(holder));
+        boolean changed = false;
+        for (int i = 0; i < recipes.size(); i++) {
+            int match = indexOf(from, recipes.get(i));
+            if (match >= 0) {
+                recipes.set(i, to.get(match));
+                changed = true;
+            }
+        }
+        return changed && setRecipes(holder, recipes);
+    }
+
+    /** {@link #mapHolder} on every machine of a group. A machine republishes its patterns once. */
+    public static int mapMachines(IGrid grid, List<ProviderSnapshot> machines,
+                                  List<IRecipeInfo> from, List<IRecipeInfo> to) {
+        int changed = 0;
+        for (ProviderSnapshot snapshot : machines) {
+            IPackageProvidingMachine machine = machineOf(grid, snapshot);
+            if (machine == null) {
+                continue;
+            }
+            ItemStack holder = machine.getPatternStack();
+            if (!holder.isEmpty() && mapHolder(holder, from, to)) {
+                machine.setPatternStack(holder);
+                changed++;
+            }
+        }
+        return changed;
+    }
+
+    /** Recipes listed by a holder. Empty for anything that is not a recipe holder. */
+    public static List<IRecipeInfo> recipesOf(ItemStack holder) {
+        if (!(holder.getItem() instanceof IRecipeListItem)) {
+            return new ArrayList<>();
+        }
+        IRecipeList recipeList = ((IRecipeListItem) holder.getItem()).getRecipeList(holder);
+        return recipeList == null ? new ArrayList<>() : recipeList.getRecipeList();
+    }
+
+    /** Replaces the list of a holder, in place. False when the item refuses. */
+    public static boolean setRecipes(ItemStack holder, List<IRecipeInfo> recipes) {
+        if (!(holder.getItem() instanceof IRecipeListItem)) {
+            return false;
+        }
+        IRecipeListItem holderItem = (IRecipeListItem) holder.getItem();
+        IRecipeList recipeList = holderItem.getRecipeList(holder);
+        if (recipeList == null) {
+            return false;
+        }
         recipeList.setRecipeList(recipes);
         holderItem.setRecipeList(holder, recipeList);
-        machine.setPatternStack(holder);
-        if (borrowed) {
-            result.supplied++;
-        }
-        return Outcome.CHANGED;
+        return true;
     }
 
     /**

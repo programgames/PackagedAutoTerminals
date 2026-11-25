@@ -10,9 +10,11 @@ import appeng.api.parts.IPart;
 import appeng.api.parts.IPartHost;
 import appeng.api.util.AEPartLocation;
 import appeng.helpers.WirelessTerminalGuiObject;
+import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.client.gui.GuiPatEditor;
 import fr.julien.packagedautoterminals.client.gui.GuiPatTerminal;
 import fr.julien.packagedautoterminals.common.EditorInventory;
+import fr.julien.packagedautoterminals.common.PatConfig;
 import fr.julien.packagedautoterminals.common.TerminalContext;
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.container.ContainerPatTerminal;
@@ -23,6 +25,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.IGuiHandler;
 import thelm.packagedauto.api.IRecipeInfo;
@@ -37,7 +40,8 @@ import thelm.packagedauto.api.IRecipeInfo;
  *   <li>0 to 6: wired terminal, on the matching face;
  *   <li>10 to 16: editor opened from that part;
  *   <li>20: wireless terminal. The x coordinate carries the inventory slot;
- *   <li>21: editor opened from the wireless terminal.
+ *   <li>21: editor opened from the wireless terminal;
+ *   <li>30: holder mode of the editor, with no terminal.
  * </ul>
  */
 public class PatGuiHandler implements IGuiHandler {
@@ -46,6 +50,8 @@ public class PatGuiHandler implements IGuiHandler {
     public static final int EDITOR = 10;
     public static final int WIRELESS = 20;
     public static final int WIRELESS_EDITOR = 21;
+    /** Holder mode of the editor (D43): no terminal, no network. The coordinates are unused. */
+    public static final int HOLDER = 30;
 
     /**
      * Target of the current edit, per player.
@@ -69,8 +75,29 @@ public class PatGuiHandler implements IGuiHandler {
         }
     }
 
+    /**
+     * Opens the holder mode, or says why not.
+     *
+     * <p>Every caller checks its own origin first: the sneak click of our item, or a terminal
+     * screen already open. This method only checks the server setting.
+     */
+    public static void openHolderEditor(EntityPlayer player) {
+        if (!PatConfig.portableEncoder) {
+            player.sendStatusMessage(new TextComponentTranslation(
+                    "gui.packagedautoterminals.portable_disabled"), true);
+            return;
+        }
+        player.openGui(PackagedAutoTerminals.instance, HOLDER, player.world, 0, 0, 0);
+    }
+
     @Override
     public Object getServerGuiElement(int id, EntityPlayer player, World world, int x, int y, int z) {
+        if (id == HOLDER) {
+            return PatConfig.portableEncoder
+                    ? new ContainerPatEditor(player.inventory,
+                            new EditorInventory(world, ContainerPatEditor.defaultRecipeType()))
+                    : null;
+        }
         TerminalContext context = context(id, player, world, x, y, z);
         if (context == null) {
             return null;
@@ -93,6 +120,10 @@ public class PatGuiHandler implements IGuiHandler {
 
     @Override
     public Object getClientGuiElement(int id, EntityPlayer player, World world, int x, int y, int z) {
+        if (id == HOLDER) {
+            return new GuiPatEditor(
+                    new ContainerPatEditor(player.inventory, new EditorInventory(world, null)));
+        }
         TerminalContext context = context(id, player, world, x, y, z);
         if (context == null) {
             return null;

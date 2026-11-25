@@ -9,6 +9,7 @@ import fr.julien.packagedautoterminals.common.CrafterTypes;
 import fr.julien.packagedautoterminals.common.EditorInventory;
 import fr.julien.packagedautoterminals.common.Feedback;
 import fr.julien.packagedautoterminals.common.FluidPackets;
+import fr.julien.packagedautoterminals.common.RecipeScale;
 import fr.julien.packagedautoterminals.container.ContainerPatEditor;
 import fr.julien.packagedautoterminals.network.PacketEditorSlot;
 import fr.julien.packagedautoterminals.network.PacketRecipeAction;
@@ -47,6 +48,8 @@ public class GuiPatEditor extends AEBaseGui {
     private static final int BUTTON_CLEAR = 5;
     private static final int BUTTON_TABS_PREVIOUS = 6;
     private static final int BUTTON_TABS_NEXT = 7;
+    private static final int BUTTON_SYNC = 8;
+    private static final int BUTTON_SCALE = 9;
     /** First id of the amount panel. Its buttons never reach {@code actionPerformed}. */
     private static final int BUTTON_PANEL = 100;
 
@@ -122,6 +125,9 @@ public class GuiPatEditor extends AEBaseGui {
     private static final int MESSAGE_TOP = 20;
     private static final int MESSAGE_WIDTH = ContainerPatEditor.WIDTH - 16;
 
+    /** Sync button of holder mode, on the title line, before the Back button. */
+    private static final int SYNC_LEFT = 140;
+
     /** Centre of the right column, to centre the type name and its icon. */
     private static final int RIGHT_CENTER = ContainerPatEditor.OUTPUT_LEFT + 27;
 
@@ -144,6 +150,9 @@ public class GuiPatEditor extends AEBaseGui {
             new appeng.fluids.client.render.FluidStackSizeRenderer();
 
     private final ContainerPatEditor editorContainer;
+    /** The two holder slots replace the group name field. */
+    private final boolean holderMode;
+    private GuiButton syncButton;
     private GuiButton saveButton;
     private GuiButton deleteButton;
     /** The two arrows of the tab row. They are greyed out when the row cannot move. */
@@ -178,6 +187,19 @@ public class GuiPatEditor extends AEBaseGui {
      */
     private final java.util.List<GuiButton> panelButtons = new java.util.ArrayList<>();
 
+    /**
+     * Scale panel (D44): one factor for every recipe of the group. It shares the plate and
+     * the place of the amount panel; only one of the two is ever open.
+     */
+    private GuiTextField scaleField;
+    /** Four quick factors, then Multiply, Divide and Cancel. */
+    private final java.util.List<GuiButton> scaleButtons = new java.util.ArrayList<>();
+    private static final int[] SCALE_PRESETS = {2, 4, 8, 16};
+    private static final int SCALE_PRESET_TOP = 24;
+    private static final int SCALE_FIELD_TOP = 52;
+    private static final int SCALE_COMMAND_TOP = 70;
+    private static final int SCALE_CANCEL_TOP = 98;
+
     private int lastFeedbackCount;
     private String message = "";
     private long messageExpiry;
@@ -187,8 +209,14 @@ public class GuiPatEditor extends AEBaseGui {
 
     public GuiPatEditor(InventoryPlayer inventory, TerminalContext terminal,
                         EditorInventory editor, int dimension, BlockPos pos, int index) {
-        super(new ContainerPatEditor(inventory, terminal, editor, dimension, pos, index));
-        this.editorContainer = (ContainerPatEditor) inventorySlots;
+        this(new ContainerPatEditor(inventory, terminal, editor, dimension, pos, index));
+    }
+
+    /** Also opens the holder mode, whose container carries no terminal (D43). */
+    public GuiPatEditor(ContainerPatEditor container) {
+        super(container);
+        this.editorContainer = container;
+        this.holderMode = container.isHolderMode();
         this.xSize = ContainerPatEditor.WIDTH;
         this.ySize = ContainerPatEditor.HEIGHT;
     }
@@ -207,7 +235,9 @@ public class GuiPatEditor extends AEBaseGui {
     public void initGui() {
         // The scale must be settled before anything is placed: every widget below reads
         // `width` and `height`.
-        if (scaleFit.apply(this, mc, xSize, ySize)) {
+        // Return only when the nested pass really built the screen: see the same line, and the
+        // crash it fixed, in GuiPatTerminal.initGui.
+        if (scaleFit.apply(this, mc, xSize, ySize) && nameField != null) {
             return;
         }
         super.initGui();
@@ -215,6 +245,7 @@ public class GuiPatEditor extends AEBaseGui {
         // A resize moves the whole screen. The panel carries absolute coordinates, so it
         // would stay behind, next to nothing.
         closeAmountField();
+        closeScalePanel();
 
         String previous = nameField == null ? editorContainer.groupName : nameField.getText();
         // Dark background, light text: same reason as the terminal search field.
@@ -255,6 +286,15 @@ public class GuiPatEditor extends AEBaseGui {
         buttonList.add(deleteButton);
         buttonList.add(new PatButton(BUTTON_CLEAR, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
                 guiTop + buttonTop + 36, 54, 16, I18n.format("gui.packagedautoterminals.clear")));
+        buttonList.add(new PatButton(BUTTON_SCALE, guiLeft + ContainerPatEditor.OUTPUT_LEFT,
+                guiTop + buttonTop + 54, 54, 16, "\u00D7N"));
+
+        if (holderMode) {
+            syncButton = new PatButton(BUTTON_SYNC, guiLeft + SYNC_LEFT, guiTop + 3, 32, 16,
+                    I18n.format("gui.packagedautoterminals.holder_sync"));
+            syncButton.visible = false;
+            buttonList.add(syncButton);
+        }
     }
 
     @Override
@@ -283,6 +323,12 @@ public class GuiPatEditor extends AEBaseGui {
             case BUTTON_CLEAR:
                 send(PacketRecipeAction.ACTION_CLEAR, 0);
                 break;
+            case BUTTON_SYNC:
+                send(PacketRecipeAction.ACTION_SYNC_HOLDERS, 0);
+                break;
+            case BUTTON_SCALE:
+                openScalePanel();
+                break;
             case BUTTON_BACK:
                 sendName();
                 send(PacketRecipeAction.ACTION_BACK, 0);
@@ -298,7 +344,7 @@ public class GuiPatEditor extends AEBaseGui {
     }
 
     private void sendName() {
-        if (nameField != null && !nameField.getText().equals(editorContainer.groupName)) {
+        if (!holderMode && nameField != null && !nameField.getText().equals(editorContainer.groupName)) {
             PatNetwork.CHANNEL.sendToServer(new PacketRenameGroup(nameField.getText()));
         }
     }
@@ -318,7 +364,7 @@ public class GuiPatEditor extends AEBaseGui {
         int wheel = org.lwjgl.input.Mouse.getEventDWheel();
         // While the panel is open, the wheel would change the slot behind the player back,
         // and the panel would keep showing the old amount.
-        if (wheel != 0 && amountField == null) {
+        if (wheel != 0 && amountField == null && scaleField == null) {
             int x = org.lwjgl.input.Mouse.getEventX() * width / mc.displayWidth;
             int y = height - org.lwjgl.input.Mouse.getEventY() * height / mc.displayHeight - 1;
             Slot slot = slotUnder(x, y);
@@ -405,10 +451,14 @@ public class GuiPatEditor extends AEBaseGui {
         if (amountField != null) {
             amountField.updateCursorCounter();
         }
+        if (scaleField != null) {
+            scaleField.updateCursorCounter();
+        }
 
         // The name comes from the server. We only overwrite it when the player is not
         // typing, otherwise every cycle would erase their input.
-        if (!nameField.isFocused() && !nameField.getText().equals(editorContainer.groupName)) {
+        if (!holderMode && !nameField.isFocused()
+                && !nameField.getText().equals(editorContainer.groupName)) {
             nameField.setText(editorContainer.groupName == null ? "" : editorContainer.groupName);
         }
     }
@@ -434,6 +484,10 @@ public class GuiPatEditor extends AEBaseGui {
             amountPanelClick(mouseX, mouseY, mouseButton);
             return;
         }
+        if (scaleField != null) {
+            scalePanelClick(mouseX, mouseY, mouseButton);
+            return;
+        }
 
         if ((mouseButton == 0 || mouseButton == 2) && !isShiftKeyDown()
                 && mc.player.inventory.getItemStack().isEmpty()) {
@@ -448,7 +502,10 @@ public class GuiPatEditor extends AEBaseGui {
             }
         }
 
-        nameField.mouseClicked(mouseX, mouseY, mouseButton);
+        // GuiTextField takes focus on a click even when hidden: holder mode skips it.
+        if (!holderMode) {
+            nameField.mouseClicked(mouseX, mouseY, mouseButton);
+        }
         super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
@@ -613,7 +670,7 @@ public class GuiPatEditor extends AEBaseGui {
      * <p>JEI reads it through {@code PatGuiAreas}, so its tooltips stop covering the buttons.
      */
     public java.awt.Rectangle panelArea() {
-        if (amountField == null) {
+        if (amountField == null && scaleField == null) {
             return null;
         }
         return new java.awt.Rectangle(panelLeft - 1, panelTop - 1, PANEL_WIDTH + 2, PANEL_HEIGHT + 2);
@@ -724,6 +781,18 @@ public class GuiPatEditor extends AEBaseGui {
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
+        if (scaleField != null) {
+            if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
+                applyScale(false);
+            } else if (keyCode == Keyboard.KEY_ESCAPE) {
+                closeScalePanel();
+            } else if (Character.isDigit(typedChar) || keyCode == Keyboard.KEY_BACK
+                    || keyCode == Keyboard.KEY_DELETE || keyCode == Keyboard.KEY_LEFT
+                    || keyCode == Keyboard.KEY_RIGHT) {
+                scaleField.textboxKeyTyped(typedChar, keyCode);
+            }
+            return;
+        }
         if (amountField != null) {
             if (keyCode == Keyboard.KEY_RETURN || keyCode == Keyboard.KEY_NUMPADENTER) {
                 applyAmountField();
@@ -786,21 +855,147 @@ public class GuiPatEditor extends AEBaseGui {
             drawHoveringText(java.util.Collections.singletonList(message), mouseX, mouseY);
         }
         drawMachineTooltip(mouseX, mouseY);
-        nameField.drawTextBox();
+        if (!holderMode) {
+            nameField.drawTextBox();
+        }
         drawAmountPanel(mouseX, mouseY, partialTicks);
+        drawScalePanel(mouseX, mouseY, partialTicks);
+    }
+
+    /** Opens the scale panel over the middle of the grid. */
+    private void openScalePanel() {
+        closeAmountField();
+        panelLeft = guiLeft + (xSize - PANEL_WIDTH) / 2;
+        panelTop = guiTop + ContainerPatEditor.GRID_TOP + 20;
+
+        scaleButtons.clear();
+        for (int index = 0; index < SCALE_PRESETS.length; index++) {
+            scaleButtons.add(new PatButton(BUTTON_PANEL + index, panelLeft + 4 + index * 29,
+                    panelTop + SCALE_PRESET_TOP, 27, PANEL_BUTTON_HEIGHT,
+                    "\u00D7" + SCALE_PRESETS[index]));
+        }
+        scaleButtons.add(new PatButton(BUTTON_PANEL + 4, panelLeft + 4,
+                panelTop + SCALE_COMMAND_TOP, 56, PANEL_BUTTON_HEIGHT,
+                I18n.format("gui.packagedautoterminals.scale_multiply")));
+        scaleButtons.add(new PatButton(BUTTON_PANEL + 5, panelLeft + 62,
+                panelTop + SCALE_COMMAND_TOP, 56, PANEL_BUTTON_HEIGHT,
+                I18n.format("gui.packagedautoterminals.scale_divide")));
+        scaleButtons.add(new PatButton(BUTTON_PANEL + 6, panelLeft + 4,
+                panelTop + SCALE_CANCEL_TOP, PANEL_WIDTH - 8, PANEL_BUTTON_HEIGHT,
+                I18n.format("gui.packagedautoterminals.cancel")));
+
+        scaleField = new GuiTextField(2, fontRenderer,
+                panelLeft + 6, panelTop + SCALE_FIELD_TOP, PANEL_WIDTH - 14, 12);
+        scaleField.setMaxStringLength(2);
+        scaleField.setTextColor(COLOR_FIELD_TEXT);
+        scaleField.setText(String.valueOf(RecipeScale.MIN_FACTOR));
+        scaleField.setFocused(true);
+        nameField.setFocused(false);
+    }
+
+    private void closeScalePanel() {
+        scaleField = null;
+        scaleButtons.clear();
+    }
+
+    /** Same rule as the amount panel: a click outside cancels, and reaches nothing else. */
+    private void scalePanelClick(int mouseX, int mouseY, int mouseButton) {
+        if (mouseButton == 0) {
+            for (int index = 0; index < scaleButtons.size(); index++) {
+                if (!scaleButtons.get(index).mousePressed(mc, mouseX, mouseY)) {
+                    continue;
+                }
+                scaleButtons.get(index).playPressSound(mc.getSoundHandler());
+                if (index < SCALE_PRESETS.length) {
+                    scaleField.setText(String.valueOf(SCALE_PRESETS[index]));
+                } else if (index == SCALE_PRESETS.length) {
+                    applyScale(false);
+                } else if (index == SCALE_PRESETS.length + 1) {
+                    applyScale(true);
+                } else {
+                    closeScalePanel();
+                }
+                return;
+            }
+        }
+        if (scaleField.mouseClicked(mouseX, mouseY, mouseButton)) {
+            return;
+        }
+        if (mouseX < panelLeft || mouseX >= panelLeft + PANEL_WIDTH
+                || mouseY < panelTop || mouseY >= panelTop + PANEL_HEIGHT) {
+            closeScalePanel();
+        }
+    }
+
+    /** Sends the factor. A factor out of range keeps the panel open, with nothing sent. */
+    private void applyScale(boolean divide) {
+        int factor;
+        try {
+            factor = Integer.parseInt(scaleField.getText().trim());
+        } catch (NumberFormatException exception) {
+            return;
+        }
+        if (factor < RecipeScale.MIN_FACTOR || factor > RecipeScale.MAX_FACTOR) {
+            return;
+        }
+        send(PacketRecipeAction.ACTION_SCALE_ALL, divide ? -factor : factor);
+        closeScalePanel();
+    }
+
+    private void drawScalePanel(int mouseX, int mouseY, float partialTicks) {
+        if (scaleField == null) {
+            return;
+        }
+        resetColour();
+        drawPanelPlate();
+        fontRenderer.drawString(fontRenderer.trimStringToWidth(
+                        I18n.format("gui.packagedautoterminals.scale_title"), PANEL_WIDTH - 10),
+                panelLeft + 5, panelTop + 9, COLOR_TEXT);
+        for (GuiButton button : scaleButtons) {
+            button.drawButton(mc, mouseX, mouseY, partialTicks);
+        }
+        scaleField.drawTextBox();
     }
 
     @Override
     public void drawBG(int offsetX, int offsetY, int mouseX, int mouseY) {
         bindTexture(Reference.MOD_ID, "guis/pat_editor.png");
         drawModalRectWithCustomSizedTexture(offsetX, offsetY, 0, 0, xSize, ySize, SHEET, SHEET);
+        if (holderMode) {
+            drawHolderBand(offsetX, offsetY);
+        }
+    }
+
+    /**
+     * Holder mode: the name field of the sheet is covered with the plate colour, and the two
+     * holder slots get the recess of a vanilla slot. No texture change for one mode.
+     */
+    private void drawHolderBand(int offsetX, int offsetY) {
+        drawRect(offsetX + ContainerPatEditor.NAME_LEFT, offsetY + ContainerPatEditor.NAME_TOP,
+                offsetX + ContainerPatEditor.NAME_LEFT + ContainerPatEditor.NAME_WIDTH,
+                offsetY + ContainerPatEditor.NAME_TOP + ContainerPatEditor.NAME_HEIGHT,
+                COLOR_PANEL);
+        for (int left : new int[] {ContainerPatEditor.HOLDER_LEFT, ContainerPatEditor.TWIN_LEFT}) {
+            int x = offsetX + left;
+            int y = offsetY + ContainerPatEditor.HOLDER_TOP;
+            drawRect(x - 1, y - 1, x + 17, y + 17, COLOR_BOX_EDGE);
+            drawRect(x, y, x + 17, y + 17, COLOR_PANEL_LIGHT);
+            drawRect(x, y, x + 16, y + 16, COLOR_BOX_FILL);
+        }
+        resetColour();
     }
 
     @Override
     public void drawFG(int offsetX, int offsetY, int mouseX, int mouseY) {
         EditorInventory editor = editorContainer.editor;
 
-        if (nameField != null && nameField.getText().isEmpty() && !nameField.isFocused()) {
+        if (holderMode) {
+            drawHolderLabel("gui.packagedautoterminals.holder_main", ContainerPatEditor.HOLDER_LEFT);
+            drawHolderLabel("gui.packagedautoterminals.holder_twin", ContainerPatEditor.TWIN_LEFT);
+            if (syncButton != null) {
+                syncButton.visible = editorContainer.drift;
+            }
+        } else if (nameField != null && nameField.getText().isEmpty() && !nameField.isFocused()) {
             fontRenderer.drawString(I18n.format("gui.packagedautoterminals.name_hint"),
                     ContainerPatEditor.NAME_LEFT + 5, ContainerPatEditor.NAME_TOP + 4, 0x707070);
         }
@@ -830,6 +1025,15 @@ public class GuiPatEditor extends AEBaseGui {
         }
     }
 
+    /** Name of a holder slot, right of it, trimmed so it never runs into the next slot. */
+    private void drawHolderLabel(String key, int slotLeft) {
+        int left = slotLeft + 20;
+        int room = (slotLeft == ContainerPatEditor.HOLDER_LEFT
+                ? ContainerPatEditor.TWIN_LEFT - 2 : SYNC_LEFT - 2) - left;
+        fontRenderer.drawString(fontRenderer.trimStringToWidth(I18n.format(key), room),
+                left, ContainerPatEditor.HOLDER_TOP + 4, COLOR_TEXT);
+    }
+
     /** Server message, or recipe state, on the line below the title. */
     private void drawMessage(EditorInventory editor) {
         if (editorContainer.feedbackCount != lastFeedbackCount) {
@@ -848,7 +1052,16 @@ public class GuiPatEditor extends AEBaseGui {
             return;
         }
         messageTrimmed = false;
-        if (editor.recipeInfo == null) {
+        if (holderMode && editorContainer.holders.getStackInSlot(0).isEmpty()
+                && editorContainer.holders.getStackInSlot(1).isEmpty()) {
+            fontRenderer.drawString(I18n.format("gui.packagedautoterminals.holder_hint"),
+                    8, MESSAGE_TOP, COLOR_DIM);
+        } else if (holderMode && editorContainer.drift) {
+            fontRenderer.drawString(fitMessage(I18n.format("gui.packagedautoterminals.holder_drift")),
+                    8, MESSAGE_TOP, COLOR_WARNING);
+        } else if (editor.recipeInfo == null && !editor.isEmpty()) {
+            // An empty grid is a recipe not started yet, not an invalid one. Holder mode opens
+            // on an empty grid, and the warning showed before the player had done anything.
             fontRenderer.drawString(I18n.format("gui.packagedautoterminals.invalid"),
                     8, 20, COLOR_WARNING);
         }

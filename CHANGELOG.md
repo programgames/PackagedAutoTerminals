@@ -5,6 +5,39 @@ numbering follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Edit a recipe holder with no ME network.** A machine that runs on its own, outside any
+  network, could only change its recipes at a Package Recipe Encoder block. Sneak and right
+  click with the wireless terminal, or click the Encoder icon in the tool strip of either
+  terminal: the editor opens with two slots, a main holder and its twin. Save and Delete write
+  to both at once, so a Packager and its Unpackager keep the same list. When the two lists
+  differ, a Sync button copies every missing recipe into the holder that lacks it, and deletes
+  nothing: a blank holder in the twin slot becomes a copy. The holders go back to the
+  inventory when the screen closes. The `portableEncoder` setting turns the feature off.
+- **Scale every recipe of a group at once.** A machine that gains a parallel upgrade needs all
+  of its recipes multiplied, and the amount panel did one recipe at a time. The `×N` button of
+  the editor multiplies or divides every processing recipe of the group, outputs included, on
+  every machine, or on both holders in holder mode. Craft recipes are locked to one per cell,
+  so they are skipped and counted. Nothing is written unless every recipe can be scaled: an
+  amount that does not divide, an amount past the limit, or two recipes that would become one
+  stop the whole operation, and the message names the recipe.
+
+### Fixed
+
+- **A new recipe keeps the type of the group.** The creation tab restarted on the default
+  type every time, and in a pack that disables the Package Crafter, such as MeatballCraft,
+  that default was Positioned Processing. A new recipe now takes the type of the tab the
+  player came from, and the default falls back to Processing before anything else.
+- **A click on the tab already open does nothing.** It used to reload the same recipe and
+  resend the whole inventory, so the held item bobbed as if something had happened.
+- **The terminal no longer crashes on a small window in some packs** (`this.search is null`).
+  When the screen is taller than the window, the mod lowers the GUI scale and builds the
+  screen again at the new size. In some packs that second build never ran, and the screen
+  was drawn with no widget. The terminal and the editor now finish the build themselves.
+- **An empty grid no longer reads "Invalid recipe".** A new recipe opened on that warning
+  before the player had placed a single item.
+
 ## [0.1.0-beta.9] - 2026-10-01
 
 A repair and performance release. It also adds the one thing the mod promised and did not do:

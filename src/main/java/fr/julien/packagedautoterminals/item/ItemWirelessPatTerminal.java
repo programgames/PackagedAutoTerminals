@@ -53,6 +53,13 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
             return new ActionResult<>(EnumActionResult.SUCCESS, stack);
         }
 
+        // Holder mode (D43) comes before the link check: it exists for machines that sit on
+        // no network at all.
+        if (player.isSneaking()) {
+            PatGuiHandler.openHolderEditor(player);
+            return new ActionResult<>(EnumActionResult.SUCCESS, stack);
+        }
+
         if (getEncryptionKey(stack).isEmpty()) {
             player.sendStatusMessage(
                     new TextComponentTranslation("gui.packagedautoterminals.not_linked"), true);
@@ -170,5 +177,6 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
         super.addCheckedInformation(stack, world, lines, flag);
         lines.add(net.minecraft.client.resources.I18n.format("tip.packagedautoterminals.wireless"));
         lines.add(net.minecraft.client.resources.I18n.format("tip.packagedautoterminals.wireless_link"));
+        lines.add(net.minecraft.client.resources.I18n.format("tip.packagedautoterminals.wireless_holder"));
     }
 }

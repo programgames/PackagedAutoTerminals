@@ -137,10 +137,15 @@ Eight releases shipped, from `0.1.0-beta.1` to `0.1.0-beta.9`. The test protocol
 
 1. **Publish on CurseForge.** The metadata, the logo, the update file and the release
    workflow are in place. The project page and the two secrets are not.
-2. **Baubles**, so the wireless terminal sits in a bauble slot.
-3. **Duplicate a recipe** in the editor. To encode a variant, the player retypes everything.
-4. **The R2 measurement**: the size of the snapshot packet on a loaded network. Revision R2
+2. **Holder mode**, decision D43: the wireless terminal edits one recipe holder, or a pair,
+   with no ME network. Asked by a tester. Coded on 2026-10-25; tests in `docs/TESTING.md`
+   group O, not run yet.
+   **Scale every recipe**, decision D44, asked by the same tester, coded the same day; tests in
+   group P, not run yet.
+3. **Baubles**, so the wireless terminal sits in a bauble slot.
+4. **Duplicate a recipe** in the editor. To encode a variant, the player retypes everything.
+5. **The R2 measurement**: the size of the snapshot packet on a loaded network. Revision R2
    accepted the simple "resend everything" path until a figure proves it too costly, and no
    figure has been taken.
-5. **Gases**, which need a format nobody has verified in game.
-6. **The 1.16 port**, described in `docs/PORTING.md`.
+6. **Gases**, which need a format nobody has verified in game.
+7. **The 1.16 port**, described in `docs/PORTING.md`.

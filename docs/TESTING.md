@@ -752,6 +752,131 @@ machine, and `IPackageCraftingMachine.isBusy` is the test to use.
 
 ---
 
+## O — Holder mode, with no network 🆕 coded, not tested in game
+
+> Written on 2026-10-25 from decision D43. Every test runs **far from any ME network**, unless
+> it says otherwise.
+
+### O1 — Open it
+
+1. Unlink the wireless terminal, or walk out of range.
+2. Sneak and right click with it.
+
+**Expected**: the holder mode opens, with an empty main slot and an empty twin slot. No
+energy leaves the terminal. With `portableEncoder=false`, nothing opens and nothing is said
+beyond the usual refusal.
+
+### O2 — Edit a lone holder
+
+1. Put a holder with three recipes in the main slot.
+2. Change the second recipe, Save. Delete the third.
+3. Close the screen, put the holder back into its machine.
+
+**Expected**: the tab row shows the three recipes as soon as the holder lands. The machine
+then offers two patterns to AE2, the second one changed.
+
+### O3 — Edit a pair
+
+1. Take the holders of a Packager and of its Unpackager.
+2. Put one in the main slot and the other in the twin slot.
+3. Add a recipe, Save. Delete another one.
+
+**Expected**: both holders carry the same list afterwards. Put them back: the online terminal
+shows one group, with no drift chip.
+
+### O4 — Copy into a blank holder
+
+1. Put a holder with recipes in the main slot, and a blank holder in the twin slot.
+2. The drift warning shows. Press the two-arrow button.
+
+**Expected**: the twin holder now carries the same list. The main holder lost nothing.
+
+### O5 — A full twin
+
+1. Main holder with 19 recipes, twin holder with 20 different ones.
+2. Add a recipe and Save.
+
+**Expected**: `group_full`, and neither holder changed.
+
+### O6 — Close with the inventory full
+
+1. Fill the player inventory, then open the holder mode and insert two holders by taking them
+   from a chest.
+2. Close the screen.
+
+**Expected**: both holders drop at the player's feet. Nothing is lost.
+
+### O7 — The button, online
+
+1. Open the wired terminal, then the wireless one in range.
+
+**Expected**: both show the holder mode button, and it opens the same screen as O1.
+
+### O8 — A stack of two holders
+
+1. Try to drop a stack of two blank holders into the main slot.
+
+**Expected**: the slot takes one holder only.
+
+---
+
+## P — Scale every recipe 🆕 coded, not tested in game
+
+> Written on 2026-10-25 from decision D44.
+
+### P1 — Multiply a group
+
+1. Encode three processing recipes on a pair, for example 1 iron ore → 2 iron dust.
+2. Open one of them, press `×N`, then `×4`, then Multiply.
+
+**Expected**: `3 recipes scaled`. Every recipe reads four times its amounts, outputs
+included, on both machines. The open tab shows the scaled version of its recipe.
+
+### P2 — Divide back
+
+1. After P1, press `×N`, type 4, then Divide.
+
+**Expected**: the recipes are back to their first amounts.
+
+### P3 — A division that does not fall right
+
+1. A recipe with 3 of an item. Divide by 2.
+
+**Expected**: a refusal that names the recipe. No recipe changed, on any machine.
+
+### P4 — A mixed group
+
+1. A group with two processing recipes and one craft recipe. Multiply by 2.
+
+**Expected**: `2 recipes scaled, 1 craft recipes skipped`. The craft recipe is unchanged.
+
+### P5 — Two recipes that become one (dropped)
+
+No test can reach the `scale_collision` refusal. One factor applies to every amount, so two
+different recipes stay different: A (1 → 1) and B (2 → 2) become 2 → 2 and 4 → 4. A
+division that would merge them is refused first as not exact. The check stays in the code
+as a guard.
+
+### P6 — Unsaved work
+
+1. Change an amount in the open tab without saving. Multiply by 2.
+
+**Expected**: the `unsaved` message. Nothing changed.
+
+### P7 — Holder mode
+
+1. In holder mode, put a pair of holders in. Multiply by 2.
+
+**Expected**: both holders carry the scaled list.
+
+### P8 — The limit
+
+1. A recipe with 3000 of an item. Multiply by 2.
+
+**Expected**: a refusal that names the recipe. Nothing changed.
+
+---
+
 ## Where I expect trouble
 
 In decreasing order of probability:
