@@ -26,6 +26,12 @@ jobs:
       # download beyond Gradle itself.
       - run: ./gradlew build --no-daemon
 
+      # Starts a dedicated server, then stops it. A client class reached on the server side
+      # would stop the start. Here run/mods is empty, so only the libs/maven mods load: the
+      # optional integrations must stay out of the way.
+      - run: bash tools/server-smoke.sh
+        timeout-minutes: 10
+
       - name: Keep the test report when a test fails
         if: failure()
         uses: actions/upload-artifact@v4
