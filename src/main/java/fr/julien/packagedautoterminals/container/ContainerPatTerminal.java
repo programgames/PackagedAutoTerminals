@@ -43,8 +43,13 @@ public class ContainerPatTerminal extends AEBaseContainer {
     // tools/make_gui_texture.py, which draws the sheet.
     /** Screen width. */
     public static final int WIDTH = 320;
-    /** Visible rows. The sheet draws sixteen: this number can grow without redrawing it. */
-    public static final int ROWS = 12;
+    /**
+     * Visible rows. The sheet draws sixteen: this number can grow without redrawing it.
+     *
+     * <p>Ten keeps the screen at 331 pixels, under the 360 a 1080 pixel display gives at GUI
+     * scale 3. Twelve made it 367, and {@code GuiScaleFit} dropped that display to scale 2.
+     */
+    public static final int ROWS = 10;
     /** Rows drawn in the sheet. Used to locate the bottom of the screen. */
     public static final int SHEET_ROWS = 16;
     /** Height of the screen footer: status bar, inventory, margin. */

@@ -1308,7 +1308,10 @@ public class ContainerPatEditor extends AEBaseContainer {
         if (skipped > 0) {
             tell("gui.packagedautoterminals.recipes_scaled_skipped", from.size(), skipped);
         } else {
-            tell("gui.packagedautoterminals.recipes_scaled", from.size());
+            tell(from.size() == 1
+                            ? "gui.packagedautoterminals.recipes_scaled_one"
+                            : "gui.packagedautoterminals.recipes_scaled",
+                    from.size());
         }
 
         // The open tab follows its recipe to its scaled version.

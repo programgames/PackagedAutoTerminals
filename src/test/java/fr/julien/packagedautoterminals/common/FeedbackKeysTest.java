@@ -45,6 +45,7 @@ public class FeedbackKeysTest {
             "holders_written",
             "name_merges",
             "recipes_scaled",
+            "recipes_scaled_one",
             "recipes_scaled_skipped",
             "renamed"));
 

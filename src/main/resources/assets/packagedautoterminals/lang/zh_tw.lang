@@ -146,5 +146,6 @@ gui.packagedautoterminals.scale_not_exact=已拒絕：%s 的數量無法整除
 gui.packagedautoterminals.scale_too_large=已拒絕：%s 會超過數量上限
 gui.packagedautoterminals.scale_invalid=已拒絕：%s 將不再是有效配方
 gui.packagedautoterminals.recipes_scaled=已縮放配方：%d
+gui.packagedautoterminals.recipes_scaled_one=已縮放配方：%d
 gui.packagedautoterminals.recipes_scaled_skipped=已縮放配方：%d，略過合成配方：%d
 gui.packagedautoterminals.scale_unsaved=請先儲存開啟的配方

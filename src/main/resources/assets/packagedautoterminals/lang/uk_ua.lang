@@ -146,5 +146,6 @@ gui.packagedautoterminals.scale_not_exact=Відхилено: кількість
 gui.packagedautoterminals.scale_too_large=Відхилено: %s перевищить межу кількості
 gui.packagedautoterminals.scale_invalid=Відхилено: %s перестане бути правильним рецептом
 gui.packagedautoterminals.recipes_scaled=Масштабовано рецептів: %d
+gui.packagedautoterminals.recipes_scaled_one=Масштабовано %d рецепт
 gui.packagedautoterminals.recipes_scaled_skipped=Масштабовано рецептів: %d, пропущено рецептів крафту: %d
 gui.packagedautoterminals.scale_unsaved=Спершу збережіть відкритий рецепт

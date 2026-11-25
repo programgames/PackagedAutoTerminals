@@ -407,8 +407,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 100 tests, checkLang 149 clés. HEIGHT = 331 px, tient à l'échelle 3 en 1920×1080 (TerminalSizeTest). Backlog : en police Unicode (ja, ko, zh, ru, uk), Minecraft ramène l'échelle 3 à 2 et GuiScaleFit ne copie pas cette règle ; recipes_scaled_skipped garde « 1 recipes » ; tools/preview_terminal.py garde ROWS = 12."
     },
     {
       "id": "T19",

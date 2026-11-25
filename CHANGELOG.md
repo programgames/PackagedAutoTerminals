@@ -37,6 +37,12 @@ numbering follows [SemVer](https://semver.org/).
   was drawn with no widget. The terminal and the editor now finish the build themselves.
 - **An empty grid no longer reads "Invalid recipe".** A new recipe opened on that warning
   before the player had placed a single item.
+- **The terminal keeps GUI scale 3 on a 1080p screen.** It was 367 pixels tall, seven more
+  than that scale leaves, so the game dropped to scale 2 each time it opened. It now shows
+  ten rows instead of twelve and is 331 pixels tall.
+- **The holder editor speaks the language of the player.** The Holder label stayed in English
+  in ten languages and the Sync button in nine, and a single scaled recipe read "1 recipes
+  scaled".
 
 ## [0.1.0-beta.9] - 2026-10-01
 
@@ -127,7 +133,7 @@ a machine with no recipe holder is served from the ME network.
   toggle the two views, and the title disappeared behind it. Two tabs now carry an item icon
   and a label, the open one raised and the other sunken, the way AE2 draws its own. The title
   stays in a band of its own, with the search field. The counts moved into a shallow recess
-  under the list, instead of floating on the panel. The screen grows from 338 to 362 pixels
+  under the list, instead of floating on the panel. The screen grows from 338 to 367 pixels
   tall; `GuiScaleFit` already handles a small window. Two pixels of panel separate the band
   from the strip and three separate the strip from the list, four separate the two tabs, and
   the icon and the label of a tab each keep their air. Without that the three bands read as

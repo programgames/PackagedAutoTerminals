@@ -146,5 +146,6 @@ gui.packagedautoterminals.scale_not_exact=Refused: an amount of %s does not divi
 gui.packagedautoterminals.scale_too_large=Refused: %s would pass the amount limit
 gui.packagedautoterminals.scale_invalid=Refused: %s would no longer be a valid recipe
 gui.packagedautoterminals.recipes_scaled=%d recipes scaled
+gui.packagedautoterminals.recipes_scaled_one=%d recipe scaled
 gui.packagedautoterminals.recipes_scaled_skipped=%d recipes scaled, %d craft recipes skipped
 gui.packagedautoterminals.scale_unsaved=Save the open recipe first

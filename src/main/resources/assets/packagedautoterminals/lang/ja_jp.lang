@@ -146,5 +146,6 @@ gui.packagedautoterminals.scale_not_exact=拒否: %s の数量が割り切れま
 gui.packagedautoterminals.scale_too_large=拒否: %s が数量の上限を超えます
 gui.packagedautoterminals.scale_invalid=拒否: %s が有効なレシピでなくなります
 gui.packagedautoterminals.recipes_scaled=倍率を変更したレシピ: %d
+gui.packagedautoterminals.recipes_scaled_one=倍率を変更したレシピ: %d
 gui.packagedautoterminals.recipes_scaled_skipped=倍率を変更したレシピ: %d、スキップしたクラフトレシピ: %d
 gui.packagedautoterminals.scale_unsaved=先に開いているレシピを保存してください
