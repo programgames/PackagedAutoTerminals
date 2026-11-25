@@ -715,6 +715,92 @@
       "taille": "S",
       "statut": "a_faire",
       "note": "Créé après la revue de T14."
+    },
+    {
+      "id": "T34",
+      "titre": "Le CHANGELOG et les règles de code suivent l'audit",
+      "type": "dette",
+      "pourquoi": "T09, T10, T12, T14, T17, T19 et T20 changent le comportement visible sans ligne de CHANGELOG. Quatre règles de jugement reviennent dans les constats et n'ont pas de document.",
+      "constats": [
+        "C-AR-18",
+        "C-MC-03",
+        "C-PR-01",
+        "C-PR-02"
+      ],
+      "criteres": [
+        "La section [Unreleased] de CHANGELOG.md décrit chaque changement visible des tickets T07 à T20, et l'entrée beta.9 « One button puts the recipe holders in, and takes them out » est corrigée.",
+        "CODING_STANDARDS.md existe et contient les quatre lignes de jugement de la section 9 de docs/audit/RAPPORT.md.",
+        "docs/CURSEFORGE.md et docs/curseforge-description.md décrivent les gestes actuels."
+      ],
+      "verification": "./gradlew build --console=plain && test -f CODING_STANDARDS.md",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": "Créé par la rétrospective."
+    },
+    {
+      "id": "T35",
+      "titre": "La CI refuse une branche qui change le code sans CHANGELOG",
+      "type": "harnais",
+      "pourquoi": "Le CHANGELOG a pris du retard sur sept tickets de suite. Un contrôle mécanique coûte moins que la mémoire.",
+      "constats": [
+        "C-AR-18"
+      ],
+      "criteres": [
+        "Une étape de .github/workflows/build.yml échoue quand la branche modifie src/main par rapport à origin/main sans modifier la section [Unreleased] de CHANGELOG.md.",
+        "L'étape ne s'applique pas à main ni aux étiquettes de version.",
+        "Le message d'échec dit quoi faire."
+      ],
+      "verification": "Sur une branche de test locale, simuler le contrôle avec la même commande que l'étape CI : modification de src/main seule → échec ; avec CHANGELOG → succès.",
+      "porte": "double_sens",
+      "bloque_par": [
+        "T34"
+      ],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": "Créé par la rétrospective."
+    },
+    {
+      "id": "T36",
+      "titre": "Un test interdit qu'un onUpdate change l'état du serveur",
+      "type": "harnais",
+      "pourquoi": "AE2 applique côté serveur les valeurs @GuiSync envoyées par le client (PacketProgressBar). Un nouveau champ @GuiSync peut rouvrir ce chemin sans que personne le voie.",
+      "constats": [
+        "C-MC-07"
+      ],
+      "criteres": [
+        "Un test JUnit lit les conteneurs de src/main et liste chaque redéfinition de onUpdate.",
+        "Le test échoue si une redéfinition modifie un champ ou appelle une méthode d'écriture sans garde world.isRemote (ou sans être sur une liste explicite d'exceptions justifiées).",
+        "Cliquet : on mesure l'existant après T33, et la liste des exceptions ne peut plus grandir."
+      ],
+      "verification": "./gradlew cleanTest test --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [
+        "T33"
+      ],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": "Créé par la rétrospective."
+    },
+    {
+      "id": "T37",
+      "titre": "Vérifier le double chargement de MixinBooter en développement",
+      "type": "verification",
+      "pourquoi": "CLAUDE.md et build.gradle disent que ForgeGradle ne met pas les entrées compileOnly sur le chemin d'exécution. Le journal local montre « Multiple Mixin containers present » : MixinBooter vient de libs/ et de run/mods.",
+      "constats": [
+        "C-VE-06"
+      ],
+      "criteres": [
+        "La cause est prouvée par le chemin d'exécution de runClient (tâche printRcp ou journal).",
+        "CLAUDE.md ou build.gradle est corrigé pour dire la vérité, et un seul MixinBooter se charge en développement."
+      ],
+      "verification": "bash tools/server-smoke.sh, puis grep -c 'Multiple Mixin containers' run/logs/latest.log → 0",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": "Créé par la rétrospective (revue de T06)."
     }
   ]
 }
