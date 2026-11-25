@@ -736,8 +736,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "Créé par la rétrospective."
+      "statut": "bloque",
+      "note": "Créé par la rétrospective. Bloqué après deux revues refusées. Essai 1 : une ligne du CHANGELOG promettait un avertissement rouge que le code donne seulement si le groupe a déjà des recettes, qu'il manque un rôle et que la sauvegarde n'écrit qu'une machine. Essai 2 : la règle 3 de CODING_STANDARDS.md est fausse pour le code actuel (Delete de l'éditeur supprime en un clic, voulu par T09 ; clic droit vide une case fantôme), la règle 1 ne dit pas que ~49 commentaires anciens ne la suivent pas, et la ligne T24 du CHANGELOG oublie que l'onglet Machines n'affiche que le texte libre. Toutes les autres lignes ont été vérifiées exactes. Le diff du second essai est gardé dans docs/audit/T34-essai.patch (git apply) : il reste trois phrases à corriger."
     },
     {
       "id": "T35",
@@ -758,8 +758,8 @@
         "T34"
       ],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "Créé par la rétrospective."
+      "statut": "bloque",
+      "note": "Créé par la rétrospective. Bloqué par T34."
     },
     {
       "id": "T36",
