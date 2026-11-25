@@ -14,8 +14,9 @@ group gathers the machines that carry exactly the same recipes, or that share a 
 the player (D38). The `Packager Extension` does not implement `IPackageProvidingMachine`: the
 terminal does not list it.
 
-Actions: add a recipe, remove a recipe, edit a recipe, change its type, move a Recipe Holder
-from one machine to another.
+Actions: add a recipe, remove a recipe, edit a recipe, change its type, repair a group, give
+blank Recipe Holders from the ME network to the machines of a group that lack one, send the
+Recipe Holders of a group back to the network.
 
 Filters: by machine name, by recipe type, by input or output item.
 
@@ -62,8 +63,9 @@ fr.julien.packagedautoterminals/
 ```
 
 The addons (PackagedExCrafting, PackagedAvaritia, PackagedFluidCrafting, PackagingProvider)
-have no package of their own. The code names their classes by string: `CrafterTypes` and
-`ProviderRole` for the machines, `FluidPackets` for the fluids (R5).
+have no package of their own. `CrafterTypes` and `ProviderRole` name the machine classes of
+the addons by string. `FluidPackets` checks the PackagedFluidCrafting modid, and names the AE2FC
+item `ae2fc:fluid_packet` by its registry id (R5).
 
 `src/test/java` holds the JUnit tests of the logic that runs without a world: search, pairing,
 scaling, list operations of `RecipeWriter`, messages, network protocol, snapshot size.
@@ -106,10 +108,10 @@ SERVER, ContainerPatTerminal                        CLIENT
 
 `ContainerPatEditor` opens on one recipe of a group, or on two recipe holders in holder mode
 (D43). The vanilla container synchronises its slots. The client rebuilds the recipe from them,
-as the Encoder does, to draw the preview and enable Save; it never writes it. The server
-rebuilds the recipe on every change, and writes it into the group at Save. JEI and the amount
-panel go through `PacketEditorFill`, `PacketEditorGhost` and `PacketEditorSlot`, which the
-server checks slot by slot.
+as the Encoder does, to draw the preview, enable Save and show the "Invalid recipe" line; it
+never writes it. The server rebuilds the recipe on every change, and writes it into the group
+at Save. JEI and the amount panel go through `PacketEditorFill`, `PacketEditorGhost` and
+`PacketEditorSlot`, which the server checks slot by slot.
 
 ### Opening
 

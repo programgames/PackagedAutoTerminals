@@ -62,7 +62,9 @@ numbering follows [SemVer](https://semver.org/).
   terminal holds about fifty such pairs. Past that size, it shows a red notice instead.
 - **Four refusals were drawn in the colour of a success:** a machine that left the network, a
   missing permission, no blank holder in storage, and a partial return of the holders. The
-  repair button now also says when it took blank holders from the network, as Save does.
+  repair button now also says when it took blank holders from the network, as Save does. It
+  takes one only when a machine lost its recipe holder after the list last refreshed: a machine
+  that the list shows without a recipe holder gets the insertion button instead.
 - **The "problems only" filter hid a red row.** A group with recipes and a machine with no
   recipe holder was red, and the filter dropped it. The chip, its colour and the filter now
   read one state.

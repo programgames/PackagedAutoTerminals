@@ -822,8 +822,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "Créé par la rétrospective du passage 2, à partir des notes de T26, T27 et T37."
+      "statut": "fait",
+      "note": "Créé par la rétrospective du passage 2, à partir des notes de T26, T27 et T37. Revue acceptée : 7 fichiers de documentation, aucun code. Phrases encore fausses hors périmètre (backlog) : PLAN.md:94 (« one per integration module ») ; PLAN.md:92/130 (tableau daté du 2026-10-01 avec un fait du 2026-11-25) ; CLAUDE.md:64 (HadEnoughItems listé dans run/mods alors qu'il est dans libs/maven) ; build.yml:33 (« no download beyond Gradle ») ; Javadoc ContainerPatEditor.java:54-56."
     },
     {
       "id": "T39",

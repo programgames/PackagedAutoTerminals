@@ -81,7 +81,7 @@ Encoding through `IRecipeInfo.generateFromStacks()`, on the server. Validation t
 **Done when**: I add, edit and remove a recipe from the terminal, and AE2 sees the change
 without me touching the block.
 
-## Batch 4 — JEI and comfort ✅ written on 2026-09-13, not tested in game
+## Batch 4 — JEI and comfort ✅ written on 2026-09-13, tested in game by 2026-10-01
 
 `IRecipeType.getRecipeTransferMap(IRecipeLayout, String)` already exists in the API. The JEI
 transfer is therefore cheap, **provided** the editor is a real `Container` with ghost slots
@@ -89,7 +89,7 @@ indexed like the Encoder ones. Search, filters, sorting.
 
 **Done when**: the JEI "+" button fills the terminal editor.
 
-## Batch 5 — "Machines" tab and diagnostic ✅ written on 2026-09-13, not tested in game
+## Batch 5 — "Machines" tab and diagnostic ✅ written on 2026-09-13, tested in game by 2026-10-01, except the orphan recipe warning
 
 Mapping table `recipe type → crafter class`, one per integration module. List of the
 crafters, `isBusy()` state, warning about orphan recipes.
@@ -126,7 +126,8 @@ This point is verified at the start of batch 1, never at batch 3.
 
 | Batch | State |
 |---|---|
-| 0, 1, 2, 3, 4, 5 | tested in game |
+| 0, 1, 2, 3, 4 | tested in game |
+| 5 — "Machines" tab and diagnostic | tested in game, except the orphan recipe warning (`docs/TESTING.md` F4 🆕) |
 | 6 — wireless terminal | tested in game |
 | 7 — integration, polish, release | AE2WUT and the opening key written and tested; Baubles not started |
 

@@ -146,18 +146,20 @@ is truly shared. See revision **R3** in `docs/DECISIONS.md`.
 
 ### 4.1 `DuplicateModsFoundException` when starting the dev client
 
-ForgeGradle puts the `deobfProvided` dependencies on the `runClient` runtime path. FML
-therefore loads them as mods. Putting the **same** jars into `run/mods` produces:
+ForgeGradle 2.3.10 adds `fileTree("libs")` to the `compile` configuration
+(`UserBasePlugin`). Every jar under `libs/`, `libs/maven` included, therefore sits on the
+`runClient` and `runServer` path, and FML loads it as a mod. Putting the **same** jar into
+`run/mods` produces:
 
 ```
 Found a duplicate mod appliedenergistics2 at [.\modse2-uel-v0.56.5.jar, ...\libs\...]
 ```
 
-**Rule**: any jar present in `libs/maven` must **never** be copied into `run/mods`.
+**Rule**: any jar present in `libs/` must **never** be copied into `run/mods`.
 
 This trap was hit twice: with AE2UEL, then with JEI, the day it became a compile dependency.
-The `checkDevMods` task now detects it, and `runClient` depends on it: the game can no longer
-start with a duplicate.
+The `checkDevMods` task now detects it for every `libs/**/*.jar`, and `runClient` and
+`runServer` depend on it: the game can no longer start with a duplicate.
 
 ### 4.2 Non-deobfuscated dependencies: two traps in a row
 

@@ -89,7 +89,7 @@ and the Unpackager, then open the terminal.
 → **One single** header line, "Packager/Unpackager pair", followed by **one single** recipe
 line.
 
-### B2 — The summary
+### B2 — The summary 🆕
 Look at the line above the inventory.
 → "2 machines · 1 recipe". Hovering the line shows nothing: `SnapshotSizeTest` measures the
 packet size at build time.
@@ -916,12 +916,10 @@ changed.
 
 ## Where I expect trouble
 
-In decreasing order of probability:
+In decreasing order of probability. Each one sits in a group or a test marked 🆕:
 
-1. **The editor tabs** (D2): they go through real slots, and the synchronisation of their
-   icons has never been observed.
-2. **The amount box** (D8): its position comes from the clicked slot, with no guard against the
-   screen edge.
-3. **The wireless terminal** (G): the container rework has no test behind it.
-4. **The JEI transfer** (D11): it relies on a PackagedAuto method that was never exercised.
-5. **Locating** (C1): rendering in the world touches the OpenGL state.
+1. **Holder mode** (O) and **scaling** (P): they write into recipe holders, and they have
+   never run in game.
+2. **The AE2WUT integration** (K): its mixins name the AE2WUT classes by string (decision
+   D33), so the compiler does not check them against AE2WUT.
+3. **Locating** (C1): rendering in the world touches the OpenGL state.
