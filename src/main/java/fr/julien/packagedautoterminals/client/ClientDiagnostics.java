@@ -6,6 +6,7 @@ import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import fr.julien.packagedautoterminals.Reference;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.client.resources.IResource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Loader;
@@ -62,9 +63,10 @@ public final class ClientDiagnostics {
                 "textures/parts/pat_terminal_medium.png",
                 "textures/parts/pat_terminal_dark.png"}) {
             ResourceLocation location = new ResourceLocation(Reference.MOD_ID, path);
-            try {
-                Minecraft.getMinecraft().getResourceManager().getResource(location);
-                PackagedAutoTerminals.LOGGER.info("  resource FOUND: {}", location);
+            try (IResource resource =
+                         Minecraft.getMinecraft().getResourceManager().getResource(location)) {
+                PackagedAutoTerminals.LOGGER.info("  resource FOUND: {}",
+                        resource.getResourceLocation());
             } catch (IOException exception) {
                 PackagedAutoTerminals.LOGGER.error("  resource MISSING: {}", location);
             }

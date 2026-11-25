@@ -550,8 +550,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 106 tests ; deux mutations prouvent les tests (sens et saut). Backlog : forwardMovesUpTheRegistry… suppose exactement 3 types dans le registre statique de la JVM de test."
     },
     {
       "id": "T26",

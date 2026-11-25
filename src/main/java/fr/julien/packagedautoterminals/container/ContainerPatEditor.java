@@ -1445,7 +1445,7 @@ public class ContainerPatEditor extends AEBaseContainer {
     static IRecipeType nextEnabledType(IRecipeType type, boolean forward) {
         IRecipeType next = type;
         do {
-            next = RecipeTypeRegistry.getNextRecipeType(next, forward);
+            next = RecipeTypeRegistry.getNextRecipeType(next, !forward);
         } while (isDisabled(next));
         return next;
     }
