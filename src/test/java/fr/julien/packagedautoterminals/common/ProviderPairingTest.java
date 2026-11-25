@@ -133,6 +133,13 @@ public class ProviderPairingTest {
     }
 
     @Test
+    public void aMachineOfAnUnknownAddonRaisesNoDiagnostic() {
+        List<ProviderPairing.Group> groups = group(machine(ProviderRole.UNKNOWN, "iron"));
+        assertNull(ProviderPairing.missingRoleOf(groups.get(0)));
+        assertTrue(groups.get(0).isComplete(new FakeRecipe("iron")));
+    }
+
+    @Test
     public void theLonePartnerIsFoundWhenTheNetworkHoldsOnlyOne() {
         ProviderSnapshot packager = machine(ProviderRole.PACKAGER, "iron");
         ProviderSnapshot unpackager = machine(ProviderRole.UNPACKAGER, "gold");

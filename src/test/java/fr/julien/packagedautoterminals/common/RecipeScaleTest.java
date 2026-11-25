@@ -21,6 +21,16 @@ public class RecipeScaleTest {
     }
 
     @Test
+    public void acceptsExactlyTheLimit() {
+        assertEquals(4096, RecipeScale.scale(2048, 2, false, 4096));
+    }
+
+    @Test
+    public void refusesOnePastTheLimit() {
+        assertEquals(-1, RecipeScale.scale(2049, 2, false, 4096));
+    }
+
+    @Test
     public void dividesExactly() {
         assertEquals(3, RecipeScale.scale(12, 4, true, 4096));
     }
