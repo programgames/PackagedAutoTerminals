@@ -296,8 +296,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "M",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 96 tests. Seul changement de comportement : un groupe avec recettes et une machine sans porte-recettes reste visible avec le filtre « problèmes seulement ». QA en jeu du filtre à faire. Backlog : l'infobulle du groupe refait ses propres tests par machine ; double javadoc sur Line."
     },
     {
       "id": "T14",

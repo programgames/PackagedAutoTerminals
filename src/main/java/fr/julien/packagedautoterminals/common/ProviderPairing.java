@@ -36,6 +36,23 @@ public final class ProviderPairing {
      */
     public enum Fix { NONE, INSERT_HOLDERS, REPAIR }
 
+    /**
+     * State of a group, as its chip says it. The first one that applies wins, in this order.
+     */
+    public enum State {
+        MISSING_ROLE, INACTIVE, EMPTY, NO_HOLDER, UNEVEN, HEALTHY;
+
+        /**
+         * Does the group need the player?
+         *
+         * <p>A group with no recipe at all is a group the player has not started yet, which
+         * is not a fault.
+         */
+        public boolean isProblem() {
+            return this != EMPTY && this != HEALTHY;
+        }
+    }
+
     /** A group: the paired machines, and the union of their recipes. */
     public static final class Group {
 
@@ -151,6 +168,25 @@ public final class ProviderPairing {
                 return Fix.REPAIR;
             }
             return needsHolder() ? Fix.INSERT_HOLDERS : Fix.NONE;
+        }
+
+        /** The chip, its colour and the "problems only" filter all read this one state. */
+        public State state() {
+            if (missingRoleOf(this) != null) {
+                return State.MISSING_ROLE;
+            }
+            for (ProviderSnapshot machine : machines) {
+                if (!machine.active) {
+                    return State.INACTIVE;
+                }
+            }
+            if (recipes.isEmpty()) {
+                return State.EMPTY;
+            }
+            if (needsHolder()) {
+                return State.NO_HOLDER;
+            }
+            return unevenCount() > 0 ? State.UNEVEN : State.HEALTHY;
         }
     }
 

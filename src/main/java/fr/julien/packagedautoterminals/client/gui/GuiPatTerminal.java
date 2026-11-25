@@ -1036,46 +1036,25 @@ public class GuiPatTerminal extends AEBaseGui {
      * out, and a pair whose two sides had drifted apart all read as a healthy "6 recipes"
      * while nothing ran. Each of those three now takes the chip, in red.
      */
-    private String groupState(ProviderPairing.Group group) {
-        ProviderRole missing = ProviderPairing.missingRoleOf(group);
-        if (missing != null) {
-            return I18n.format("gui.packagedautoterminals.missing_"
-                    + missing.name().toLowerCase(Locale.ROOT));
+    private static String groupState(ProviderPairing.Group group, ProviderPairing.State state) {
+        switch (state) {
+            case MISSING_ROLE:
+                return I18n.format("gui.packagedautoterminals.missing_"
+                        + ProviderPairing.missingRoleOf(group).name().toLowerCase(Locale.ROOT));
+            case INACTIVE:
+                return I18n.format("gui.packagedautoterminals.inactive");
+            case EMPTY:
+                return I18n.format("gui.packagedautoterminals.no_recipe_yet");
+            case NO_HOLDER:
+                return I18n.format("gui.packagedautoterminals.no_holder");
+            case UNEVEN:
+                return I18n.format("gui.packagedautoterminals.group_uneven", group.unevenCount());
+            default:
+                int count = group.recipes.size();
+                return I18n.format(count == 1
+                        ? "gui.packagedautoterminals.recipe"
+                        : "gui.packagedautoterminals.recipes", count);
         }
-        if (hasInactive(group)) {
-            return I18n.format("gui.packagedautoterminals.inactive");
-        }
-        if (group.recipes.isEmpty()) {
-            return I18n.format("gui.packagedautoterminals.no_recipe_yet");
-        }
-        if (group.needsHolder()) {
-            return I18n.format("gui.packagedautoterminals.no_holder");
-        }
-        int uneven = group.unevenCount();
-        if (uneven > 0) {
-            return I18n.format("gui.packagedautoterminals.group_uneven", uneven);
-        }
-        int count = group.recipes.size();
-        return I18n.format(count == 1
-                ? "gui.packagedautoterminals.recipe"
-                : "gui.packagedautoterminals.recipes", count);
-    }
-
-    /** Does a machine of the group sit without a channel? It then runs nothing, in silence. */
-    private boolean hasInactive(ProviderPairing.Group group) {
-        for (ProviderSnapshot machine : group.machines) {
-            if (!machine.active) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** Is the chip of this group a fault, hence drawn in the warning colour? */
-    private boolean groupTroubled(ProviderPairing.Group group) {
-        return ProviderPairing.missingRoleOf(group) != null
-                || hasInactive(group)
-                || (!group.recipes.isEmpty() && (group.needsHolder() || group.unevenCount() > 0));
     }
 
     @Override
@@ -1621,7 +1600,8 @@ public class GuiPatTerminal extends AEBaseGui {
         sortGroups(groups);
 
         for (ProviderPairing.Group group : groups) {
-            if (onlyProblems && !hasProblem(group)) {
+            ProviderPairing.State state = group.state();
+            if (onlyProblems && !state.isProblem()) {
                 continue;
             }
             boolean titleMatches = query.isEmpty()
@@ -1640,8 +1620,8 @@ public class GuiPatTerminal extends AEBaseGui {
                 continue;
             }
             Line header = Line.group(group);
-            header.groupState = groupState(group);
-            header.groupTroubled = groupTroubled(group);
+            header.groupState = groupState(group, state);
+            header.groupTroubled = state.isProblem();
             lines.add(header);
 
             // Two rules, said in a single line: outside a search the group opens on the
@@ -1653,30 +1633,6 @@ public class GuiPatTerminal extends AEBaseGui {
             }
         }
         return lines;
-    }
-
-    /**
-     * Does this group need the player?
-     *
-     * <p>Three cases, and only three: a role is missing, a machine has no channel, or a
-     * recipe sits on one side of the pair only. A group with no recipe at all is a group the
-     * player has not started yet, which is not a fault.
-     */
-    private boolean hasProblem(ProviderPairing.Group group) {
-        if (ProviderPairing.missingRoleOf(group) != null) {
-            return true;
-        }
-        for (ProviderSnapshot machine : group.machines) {
-            if (!machine.active) {
-                return true;
-            }
-        }
-        for (IRecipeInfo recipe : group.recipes) {
-            if (!group.isComplete(recipe)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

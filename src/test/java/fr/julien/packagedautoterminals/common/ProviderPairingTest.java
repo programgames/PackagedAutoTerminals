@@ -30,6 +30,7 @@ public class ProviderPairingTest {
         snapshot.role = role;
         snapshot.pos = new BlockPos(nextX++, 64, 0);
         snapshot.name = role.name().toLowerCase();
+        snapshot.active = true;
         snapshot.holderPresent = true;
         for (String recipe : recipes) {
             snapshot.recipes.add(new FakeRecipe(recipe));
@@ -228,5 +229,77 @@ public class ProviderPairingTest {
         assertFalse(groups.get(0).isComplete(new FakeRecipe("iron")));
         assertEquals(ProviderPairing.Fix.NONE, groups.get(0).fix());
         assertEquals(ProviderPairing.Fix.NONE, groups.get(1).fix());
+    }
+
+    @Test
+    public void aLonePackagerWithARecipeIsMissingARole() {
+        ProviderPairing.State state = group(machine(ProviderRole.PACKAGER, "iron")).get(0).state();
+
+        assertEquals(ProviderPairing.State.MISSING_ROLE, state);
+        assertTrue(state.isProblem());
+    }
+
+    @Test
+    public void aPairWithAMachineWithoutChannelIsInactive() {
+        ProviderSnapshot unpackager = machine(ProviderRole.UNPACKAGER, "iron");
+        unpackager.active = false;
+
+        ProviderPairing.State state =
+                group(machine(ProviderRole.PACKAGER, "iron"), unpackager).get(0).state();
+
+        assertEquals(ProviderPairing.State.INACTIVE, state);
+        assertTrue(state.isProblem());
+    }
+
+    @Test
+    public void aBrandNewPairIsEmptyAndNoProblem() {
+        ProviderPairing.State state =
+                group(machine(ProviderRole.PACKAGER), machine(ProviderRole.UNPACKAGER)).get(0).state();
+
+        assertEquals(ProviderPairing.State.EMPTY, state);
+        assertFalse(state.isProblem());
+    }
+
+    @Test
+    public void aNamedGroupOfThreeWithAPackagerWithoutHolderIsAProblem() {
+        // Every recipe is complete and both roles are there. The chip read "no holder" in red,
+        // while the "problems only" filter hid the row.
+        ProviderSnapshot packager = machine(ProviderRole.PACKAGER, "iron");
+        ProviderSnapshot unpackager = machine(ProviderRole.UNPACKAGER, "iron");
+        ProviderSnapshot bare = machine(ProviderRole.PACKAGER);
+        bare.holderPresent = false;
+        packager.customName = "ingots";
+        unpackager.customName = "ingots";
+        bare.customName = "ingots";
+
+        List<ProviderPairing.Group> groups = group(packager, unpackager, bare);
+
+        assertEquals(1, groups.size());
+        assertEquals(3, groups.get(0).size());
+        assertEquals(ProviderPairing.State.NO_HOLDER, groups.get(0).state());
+        assertTrue(groups.get(0).state().isProblem());
+    }
+
+    @Test
+    public void aDriftedNamedPairIsUneven() {
+        ProviderSnapshot packager = machine(ProviderRole.PACKAGER, "iron", "gold");
+        ProviderSnapshot unpackager = machine(ProviderRole.UNPACKAGER, "iron");
+        packager.customName = "ingots";
+        unpackager.customName = "ingots";
+
+        ProviderPairing.State state = group(packager, unpackager).get(0).state();
+
+        assertEquals(ProviderPairing.State.UNEVEN, state);
+        assertTrue(state.isProblem());
+    }
+
+    @Test
+    public void aPairCarryingTheSameRecipesIsHealthy() {
+        ProviderPairing.State state = group(
+                machine(ProviderRole.PACKAGER, "iron"),
+                machine(ProviderRole.UNPACKAGER, "iron")).get(0).state();
+
+        assertEquals(ProviderPairing.State.HEALTHY, state);
+        assertFalse(state.isProblem());
     }
 }
