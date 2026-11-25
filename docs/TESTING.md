@@ -693,11 +693,13 @@ in `gradle.properties`, today `0.1.0-beta.10`.
 2. Place an Unpackager beside it, with no recipe holder.
 3. Open the terminal. The group joins the two machines, and the chip reads `no holder`, in
    red: a missing holder comes before the recipes on one side only.
-4. Hover the row. The button shows two turning arrows.
-5. Click it.
+4. Hover the row. The button shows an arrow entering a box.
+5. Click it. A blank recipe holder leaves the ME network for the Unpackager.
+6. Hover the row again. The button shows two turning arrows.
+7. Click it.
 
-**Expected**: the three recipes reach the Unpackager at once, the chip returns to
-`3 recipes`, and a blank recipe holder leaves the ME network for the Unpackager.
+**Expected**: the three recipes reach the Unpackager at once, and the chip returns to
+`3 recipes`. Set `pullHolderFromNetwork` to `false`, restart, and repeat: the result is the same.
 
 ### N2 — A machine without a channel
 
@@ -713,8 +715,9 @@ machine that lost it. Before this release the row read `6 recipes`, and nothing 
 2. Open the terminal.
 
 **Expected**: the chip reads `no holder`, in red, and the tooltip names that machine. Hover
-the row: the button shows two turning arrows, because the recipes now sit on one side only. A
-click takes a blank holder from the network for that machine, and copies the recipes into it.
+the row: the button shows an arrow entering a box, because a missing holder comes before the
+recipes on one side only. A click takes a blank holder from the network for that machine. The
+button then shows two turning arrows, and a second click copies the recipes into that holder.
 
 Then take both holders out of a pair that carries no recipe. Hover its row: the button shows an
 arrow entering a box, and a click puts a blank holder from the network into each machine.

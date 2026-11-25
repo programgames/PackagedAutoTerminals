@@ -208,6 +208,21 @@ public class ProviderPairingTest {
     }
 
     @Test
+    public void aPairWithAMachineWithoutHolderIsOfferedOneBeforeTheRepair() {
+        // The repair takes a blank holder only when pullHolderFromNetwork allows it
+        // (RecipeWriter.takeBlankHolder), and the client does not know that server setting.
+        ProviderSnapshot unpackager = machine(ProviderRole.UNPACKAGER);
+        unpackager.holderPresent = false;
+
+        List<ProviderPairing.Group> groups =
+                group(machine(ProviderRole.PACKAGER, "iron"), unpackager);
+
+        assertEquals(1, groups.size());
+        assertEquals(1, groups.get(0).unevenCount());
+        assertEquals(ProviderPairing.Fix.INSERT_HOLDERS, groups.get(0).fix());
+    }
+
+    @Test
     public void aDriftedGroupHoldingBothRolesIsOfferedTheRepair() {
         ProviderSnapshot packager = machine(ProviderRole.PACKAGER, "iron", "gold");
         ProviderSnapshot unpackager = machine(ProviderRole.UNPACKAGER, "iron");

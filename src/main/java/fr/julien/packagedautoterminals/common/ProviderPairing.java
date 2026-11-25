@@ -158,16 +158,20 @@ public final class ProviderPairing {
         }
 
         /**
-         * The repair comes first, then the holders.
+         * The holders come first, then the repair, in the order of {@link #state()}.
+         *
+         * <p>The repair takes a blank holder only when {@code pullHolderFromNetwork} allows it
+         * ({@code RecipeWriter.takeBlankHolder}), and the client does not know that server
+         * setting. The insertion button takes one in both settings.
          *
          * <p>The repair copies a recipe into the machines of this group only. A group that
          * holds a single role has no other side to copy to: the repair would write nothing.
          */
         public Fix fix() {
-            if (unevenCount() > 0 && missingRoleOf(this) == null) {
-                return Fix.REPAIR;
+            if (needsHolder()) {
+                return Fix.INSERT_HOLDERS;
             }
-            return needsHolder() ? Fix.INSERT_HOLDERS : Fix.NONE;
+            return unevenCount() > 0 && missingRoleOf(this) == null ? Fix.REPAIR : Fix.NONE;
         }
 
         /** The chip, its colour and the "problems only" filter all read this one state. */

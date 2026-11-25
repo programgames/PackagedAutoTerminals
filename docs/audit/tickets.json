@@ -844,8 +844,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "Créé au passage 3, après la revue de T34. Vérifier d'abord l'affirmation dans le code : si elle est fausse, le ticket s'arrête avec la preuve."
+      "statut": "fait",
+      "note": "Créé au passage 3, après la revue de T34. Vérifier d'abord l'affirmation dans le code : si elle est fausse, le ticket s'arrête avec la preuve. Revue acceptée : 124 tests ; le nouveau test échoue sur l'ancien ordre. Coût : un clic de plus avec pullHolderFromNetwork=true (insérer, puis réparer). Backlog : CHANGELOG.md:64-65 (la réparation annonce les porte-recettes pris) décrit maintenant un cas presque impossible ; groupe nommé de 3+ machines sans porte-recettes vierge sur le réseau : le bouton reste sur insérer ; repairGroup ne relit pas fix() côté serveur (instantané périmé, sans dégât)."
     }
   ]
 }

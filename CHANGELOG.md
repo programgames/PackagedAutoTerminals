@@ -94,6 +94,12 @@ numbering follows [SemVer](https://semver.org/).
 - **A modified client could crash the server.** AE2 lets a client write some fields of its open
   screen on the server. A negative tab offset in the editor made the server fail during the tick
   of the player. The server now keeps that offset inside the recipe list.
+- **The button of a group row takes the missing recipe holder before it repairs.** In a group
+  that holds both roles, with recipes on one side and a machine with no recipe holder, the
+  button offered the repair. With `pullHolderFromNetwork` set to `false`, the repair took no
+  holder and wrote nothing, and the button never offered the holder. Now, while a machine of
+  the group has no recipe holder, the button takes blank holders from the network, in both
+  settings. The next click copies the recipes.
 
 ### Changed
 
