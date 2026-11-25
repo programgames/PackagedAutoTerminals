@@ -1048,9 +1048,9 @@ public class ContainerPatEditor extends AEBaseContainer {
         }
         recipeCount = recipes.size();
 
-        if (tabOffset > maxTabOffset()) {
-            tabOffset = maxTabOffset();
-        }
+        // AE2 PacketProgressBar lets the client write this field on the server. A negative
+        // offset would reach recipes.get(negative) below, inside the player tick.
+        tabOffset = Math.max(0, Math.min(maxTabOffset(), tabOffset));
 
 
         for (int slot = 0; slot < TAB_COUNT; slot++) {

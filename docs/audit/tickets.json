@@ -713,8 +713,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "Créé après la revue de T14."
+      "statut": "fait",
+      "note": "Créé après la revue de T14. Revue acceptée, vérification refaite par le relecteur. SyncData écrit le champ AVANT onUpdate ; types écrits : int, long, boolean, enum (pas String). Seul champ nuisible : tabOffset de l'éditeur — une valeur négative faisait planter le serveur (recipes.get(-n) pendant le tick du joueur, « Ticking player ») ; fermé par max(0, min(maxTabOffset, tabOffset)). Inoffensifs : recipeTypeId (garde T14 + recalcul), groupName et feedback (String, non écrits), currentTab, recipeCount (recalculé ; load garde < size), dirty, drift, feedbackCount (×2). Aucun champ n'agit sur un autre joueur."
     },
     {
       "id": "T34",
