@@ -489,8 +489,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée. 105 tests ; la limite suit un changement de config en jeu ; chaînes intactes après réobfuscation. Backlog : T14 a ajouté un second lien dur vers TileEncoder (disabledRecipeTypes, ContainerPatEditor.java:40) ; une borne haute de version sur PackagedAuto serait une porte à sens unique (non faite)."
     },
     {
       "id": "T23",

@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.junit.Test;
 import thelm.packagedauto.api.IRecipeInfo;
+import thelm.packagedauto.tile.TileEncoder;
 
 /**
  * The list rules of a recipe holder, tested without the game.
@@ -158,6 +159,25 @@ public class RecipeWriterTest {
     @Test
     public void aRecipeThatIsGoneResolvesToNothing() {
         assertEquals(-1, RecipeWriter.resolve(recipes("a", "c"), 1, recipe("b")));
+    }
+
+    @Test
+    public void theLimitFollowsTheEncoderSlots() {
+        int before = TileEncoder.patternSlots;
+        try {
+            TileEncoder.patternSlots = 7;
+            assertEquals(7, RecipeWriter.maxRecipes());
+        } finally {
+            TileEncoder.patternSlots = before;
+        }
+    }
+
+    @Test
+    public void aMissingFieldFallsBackToTwenty() {
+        assertEquals(20, RecipeWriter.patternSlots(
+                "thelm.packagedauto.tile.TileEncoder", "renamedSlots").getAsInt());
+        assertEquals(20, RecipeWriter.patternSlots(
+                "thelm.packagedauto.tile.RenamedEncoder", "patternSlots").getAsInt());
     }
 
     @Test

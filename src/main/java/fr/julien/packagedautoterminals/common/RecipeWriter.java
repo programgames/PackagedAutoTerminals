@@ -1,10 +1,14 @@
 package fr.julien.packagedautoterminals.common;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntSupplier;
 
 import appeng.api.networking.IGrid;
 import appeng.api.networking.security.IActionSource;
+import fr.julien.packagedautoterminals.PackagedAutoTerminals;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -28,6 +32,11 @@ public final class RecipeWriter {
 
     private RecipeWriter() {}
 
+    // TileEncoder lies outside the PackagedAuto API, and the dependency has no upper bound:
+    // a rename in a later version must not crash the game.
+    private static final IntSupplier PATTERN_SLOTS =
+            patternSlots("thelm.packagedauto.tile.TileEncoder", "patternSlots");
+
     /**
      * How many recipes one recipe holder can carry.
      *
@@ -41,7 +50,32 @@ public final class RecipeWriter {
      * their own Encoder would never be able to open again.
      */
     public static int maxRecipes() {
-        return Math.max(1, thelm.packagedauto.tile.TileEncoder.patternSlots);
+        return Math.max(1, PATTERN_SLOTS.getAsInt());
+    }
+
+    /**
+     * Reads the public static int field {@code fieldName} of {@code className} at each call.
+     * When the class or the field is gone, answers 20, the Encoder default, and logs it once.
+     */
+    static IntSupplier patternSlots(String className, String fieldName) {
+        int fallback = 20;
+        try {
+            Field field = Class.forName(className).getField(fieldName);
+            if (field.getType() == int.class && Modifier.isStatic(field.getModifiers())) {
+                return () -> {
+                    try {
+                        return field.getInt(null);
+                    } catch (IllegalAccessException e) {
+                        return fallback;
+                    }
+                };
+            }
+        } catch (ReflectiveOperationException e) {
+            // Falls through to the warning.
+        }
+        PackagedAutoTerminals.LOGGER.warn("{}.{} not found: a recipe holder keeps {} recipes at most",
+                className, fieldName, fallback);
+        return () -> fallback;
     }
 
     /** Result of a group write. */
