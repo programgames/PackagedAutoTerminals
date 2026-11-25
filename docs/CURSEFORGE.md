@@ -80,9 +80,12 @@ For a description page in game, press the JEI usage key on either item.
 | Gesture | Effect |
 |---|---|
 | Left click a group row | Open the editor on a new recipe |
-| Shift and left click a group row | Send the recipe holders of the group back to the network |
+| Left click the button of a group row | Take blank recipe holders from the network, or copy the recipes that one side lacks to the other side |
+| Shift and left click a group row, twice | Send the recipe holders of the group back to the network |
 | Right click a recipe row | Edit that recipe |
-| Shift and right click a recipe row | Remove that recipe from the group |
+| Shift and right click a recipe row, twice | Remove that recipe from the group |
+| Left click the cross of a recipe row, twice | Remove that recipe from the group |
+| Save right after Delete in the editor | Write the deleted recipe back |
 | Left click a filled slot | Open the amount panel |
 | Turn the wheel over a slot | Change the amount. Shift and Ctrl take bigger steps |
 | Right click a filled slot | Empty the slot |

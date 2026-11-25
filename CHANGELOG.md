@@ -22,6 +22,10 @@ numbering follows [SemVer](https://semver.org/).
   so they are skipped and counted. Nothing is written unless every recipe can be scaled: an
   amount that does not divide, an amount past the limit, or two recipes that would become one
   stop the whole operation, and the message names the recipe.
+- **The search field and the `×N` button explain themselves.** Hovering the search field shows
+  its syntax: free text, `@mod` and `#type` (free text only on the Machines tab). Hovering `×N`
+  says that it multiplies or divides every processing recipe of the group, and that it skips the
+  craft recipes.
 
 ### Fixed
 
@@ -43,6 +47,91 @@ numbering follows [SemVer](https://semver.org/).
 - **The holder editor speaks the language of the player.** The Holder label stayed in English
   in ten languages and the Sync button in nine, and a single scaled recipe read "1 recipes
   scaled".
+- **A removal from the terminal could delete another recipe in the whole group.** The terminal
+  named the recipe by its position in the last list it received. When that list had moved, the
+  server removed the recipe that now sat at that position, in every machine of the group. The
+  terminal now sends the recipe itself, for a removal and for an edit. When the recipe is gone,
+  the server writes nothing and says that the group changed.
+- **A click on a ghost slot of the editor skipped the rules of the editor.** The change did not
+  mark the recipe as unsaved, so a switch of tab lost the work with no warning. A right click
+  with an empty hand did not empty the slot. The server accepted an item in a cell that the
+  recipe type turns off, such as a cell outside the 3×3 square of a craft recipe.
+- **A large network disconnected the player who opened the terminal.** Past 27 pairs of twenty
+  processing recipes each, the list of machines went over the size that the client accepts in
+  one packet. The two machines of a pair now share one copy of their recipe list, so the
+  terminal holds about fifty such pairs. Past that size, it shows a red notice instead.
+- **Four refusals were drawn in the colour of a success:** a machine that left the network, a
+  missing permission, no blank holder in storage, and a partial return of the holders. The
+  repair button now also says when it took blank holders from the network, as Save does.
+- **The "problems only" filter hid a red row.** A group with recipes and a machine with no
+  recipe holder was red, and the filter dropped it. The chip, its colour and the filter now
+  read one state.
+- **The client used its own `machinesTab` setting, not the one of the server.** On a server
+  that turns the Machines tab off, the client still showed the tab, and every recipe tooltip
+  said that its crafter was missing. The client now follows the server.
+- **The update notice of the mod list never appeared.** The mod gave its version as
+  `1.12.2-0.1.0-beta.9`, and `update.json` lists `0.1.0-beta.9`, so Forge always found the mod
+  ahead. The notice works from this version on: the jars already published keep the old form.
+- **The wireless terminal screen stayed open after the terminal left its slot.** The slot is
+  now locked while the screen is open, as the AE2 portable terminal does it. The screen closes
+  when the slot is empty or holds another item.
+- **The editor erased the outputs of a processing recipe opened after a craft recipe.** A
+  switch from a craft tab to a processing tab cleared the outputs on the client and left Save
+  disabled. The recipe type now reaches the client before the slots.
+- **A group name outlived its machine.** A new machine placed at the same position took the
+  name, and joined the group of another production line. The name now goes when a player
+  breaks the machine. A protection mod that cancels the break keeps the name. A machine that an
+  explosion or another mod removes still leaves its name behind.
+- **The right arrow of the recipe type went backwards.** It now moves forward through the
+  types, as the arrow of the Encoder does.
+- **The holder mode refusal was hidden under the terminal.** With `portableEncoder` off, the
+  Encoder icon of an open terminal wrote its refusal in the action bar, under the screen. The
+  refusal now shows in the message line of the terminal, in red.
+- **A wireless terminal linked to a security terminal that no longer exists opened, then closed
+  at once.** It is now refused before the screen opens, with the reason.
+- **The key opened nothing on the first press with a Wireless Universal Terminal in another
+  mode.** The key now switches that terminal to the PackagedAuto mode, then opens it.
+- **A modified client could crash the server.** AE2 lets a client write some fields of its open
+  screen on the server. A negative tab offset in the editor made the server fail during the tick
+  of the player. The server now keeps that offset inside the recipe list.
+
+### Changed
+
+- **Deleting a recipe from the terminal takes two clicks.** A right click on the cross of a
+  recipe row deleted the recipe at once, while a right click on the row edits it. The cross now
+  answers the left click only. The cross, and Shift and right click on the row, delete on the
+  second click on the same recipe within three seconds. The first click says to click again.
+- **Delete in the editor keeps the grid.** The editor stays on the new recipe tab with the grid
+  filled, so Save writes the deleted recipe back.
+- **The button of a group row only adds.** It takes blank recipe holders from the network when
+  a machine lacks one. It copies the recipes that one side lacks when the group holds both
+  roles. It no longer sends the holders back: a single click emptied every machine of the group.
+  Shift and left click on the row, twice, sends them back. A group with one role offers no
+  repair, which wrote nothing; its tooltip says to give both rows the same name. The row buttons
+  answer the left click only.
+- **The terminal needs the AE2 Build permission to open**, wired or wireless. A player without
+  it gets a message and no screen. A player who loses it while the screen is open sees the
+  screen close.
+- **The editor skips the recipe types that PackagedAuto turns off** in `disabled_recipe_types`,
+  as the Encoder does: in the type arrows, in the default type and in the JEI transfer.
+- **An orphan recipe reads as a doubt, in orange.** The tooltip says that no crafter of that
+  type sits on the ME network, and that a crafter outside the network may still run it.
+- **The tooltip of the wireless terminal says Linked or Unlinked.** It shows the linking hint
+  only when the terminal has no link.
+- **The "no paired machine" warning wins over the holder message.** In a group that already
+  holds recipes and lacks a Packager or an Unpackager, an editor save that writes one machine
+  only now says "no paired machine", in red, even when it took a blank holder from the network.
+  It used to name the holder taken from storage, in green.
+- **An open editor no longer scans the ME grid on every tick.** It scans at the `refreshTicks`
+  pace and after each write. Every write still decides on a fresh scan.
+- **`wutModeId` asks for a restart of the game.** Its comment says that the universal terminals
+  assembled before a change keep the old id.
+
+### Removed
+
+- **The `tooltipStacks` setting.** Nothing read it. An old config file that still holds the key
+  loads with no error. Forge keeps the key in the file, and its config screen shows it as a raw
+  entry with no effect.
 
 ## [0.1.0-beta.9] - 2026-10-01
 
@@ -63,7 +152,9 @@ a machine with no recipe holder is served from the ME network.
   holder in hand. The holders come from the ME network, so the AE2 energy and security rules
   apply, and only a blank holder ever leaves storage. The `pullHolderFromNetwork` setting does
   not reach this button: that setting governs the holder taken on its own while a recipe is
-  saved, and a click is a decision the player has just made.
+  saved, and a click is a decision the player has just made. **Changed after this release:**
+  the button no longer takes the holders out, because one click emptied every machine of the
+  group. Shift and left click on the row, twice, takes them out. See [Unreleased].
 - **The terminal takes a blank Package Recipe Holder out of the ME network** when a machine
   has none. Until now it answered "insert a holder first", and the player had to walk to the
   machine, which is the walk this mod exists to remove. The extraction goes through

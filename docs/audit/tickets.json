@@ -736,8 +736,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": "Créé par la rétrospective. Bloqué après deux revues refusées. Essai 1 : une ligne du CHANGELOG promettait un avertissement rouge que le code donne seulement si le groupe a déjà des recettes, qu'il manque un rôle et que la sauvegarde n'écrit qu'une machine. Essai 2 : la règle 3 de CODING_STANDARDS.md est fausse pour le code actuel (Delete de l'éditeur supprime en un clic, voulu par T09 ; clic droit vide une case fantôme), la règle 1 ne dit pas que ~49 commentaires anciens ne la suivent pas, et la ligne T24 du CHANGELOG oublie que l'onglet Machines n'affiche que le texte libre. Toutes les autres lignes ont été vérifiées exactes. Le diff du second essai est gardé dans docs/audit/T34-essai.patch (git apply) : il reste trois phrases à corriger. Passage 3 : remis à faire (DA-14)."
+      "statut": "fait",
+      "note": "Créé par la rétrospective. Bloqué après deux revues refusées. Essai 1 : une ligne du CHANGELOG promettait un avertissement rouge que le code donne seulement si le groupe a déjà des recettes, qu'il manque un rôle et que la sauvegarde n'écrit qu'une machine. Essai 2 : la règle 3 de CODING_STANDARDS.md est fausse pour le code actuel (Delete de l'éditeur supprime en un clic, voulu par T09 ; clic droit vide une case fantôme), la règle 1 ne dit pas que ~49 commentaires anciens ne la suivent pas, et la ligne T24 du CHANGELOG oublie que l'onglet Machines n'affiche que le texte libre. Toutes les autres lignes ont été vérifiées exactes. Le diff du second essai est gardé dans docs/audit/T34-essai.patch (git apply) : il reste trois phrases à corriger. Passage 3 : remis à faire (DA-14). Passage 3 : patch + trois phrases corrigées ; revue acceptée, chaque ligne vérifiée. Notes : la règle 2 n'a pas d'exception nommée pour le clic d'onglet (lecture seule par index du cache) ; C8 a un cas rare (applied_partial, aussi rouge). Défaut trouvé → T39."
     },
     {
       "id": "T35",
@@ -824,6 +824,28 @@
       "taille": "S",
       "statut": "a_faire",
       "note": "Créé par la rétrospective du passage 2, à partir des notes de T26, T27 et T37."
+    },
+    {
+      "id": "T39",
+      "titre": "Le bouton de ligne propose « insérer » quand une machine n'a pas de porte-recettes",
+      "type": "bug",
+      "pourquoi": "Relevé par la revue de T34. Pour une paire dont l'Unpackager n'a pas de porte-recettes, les recettes sont incomplètes au sens des rôles, donc Group.fix() renvoie REPAIR avant INSERT_HOLDERS (ProviderPairing.java:166-170). Avec pullHolderFromNetwork=false, le bouton répare sans prendre de porte-recettes et répond « Nothing was written » : l'insertion devient inaccessible depuis le bouton.",
+      "constats": [
+        "C-PR-01",
+        "C-PR-03"
+      ],
+      "criteres": [
+        "Un test de ProviderPairingTest reproduit d'abord le cas (paire, une machine sans porte-recettes, recettes sur l'autre) et échoue sur l'ordre actuel.",
+        "Group.fix() renvoie INSERT_HOLDERS quand une machine du groupe n'a pas de porte-recettes, avant REPAIR.",
+        "Les tests existants de fix() restent verts sans être affaiblis ; le comportement des autres cas ne change pas.",
+        "docs/TESTING.md (E6/E8 ou N3) et le tableau des gestes restent vrais."
+      ],
+      "verification": "rtk proxy ./gradlew cleanTest test --console=plain",
+      "porte": "double_sens",
+      "bloque_par": [],
+      "taille": "S",
+      "statut": "a_faire",
+      "note": "Créé au passage 3, après la revue de T34. Vérifier d'abord l'affirmation dans le code : si elle est fausse, le ticket s'arrête avec la preuve."
     }
   ]
 }
