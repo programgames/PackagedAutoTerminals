@@ -1,4 +1,4 @@
-# Target architecture
+# Architecture
 
 ## 1. Functional scope
 
@@ -9,9 +9,10 @@ The terminal walks the ME grid. It keeps every machine that answers
 implements `IRecipeListItem`, it pulls the `IRecipeList` out of it, hence the list of
 `IRecipeInfo`.
 
-Display: one line per machine, then its recipes, like the AE2 Interface Terminal. The
-`Packager Extension` is shown as a line attached to its Packager, never as a separate
-machine.
+Display: one header per machine group, then its recipes, like the AE2 Interface Terminal. A
+group gathers the machines that carry exactly the same recipes, or that share a name given by
+the player (D38). The `Packager Extension` does not implement `IPackageProvidingMachine`: the
+terminal does not list it.
 
 Actions: add a recipe, remove a recipe, edit a recipe, change its type, move a Recipe Holder
 from one machine to another.
@@ -38,45 +39,95 @@ it today.
 
 ## 2. Modules
 
-A single Gradle module to start with (revision **R3**). Split by package:
+A single Gradle module (revision **R3**). Split by package:
 
 ```
 fr.julien.packagedautoterminals/
- ├── api/                  stable interfaces for the recipe type adapters
- ├── common/               registry, bridge to the PackagedAuto API, data model
- ├── network/              packets and incremental updates
- ├── part/                 PartPackagedAutoTerminal (wired terminal)
- ├── item/                 ItemWirelessPackagedAutoTerminal (IWirelessTermHandler)
- ├── container/            ContainerPackagedAutoTerminal + wireless variant + editor
- ├── client/gui/           GUI, widgets, search, recipe editor
- └── integration/          packagedexcrafting, packagedavaritia, packagedfluidcrafting,
-                           packagingprovider, ae2wut, jei
+ ├── PackagedAutoTerminals, Reference   mod entry point, identity constants
+ ├── common/            grid scan (ProviderScanner), snapshots (ProviderSnapshot,
+ │                      MachineSnapshot), pairing (ProviderPairing), recipe writes
+ │                      (RecipeWriter), editor slots (EditorInventory), crafter table
+ │                      (CrafterTypes), group names, config, ME storage access
+ ├── container/         ContainerPatTerminal, ContainerPatEditor
+ ├── network/           PatNetwork, channel "pat_terminals" (D37), and its 7 packets
+ ├── part/              PartPatTerminal, the wired terminal
+ ├── item/              ItemPatTerminal (places the part), ItemWirelessPatTerminal
+ ├── proxy/             PatGuiHandler: every screen opens through FML, from its id
+ ├── client/            opening key, snapshot reception, block highlight, AE2WUT icon,
+ │                      startup diagnostics
+ ├── client/gui/        GuiPatTerminal, GuiPatEditor, GuiScaleFit, PatButton
+ ├── integration/jei/   recipe transfer, ghost drag, screen areas
+ ├── integration/wut/   AE2WUT bridge, right click listener, mixin loader
+ └── mixin/ae2wut/      the three AE2WUT injections (D33)
 ```
+
+The addons (PackagedExCrafting, PackagedAvaritia, PackagedFluidCrafting, PackagingProvider)
+have no package of their own. The code names their classes by string: `CrafterTypes` and
+`ProviderRole` for the machines, `FluidPackets` for the fluids (R5).
+
+`src/test/java` holds the JUnit tests of the logic that runs without a world: search, pairing,
+scaling, list operations of `RecipeWriter`, messages, network protocol, snapshot size.
 
 The recipe editor is a real `Container`, with ghost slots indexed like the Encoder ones. That
 is constraint **D22**, without which JEI becomes unusable.
 
 ## 3. Data flow
 
+### Terminal
+
 ```
-SERVER                                             CLIENT
-  walk the ME grid
-  → snapshot of the providing machines
-  → diff against the previous snapshot
-  → delta packet, split into chunks            →   apply the delta
-                                                   render the list
-  validation (AE2 permissions, energy, range)  ←   user intent
-  write into the Recipe Holder
-  republish the AE2 patterns
+SERVER, ContainerPatTerminal                        CLIENT
+  every refreshTicks, and right after a write:
+  refusal: range, link, BUILD, energy
+    → the screen closes, with a message
+  ProviderScanner.scan walks the ME grid
+  ProviderSnapshot.writeAll: each distinct
+    recipe list once, machines point to it
+  + crafters, + the machinesTab setting
+  same message as last time → nothing sent
+  PacketProviderList.capped: past 2 000 000
+    counted bytes, only the size ("TooBig")    →   ClientHandler fills the container
+                                                    GuiPatTerminal groups the machines
+                                                    and rebuilds its rows on a new snapshot
+
+  PacketRecipeAction                           ←   intent: action, machine position,
+                                                    index in the group, and the recipe NBT
+                                                    for a removal or an edit
+  BUILD check, fresh scan
+  RecipeWriter.resolve finds the recipe by identity:
+    gone → nothing written, "group changed"
+  RecipeWriter.apply writes the server copy into
+    every machine of the group
+  setPatternStack → PackagedAuto republishes
+    its AE2 patterns
 ```
+
+### Editor
+
+`ContainerPatEditor` opens on one recipe of a group, or on two recipe holders in holder mode
+(D43). The vanilla container synchronises its slots. The client rebuilds the recipe from them,
+as the Encoder does, to draw the preview and enable Save; it never writes it. The server
+rebuilds the recipe on every change, and writes it into the group at Save. JEI and the amount
+panel go through `PacketEditorFill`, `PacketEditorGhost` and `PacketEditorSlot`, which the
+server checks slot by slot.
+
+### Opening
+
+The wired terminal opens from its part. The wireless terminal opens from a right click, from
+the key (`PacketOpenTerminal`), or from AE2WUT (`WutEventHandler`). Every path ends in
+`PatGuiHandler.getServerGuiElement`, which refuses a player without the BUILD permission.
+Holder mode needs no network: a sneak right click with the wireless terminal, or a button of
+the terminal, opens it.
 
 Four structuring decisions:
 
-1. **The server is the authority.** The client sends an intent, never a recipe NBT.
-2. **No mixin as long as an API is enough.**
-3. **Every integration is optional**, detected by modid.
-4. **Simple incremental updates**, following the AE2 `ContainerInterfaceTerminal`. Chunk
-   splitting only arrives if the batch 2 measurement proves it necessary (revision **R2**).
+1. **The server is the authority** (D05). The client sends an intent. The recipe NBT that a
+   removal or an edit carries only names the recipe: the server looks it up in its own lists
+   and writes its own copy.
+2. **No mixin as long as an API is enough** (D06). AE2WUT has no API: see D33.
+3. **Every integration is optional**, detected by modid (D07).
+4. **The whole snapshot, no delta** (R2). The server resends the full message when it changes.
+   `SnapshotSizeTest` measures the limit; `docs/PLAN.md` carries the figure.
 
 ---
 

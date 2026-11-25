@@ -165,9 +165,10 @@ public class PatGuiHandler implements IGuiHandler {
     /**
      * Builds the AE2 wireless screen object.
      *
-     * <p>PITFALL: its constructor reads the link key and calls {@code Long.parseLong}. On a
-     * terminal that was never linked, the key is empty and the call throws. AE2 checks this
-     * before building the object; we must do the same.
+     * <p>An unlinked terminal opens no screen. AE2UEL 0.56.5 builds the object anyway: its
+     * constructor catches the {@code NumberFormatException} of an empty key and leaves the grid
+     * {@code null}. The screen would then open and close at once, on the first
+     * {@code refusal}.
      *
      * <p>Two items can open this screen: ours, and the Wireless Universal Terminal set to
      * our mode. The handler therefore comes from the AE2 registry, not from a cast to our

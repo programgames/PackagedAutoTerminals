@@ -126,8 +126,7 @@ public class PacketOpenTerminal implements IMessage {
                 return true;
             }
 
-            // PITFALL: the WirelessTerminalGuiObject constructor calls Long.parseLong on
-            // this key. An unreadable key would throw there.
+            // The station lookup needs the key as a number, and a malformed key throws here.
             ILocatable station;
             try {
                 station = AEApi.instance().registries().locatable()

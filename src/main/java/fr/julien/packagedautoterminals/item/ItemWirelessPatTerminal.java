@@ -153,20 +153,19 @@ public class ItemWirelessPatTerminal extends AEBasePoweredItem implements IWirel
         tag.setString(KEY_ENCRYPTION, encryptionKey);
     }
 
-    /** Cost of one opening, read by the container to draw the energy. */
+    /** Energy one opening needs, checked by the key and the AE2WUT click before they open. */
     public static double powerPerOpen() {
         return POWER_PER_OPEN;
     }
 
     /**
-     * Two lines that say what the item is for, and the gesture that uses it.
+     * Tooltip: the link state, what the item is for, and the gestures that use it.
      *
      * <p>A player who meets the item in a creative tab or in JEI reads this first. The longer
      * explanation lives in the JEI description page, reached with the usage key.
-     */
-    /**
-     * PITFALL: {@code AEBaseItem.addInformation} is **final**. AE2 fills the power line there and
-     * calls this hook afterwards. Overriding the vanilla method does not compile.
+     *
+     * <p>PITFALL: {@code AEBaseItem.addInformation} is **final**. AE2 fills the power line there
+     * and calls this hook afterwards. Overriding the vanilla method does not compile.
      */
     @Override
     @SideOnly(Side.CLIENT)

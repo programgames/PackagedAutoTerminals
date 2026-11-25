@@ -253,9 +253,9 @@ public class ContainerPatTerminal extends AEBaseContainer {
     /**
      * Opens the editor on a brand new recipe.
      *
-     * <p>The terminal pulls **nothing** out of the network on its own: when the machine has
-     * no recipe holder, it refuses and says so. Taking an item out of storage stays the
-     * player's decision.
+     * <p>When the machine has no recipe holder, the editor opens only if the network can give
+     * a blank one and {@code pullHolderFromNetwork} allows it (D40). Otherwise the terminal
+     * refuses and says so.
      */
     public void newRecipe(int dimension, BlockPos pos) {
         IGrid grid = grid();

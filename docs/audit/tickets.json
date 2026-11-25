@@ -573,8 +573,8 @@
       "porte": "double_sens",
       "bloque_par": [],
       "taille": "S",
-      "statut": "a_faire",
-      "note": ""
+      "statut": "fait",
+      "note": "Revue acceptée : 0 ligne de code exécutable changée ; 106 tests. Imprécisions restantes : le client lit aussi recipeInfo pour la ligne « invalid » (ContainerPatEditor.java:52-54, ARCHITECTURE.md:108) ; le texte de R2 (DECISIONS.md:34) dit encore « incremental updates » ; FluidPackets nomme un identifiant d'item, pas une classe (ARCHITECTURE.md:65) ; « move a Recipe Holder » n'existe pas (ARCHITECTURE.md:17) ; R1 dit encore « each integration module » ; section 4 d'ARCHITECTURE.md inchangée."
     },
     {
       "id": "T27",

@@ -115,7 +115,6 @@ public class GuiPatTerminal extends AEBaseGui {
     private static final int SHEET = 512;
     /** Text of the input fields, light on their dark background. */
     private static final int COLOR_FIELD_TEXT = 0xE0E0E0;
-    /** Left edge of the button, inside a group row. */
     /**
      * The pin, the type name and the machine icon share the **same** right edge. Without
      * that, the right column wobbled by two pixels from one row to the next.
@@ -1497,13 +1496,6 @@ public class GuiPatTerminal extends AEBaseGui {
     }
 
     /**
-     * Builds the displayed rows, filtered by the search.
-     *
-     * <p>A machine stays visible when its name matches, or when one of its recipes matches.
-     * Without this rule, a recipe found would appear without its machine, and the player
-     * would not know where it sits.
-     */
-    /**
      * The rows to draw, rebuilt only when their sources have changed.
      *
      * <p>The key names every source: the snapshot counter of the container, the search text,
@@ -1786,13 +1778,6 @@ public class GuiPatTerminal extends AEBaseGui {
         return !query.text.isEmpty();
     }
 
-    /**
-     * A displayed row: either a machine, or a recipe.
-     *
-     * <p>A recipe row also carries its machine and its index in the recipe holder. Edit
-     * commands name the machine by its **position**, never by its rank in the list: the scan
-     * order can change from one refresh to the next.
-     */
     /**
      * A displayed row.
      *

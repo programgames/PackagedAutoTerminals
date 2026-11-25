@@ -41,7 +41,7 @@ Every line here was approved with the player. Date: 2026-09-12.
 | # | Constraint | Evidence |
 |---|---|---|
 | **D20** | We compile against the **full deobfuscated jar** of AE2UEL, not against an API-only artifact | third-party terminals extend internal classes: `PartCellTerminal extends appeng.parts.reporting.AbstractPartDisplay`, `ItemWirelessCellTerminal extends appeng.items.tools.powered.powersink.AEBasePoweredItem` |
-| **D21** | The AE2WUT integration is done **without a mixin**, through a public call, and the mode id must be **configurable** | `AE2UELWirelessUniversalTerminal.registryContainer(byte, GetGui)`, `registryGui(byte, GetGui)`, `ItemWUTBakedModel.regIcon(byte, ItemStack)`. `cell-terminal` makes its id configurable to avoid collisions between third-party mods |
+| **D21** | **Replaced by D33**: AE2WUT 1.0.5 has no such public call. The AE2WUT integration is done **without a mixin**, through a public call, and the mode id must be **configurable** | `AE2UELWirelessUniversalTerminal.registryContainer(byte, GetGui)`, `registryGui(byte, GetGui)`, `ItemWUTBakedModel.regIcon(byte, ItemStack)`. `cell-terminal` makes its id configurable to avoid collisions between third-party mods |
 | **D22** | The recipe editor must be a real `Container`, with ghost slots **indexed like the Encoder ones** | without that, `IRecipeType.getRecipeTransferMap(IRecipeLayout, String)` and the PackagedAuto JEI handles become unusable |
 | **D23** | PackagedAuto is under the **MIT** licence | compile dependency and API reuse with no obstacle, with attribution |
 | **D24** | No mod already covers this need on 1.12.2 | batch 0 research. `Extended Terminal` targets 1.20 and 1.21, and does not touch PackagedAuto |
@@ -52,7 +52,7 @@ Every line here was approved with the player. Date: 2026-09-12.
 |---|---|
 | Also list the crafters in the patterns tab | they carry no recipe; dozens of empty lines on a large network |
 | Embed the ME item panel in the terminal screen, in v1 | doubles the GUI work without serving the main need |
-| Hard code the Basic to Ultimate and Extreme tiers in the mod core | `RecipeTypeRegistry` already provides them. Only the R1 diagnostic table is wired, and it lives in the integration modules |
+| Hard code the Basic to Ultimate and Extreme tiers in the mod core | `RecipeTypeRegistry` already provides them. Only the R1 diagnostic table is wired, and it lives in `common/CrafterTypes.java` |
 | Probe a crafter with a dry `acceptPackage` call | the method actually runs the craft; no simulation mode exists |
 
 ## Decisions taken during the night of 12 to 13 September 2026

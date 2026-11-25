@@ -18,8 +18,8 @@ import net.minecraftforge.fml.common.Loader;
  * Bridge to AE2 Wireless Universal Terminal, the mod that merges several wireless terminals
  * into a single item.
  *
- * <p>AE2WUT exposes **no** extension interface. The proof is in its bytecode, and revision
- * R4 of {@code docs/DECISIONS.md} records it:
+ * <p>AE2WUT exposes **no** extension interface. The proof is in its bytecode, and decision
+ * D33 of {@code docs/DECISIONS.md} records it:
  *
  * <ul>
  *   <li>{@code getAllMode()} builds a hard-coded list of integers, 0 to 9;

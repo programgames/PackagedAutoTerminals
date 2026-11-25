@@ -51,8 +51,9 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  * <p>The slots are ghost copies: clicking with an item in hand drops its image there, without
  * consuming the item. The behaviour matches the Encoder.
  *
- * <p>The recipe is built **by the server** (decision D05), on every slot change. The client
- * only displays the result.
+ * <p>Both sides rebuild the recipe on every slot change, as the PackagedAuto Encoder does. The
+ * client uses its copy for the preview and the Save button only. The server writes its own
+ * copy, at Save (decision D05).
  */
 public class ContainerPatEditor extends AEBaseContainer {
 
@@ -203,15 +204,6 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
-     * Places the 99 slots, always in the same order and of the same class on both sides.
-     *
-     * <p>PITFALL avoided here: if the class of a slot depended on the recipe type, client and
-     * server could place different ones, because the client does not know the type when it
-     * builds the screen. Slot synchronisation would then go wrong. The right to write is
-     * therefore checked elsewhere: by {@code EditorInventory.isItemValidForSlot} on the
-     * server, and by the greying out in the screen.
-     */
-    /**
      * Tab icons: the output of each recipe of the group.
      *
      * <p>These are **real** slots. Item synchronisation to the client is therefore handled by
@@ -220,6 +212,16 @@ public class ContainerPatEditor extends AEBaseContainer {
     public final net.minecraft.inventory.InventoryBasic tabs =
             new net.minecraft.inventory.InventoryBasic("tabs", false, TAB_COUNT);
 
+    /**
+     * Places the tabs and the 99 editor slots, always in the same order and of the same class
+     * on both sides.
+     *
+     * <p>PITFALL avoided here: if the class of a slot depended on the recipe type, client and
+     * server could place different ones, because the client does not know the type when it
+     * builds the screen. Slot synchronisation would then go wrong. The right to write is
+     * therefore checked elsewhere: by {@code EditorInventory.isItemValidForSlot} on the
+     * server, and by the greying out in the screen.
+     */
     private void bindEditorSlots() {
         IItemHandler handler = new InvWrapper(editor);
 
@@ -533,12 +535,6 @@ public class ContainerPatEditor extends AEBaseContainer {
     }
 
     /**
-     * Adjusts the amount in one slot.
-     *
-     * <p>The upper bound is not 64: PackagedAuto can write large amounts, through
-     * {@code MiscUtil.saveItemWithLargeCount}. Processing recipes need that.
-     */
-    /**
      * Sets the amount of one slot, typed in the amount panel.
      *
      * <p>Zero empties the slot. That is the rule of the Package Recipe Encoder, read in
@@ -644,6 +640,12 @@ public class ContainerPatEditor extends AEBaseContainer {
         sendChanges();
     }
 
+    /**
+     * Adjusts the amount in one slot.
+     *
+     * <p>The upper bound is not 64: PackagedAuto can write large amounts, through
+     * {@code MiscUtil.saveItemWithLargeCount}. Processing recipes need that.
+     */
     public void changeSlotCount(int slot, int delta) {
         if (!editor.isEditable(slot)) {
             return;

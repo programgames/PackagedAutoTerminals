@@ -27,7 +27,7 @@ public class PacketRecipeAction implements IMessage {
     public static final byte ACTION_REMOVE = 0;
     /** Opens the editor on {@link #recipe}, which the client saw at index {@link #index}. */
     public static final byte ACTION_EDIT = 1;
-    /** Writes the editor recipe, then returns to the terminal. */
+    /** Writes the editor recipe. The editor stays open. */
     public static final byte ACTION_SAVE = 2;
     /** Changes the recipe type in the editor. {@link #index} is 1 forward, 0 backward. */
     public static final byte ACTION_CYCLE_TYPE = 3;
